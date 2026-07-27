@@ -2,7 +2,7 @@
 // ==========================================
 // TPA FINANCE MIGRATION & NAMESPACE ISOLATION
 // ==========================================
-const APP_VERSION = '1.7'; 
+const APP_VERSION = '1.8'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -695,7 +695,40 @@ async function verifyOTPAndSavePin() {
     if(newPin.length < 4) { showToast("PIN Baru minimal 4 digit!", "error"); return; }
     profile.pin = await hashPIN(newPin); profile.txPin = ''; saveProfileLocal(); await saveProfileToSupabase(); generatedOTP = ""; closeModal('otpVerifyModal'); showToast("PIN Utama berhasil direset!", "success");
 }
-function toggleTheme() { showToast("Tema dikunci untuk performa."); }
+const iconSun = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+const iconMoon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
+const savedTheme = getLS('app_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
+window.addEventListener('DOMContentLoaded', () => {
+    updateThemeIcon(savedTheme);
+});
+
+function toggleTheme() {
+    const htmlEl = document.documentElement;
+    const currentTheme = htmlEl.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    htmlEl.setAttribute('data-theme', newTheme);
+    setLS('app_theme', newTheme);
+    updateThemeIcon(newTheme);
+    
+    const searchTerm = document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '';
+    if(typeof updateUI === 'function') updateUI(searchTerm);
+}
+
+function updateThemeIcon(theme) {
+    const btn = document.getElementById('themeToggleBtn');
+    if (!btn) return;
+    if (theme === 'light') {
+        btn.innerHTML = iconMoon;
+        btn.style.color = '#64748b'; 
+    } else {
+        btn.innerHTML = iconSun;
+        btn.style.color = 'var(--kuning)'; 
+    }
+}
 
 // INIT
 window.addEventListener('load', () => { bootApp(); });
