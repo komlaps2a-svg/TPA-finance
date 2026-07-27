@@ -1,34 +1,42 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.5, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.6, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#022c22">
+    <meta name="theme-color" content="#0a1510">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TPA Finance">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>TPA Finance v2.0</title>
+    <title>TPA Finance v1.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    
-    <link rel="stylesheet" href="style.css?v=200">
-    <script defer src="main.js?v=200"></script>
+    <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+    <link rel="stylesheet" href="style.css?v=1">
+    <script defer src="main.js?v=1"></script>
 </head>
 <body>
+
+    <div id="updateScreen" style="display:none;">
+        <div class="spinner"></div>
+        <p style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-top: 20px; letter-spacing: 1px;">MENERAPKAN UPDATE VERSI BARU...</p>
+    </div>
+
     <div id="toastBox" class="toast-container"></div>
     
     <div class="profile-header" onclick="openProfileView()">
         <div class="profile-info">
-            <div class="profile-pic-container"><img src="icon-192x192.png" id="headProfileImg" class="profile-pic" alt="Profile" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTBiOTgxIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iOCIgcj0iNSIvPjxwYXRoIGQ9Ik0yMCAyMWE4IDggMCAwIDAtMTYgMCIvPjwvc3ZnPg=='"></div>
+            <div class="profile-pic-container"><img src="" id="headProfileImg" class="profile-pic" alt="Profile"></div>
             <div class="profile-name-wrap">
                 <span class="profile-title" id="headGender">PENGURUS TPA</span>
-                <h1 class="profile-name" id="headName">Admin</h1>
+                <h1 class="profile-name" id="headName">Guest</h1>
                 <div id="networkStatus" class="status-sync sync-offline">Offline Mode</div>
             </div>
         </div>
@@ -38,24 +46,29 @@
         </div>
     </div>
 
+    <!-- 4-WAY WALLET SWITCHER -->
     <div class="controls-header" style="display: block; width: 100%; box-sizing: border-box;">
-        <div class="wallet-switcher" style="width: 100%; display: flex;" id="walletSwitchContainer" data-active="operasional">
+        <div class="wallet-switcher" style="width: 100%; display: flex;" id="walletSwitchContainer" data-active="tunai">
             <div class="wallet-slider"></div>
-            <button class="btn-tab active" onclick="switchWallet('operasional')" id="tab-operasional">Kas Operasional</button>
-            <button class="btn-tab" onclick="switchWallet('wakaf')" id="tab-wakaf">Dana Wakaf/Khusus</button>
+            <button class="btn-tab active" onclick="switchWallet('tunai')" id="tab-tunai">Tunai</button>
+            <button class="btn-tab" onclick="switchWallet('rekening')" id="tab-rekening">Bank</button>
+            <button class="btn-tab" onclick="switchWallet('wakaf')" id="tab-wakaf">Wakaf</button>
+            <button class="btn-tab" onclick="switchWallet('operasional')" id="tab-operasional">Operasional</button>
         </div>
     </div>
 
     <div class="filter-insight-row">
         <div class="custom-select-wrapper time-filter-wrapper" style="margin-bottom: 0;">
             <div class="custom-select-trigger" onclick="toggleCustomSelect('timeFilterOptions')">
-                <span id="dispTimeFilter">Bulan Ini</span>
+                <span id="dispTimeFilter">Semua</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
             </div>
             <div class="custom-options" id="timeFilterOptions">
-                <div class="custom-option" onclick="applyTimeFilter(0, 'Semua Waktu')">Semua Waktu</div>
-                <div class="custom-option" onclick="applyTimeFilter(30, 'Bulan Ini')">Bulan Ini</div>
-                <div class="custom-option" onclick="applyTimeFilter(365, 'Tahun Ini')">Tahun Ini</div>
+                <div class="custom-option" onclick="applyTimeFilter(365, 'Semua')">Semua Waktu</div>
+                <div class="custom-option" onclick="applyTimeFilter(1, 'Hari Ini')">Hari Ini</div>
+                <div class="custom-option" onclick="applyTimeFilter(7, '7 Hari')">7 Hari Terakhir</div>
+                <div class="custom-option" onclick="applyTimeFilter(30, '30 Hari')">30 Hari Terakhir</div>
+                <div class="custom-option" onclick="applyTimeFilter(365, '1 Tahun')">1 Tahun Belakang</div>
             </div>
         </div>
         
@@ -79,17 +92,22 @@
             <p class="card-value text-merah" id="disp-keluar" data-short="Rp 0" data-full="Rp 0"></p>
         </div>
     </div>
-
+    
     <div class="section-header" onclick="toggleSection('chartsSection', 'chartToggleIcon')">
-        <h2 class="section-title">Laporan Visual</h2>
+        <h2 class="section-title">Analitik Keuangan</h2>
         <svg id="chartToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
     </div>
     <div class="collapsible-content" id="chartsSection">
         <div class="expand-container" id="chartContainer">
             <div class="expand-item" onclick="expandChart(this, 'chartContainer')">
                 <button class="btn-close-expand" onclick="closeChart(event, this)">✕</button>
-                <span class="card-label">Distribusi Dana</span>
+                <span class="card-label">Distribusi Kategori</span>
                 <div class="chart-box"><canvas id="pieChart"></canvas></div>
+            </div>
+            <div class="expand-item" onclick="expandChart(this, 'chartContainer')">
+                <button class="btn-close-expand" onclick="closeChart(event, this)">✕</button>
+                <span class="card-label">Timeline 15 Trx</span>
+                <div class="chart-box"><canvas id="barChart"></canvas></div>
             </div>
             <div class="expand-item" onclick="expandChart(this, 'chartContainer')">
                 <button class="btn-close-expand" onclick="closeChart(event, this)">✕</button>
@@ -103,35 +121,73 @@
 
     <div class="section-header" style="cursor: default;">
         <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('historySection', 'historyToggleIcon')">
-            <h2 class="section-title">Buku Kas Laporan</h2>
+            <h2 class="section-title">Buku Kas & Riwayat</h2>
             <svg id="historyToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <button onclick="openCSVModal()" style="background:transparent; border:1px solid var(--hijau); color:var(--hijau); padding:6px 10px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; display:flex; gap:6px; align-items:center; text-transform:uppercase;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export Excel
+            Export Laporan
         </button>
     </div>
     
+    <div id="debtBannerContainer"></div>
     <div class="collapsible-content" id="historySection">
         <div class="search-container">
-            <input type="text" id="searchTxInput" class="search-input" placeholder="Cari transaksi, donatur, atau keterangan..." autocomplete="off">
+            <input type="text" id="searchTxInput" class="search-input" placeholder="Cari transaksi, donatur, atau kategori..." autocomplete="off">
             <span class="search-clear" id="searchClearBtn" onclick="clearSearch()">✕</span>
         </div>
+        
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th>Waktu</th><th>Kategori</th><th>Deskripsi / Entitas</th><th style="text-align: center;">Aksi</th><th style="text-align: right;">Nominal</th></tr>
+                    <tr><th>Waktu</th><th>Kategori</th><th>Keterangan / Bukti</th><th style="text-align: center;">Aksi</th><th style="text-align: right;">Nominal</th></tr>
                 </thead>
                 <tbody id="table-body"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- MODAL INPUT TRANSAKSI (LINK DRIVE PENGGANTI UPLOAD FILE) -->
+    <!-- MODAL PROFILE, PIN, GOOGLE AUTH, CSV (Reused layout, adjusted IDs/keys in JS) -->
+    <!-- (Profile & Auth Modals dipadatkan dalam HTML, struktur identik dengan sebelumnya) -->
+    <div class="modal-overlay" id="profileViewModal">
+        <div class="modal-card">
+            <div style="text-align: center; margin-bottom: 25px; position: relative;">
+                <button id="themeToggleBtn" onclick="toggleTheme()" style="position: absolute; top: 0; left: 0; background:var(--hitam); border:1px solid var(--border); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </button>
+                <button onclick="requestProfileEdit()" style="position: absolute; top: 0; right: 0; background:var(--hitam); border:1px solid var(--border); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto; border-color:var(--putih);">
+                    <img src="" id="viewProfileImg" class="profile-pic" alt="Profile View">
+                </div>
+                <h2 style="margin:0; font-size: 26px; font-weight:900;" id="viewProfileName">Guest</h2>
+                <p style="margin:5px 0 0 0; font-size: 11px; color: var(--text-muted); font-weight:700;" id="viewJoinDate"></p>
+            </div>
+            
+            <div class="prof-detail-grid">
+                <div class="prof-detail-box" style="grid-column: span 2; display:flex; flex-direction: row; justify-content:space-between; align-items:center; border-color:#4285F4; gap: 10px; padding: 15px;">
+                    <div style="text-align: left; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                        <span class="prof-detail-label">Status Akun Cloud</span>
+                        <p class="prof-detail-val" id="viewGoogleStatus" style="color:var(--text-muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">Tidak Terhubung</p>
+                    </div>
+                    <button id="btnGoogleLink" class="btn-quick glow-biru" style="padding: 8px 12px; font-size:11px; border-color:#4285F4; color:#4285F4; flex-shrink: 0; width: auto; height: fit-content; display: flex; align-items: center;" onclick="openGoogleAuthModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> 
+                        <span id="textGoogleLink">Hubungkan</span>
+                    </button>
+                </div>
+            </div>
+            
+            <button class="btn-modal btn-cancel" onclick="closeModal('profileViewModal')">Tutup</button>
+        </div>
+    </div>
+
+    <!-- MODAL INPUT TRANSAKSI (Dimodifikasi untuk TPA: Link Drive & Pihak Terkait) -->
     <div class="modal-overlay" id="txModal">
         <div class="modal-card">
             <h2 id="modal-title" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Input Data</h2>
             <input type="hidden" id="tx-type">
+            <input type="hidden" id="tx-is-saving" value="false">
             
             <label class="input-label" id="label-kategori">Kategori</label>
             <div id="categoryContainer" style="margin-bottom: 20px; position: relative;">
@@ -142,32 +198,32 @@
                     </div>
                     <div class="custom-options" id="catOptionsBox"></div>
                 </div>
+                <input type="text" id="tx-category-manual" class="input-field" placeholder="Ketik kategori manual..." style="margin:0; display: none;">
             </div>
+            <input type="hidden" id="tx-category">
 
-            <div id="borrowerWrapper" style="display: none;">
-                <label class="input-label text-kuning" id="label-entity">Nama Donatur / Penerima</label>
-                <input type="text" id="tx-entity" class="input-field" placeholder="Ketik nama entitas..." autocomplete="off">
-            </div>
-
-            <label class="input-label" id="label-desc">Deskripsi / Program</label>
-            <input type="text" id="tx-desc" class="input-field" autocomplete="off" placeholder="Penjelasan rincian...">
-
-            <label class="input-label">Link Bukti Google Drive (Opsional)</label>
-            <input type="url" id="tx-drive" class="input-field" placeholder="Paste link Google Drive disini..." autocomplete="off">
+            <label class="input-label" id="label-desc">Keterangan / Tujuan</label>
+            <input type="text" id="tx-desc" class="input-field" autocomplete="off">
             
+            <label class="input-label text-kuning">Pihak Terkait (Donatur/Penerima)</label>
+            <input type="text" id="tx-pihak-terkait" class="input-field" placeholder="Nama entitas/orang..." autocomplete="off">
+            
+            <label class="input-label text-biru">Link Arsip / Bukti (Google Drive)</label>
+            <input type="url" id="tx-link-bukti" class="input-field" placeholder="https://drive.google.com/..." autocomplete="off">
+
             <label class="input-label">Nominal (Rp)</label>
-            <input type="text" id="tx-amount" class="input-field text-kuning" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
+            <input type="text" id="tx-amount" class="input-field text-hijau" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
             
-            <button type="button" class="btn-modal" id="btnExecuteTx">Simpan ke Buku Kas</button>
+            <button type="button" class="btn-modal" style="background: var(--hijau);" id="btnExecuteTx">Simpan ke Buku Kas</button>
             <button type="button" class="btn-modal btn-cancel" onclick="closeModal('txModal')">Batal</button>
         </div>
     </div>
 
-    <!-- MODAL GOOGLE AUTH -->
+    <!-- Sisa Modal (Google Auth, Export CSV, Action Confirm) identik dengan fungsionalitas, disesuaikan ID di JS -->
     <div class="modal-overlay" id="googleAuthModal">
         <div class="modal-card" style="text-align: center;">
-            <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Sinkronisasi Cloud TPA</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Login untuk menyimpan data TPA Anda dengan aman ke server secara real-time.</p>
+            <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Sinkronisasi Cloud</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Login untuk menyimpan data TPA Anda dengan aman ke server Supabase secara real-time.</p>
             <button class="btn-modal" id="btnRealGoogleLogin" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#fff; color:#000; padding:15px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> 
                 Login dengan Google
@@ -175,28 +231,22 @@
             <button class="btn-modal btn-cancel" onclick="closeModal('googleAuthModal')" style="margin-top: 15px;">Batal</button>
         </div>
     </div>
-
-    <!-- MODAL CSV -->
+    
     <div class="modal-overlay" id="csvExportModal">
         <div class="modal-card" style="text-align: center;">
-            <div style="background: rgba(16, 185, 129, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--hijau);">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </div>
-            <h2 style="margin-top:0; color: var(--hijau);">Ekspor Laporan Excel/CSV</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Data akan diekspor sesuai dengan <b>filter waktu</b> yang aktif.</p>
+            <h2 style="margin-top:0; color: var(--hijau);">Ekspor Laporan CSV</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Data yang diekspor akan menyesuaikan dengan <b>filter waktu</b> dan dompet kas yang sedang aktif.</p>
             <button class="btn-modal" style="background: var(--hijau); color: var(--hitam);" onclick="executeCSVExport()">Unduh Sekarang</button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('csvExportModal')" style="margin-top: 10px;">Batal</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('csvExportModal')">Batal</button>
         </div>
     </div>
-
-    <!-- MODAL PROFIL INFO -->
-    <div class="modal-overlay" id="profileViewModal">
-        <div class="modal-card" style="text-align: center;">
-            <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Info Pengurus</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Untuk mengaktifkan sinkronisasi otomatis, pastikan akun Google terhubung.</p>
-            <button class="btn-modal" onclick="document.getElementById('googleAuthModal').classList.add('active'); closeModal('profileViewModal');">Hubungkan Akun Cloud</button>
-            <button class="btn-modal btn-cancel" onclick="executeFactoryReset()" style="margin-top: 10px; color: var(--merah); border-color: var(--merah);">Reset Data Lokal</button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('profileViewModal')" style="margin-top: 10px;">Tutup</button>
+    
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-card" style="text-align:center;">
+            <h2 style="margin-top:0;" id="confirmTitle">Konfirmasi</h2>
+            <p id="confirmDesc" style="color:var(--text-muted); font-size:14px; margin-bottom: 25px;"></p>
+            <button class="btn-modal" id="btnConfirmYes">Ya, Lanjutkan</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('confirmModal')">Batal</button>
         </div>
     </div>
 </body>
