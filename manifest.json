@@ -1,11 +1,11 @@
+/* manifest.json */
 {
   "name": "TPA Finance",
   "short_name": "TPA Finance",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#022c22",
-  "theme_color": "#022c22",
-  "description": "Sistem Pembukuan Akuntansi Multi-Fund TPA",
+  "background_color": "#0a1510",
+  "theme_color": "#0a1510",
   "icons": [
     {
       "src": "icon-192x192.png",
