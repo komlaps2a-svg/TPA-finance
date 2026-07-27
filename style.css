@@ -222,6 +222,68 @@ tr:last-child td { border-bottom: none; }
 .sync-online { background: rgba(16, 185, 129, 0.2); color: var(--hijau); }
 .sync-offline { background: rgba(245, 158, 11, 0.2); color: var(--kuning); }
 .sync-pending { background: rgba(59, 130, 246, 0.2); color: var(--biru); }
+[data-theme="light"] { 
+    --navy: #f0fdf4;
+    --hitam: #ffffff;
+    --hitam-card: #ffffff;
+    --putih: #064e3b;
+    --border: #d1fae5;
+    --text-muted: #64748b; 
+}
 
-/* Tema Light dimatikan secara visual (force dark) untuk efisiensi TPA, tetapi selektor tetap tersedia secara struktural */
-[data-theme="light"] { --navy: #f0f4f8; --hitam: #ffffff; --hitam-card: #ffffff; --putih: #0f172a; --border: #e2e8f0; --text-muted: #64748b; }
+[data-theme="light"] body { background-image: none !important; }
+
+[data-theme="light"] .profile-header,
+[data-theme="light"] .expand-item,
+[data-theme="light"] .table-container,
+[data-theme="light"] .modal-card,
+[data-theme="light"] .insight-box,
+[data-theme="light"] .wallet-switcher,
+[data-theme="light"] .btn-quick {
+    background: #ffffff !important;
+    border: 1px solid #d1fae5 !important; 
+    box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.15) !important;
+}
+
+[data-theme="light"] .insight-box { border-left: 4px solid var(--hijau) !important; }
+[data-theme="light"] .wallet-switcher { padding: 6px !important; }
+
+[data-theme="light"] #headName,
+[data-theme="light"] .card-value,
+[data-theme="light"] .insight-box span,
+[data-theme="light"] td,
+[data-theme="light"] .receipt-head h3,
+[data-theme="light"] .prof-detail-val { color: #064e3b !important; font-weight: 800 !important; }
+
+[data-theme="light"] .card-label, 
+[data-theme="light"] .section-title,
+[data-theme="light"] #headGender,
+[data-theme="light"] .btn-tab,
+[data-theme="light"] th { color: #64748b !important; }
+
+[data-theme="light"] .custom-select-trigger, 
+[data-theme="light"] .search-input,
+[data-theme="light"] .input-field,
+[data-theme="light"] .prof-detail-box { 
+    background: #f8fafc !important; 
+    color: #064e3b !important; 
+    border: 1px solid #cbd5e1 !important; 
+}
+
+[data-theme="light"] th { background: #f1f5f9 !important; border-bottom: 2px solid #e2e8f0 !important; }
+[data-theme="light"] td { border-bottom: 1px solid #f1f5f9 !important; }
+[data-theme="light"] tr:last-child td { border-bottom: none !important; }
+
+[data-theme="light"] .modal-overlay { background: rgba(240, 253, 244, 0.6) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important;}
+[data-theme="light"] .modal-card { background: rgba(255, 255, 255, 0.95) !important; border: 1px solid #d1fae5 !important; }
+[data-theme="light"] .receipt-card { background: #ffffff !important; border-color: #cbd5e1 !important; }
+[data-theme="light"] .receipt-card::before, 
+[data-theme="light"] .receipt-card::after { background: var(--navy) !important; border-color: #cbd5e1 !important; }
+[data-theme="light"] .receipt-head { border-color: #cbd5e1 !important; }
+
+[data-theme="light"] .card-value.text-hijau, [data-theme="light"] .text-hijau { color: #059669 !important; }
+[data-theme="light"] .card-value.text-biru, [data-theme="light"] .text-biru { color: #2563eb !important; }
+[data-theme="light"] .card-value.text-merah, [data-theme="light"] .text-merah { color: #dc2626 !important; }
+
+[data-theme="light"] .badge-cat[style*="rgba(0,0,0,0.5)"] { background: #f1f5f9 !important; border-color: currentColor !important; box-shadow: none !important; }
+[data-theme="light"] .wallet-switcher[data-active="operasional"] .btn-tab#tab-operasional { color: #ffffff !important; }
