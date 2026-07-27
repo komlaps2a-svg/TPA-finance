@@ -2,7 +2,7 @@
 // ==========================================
 // TPA FINANCE MIGRATION & NAMESPACE ISOLATION
 // ==========================================
-const APP_VERSION = '1.8'; 
+const APP_VERSION = '1.9'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
