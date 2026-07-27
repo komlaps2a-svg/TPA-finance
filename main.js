@@ -1,4 +1,4 @@
-const APP_VERSION = '1.1'; 
+const APP_VERSION = '1.3'; 
 let sbClient = null;
 let db = []; 
 let currentUser = null; 
