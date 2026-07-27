@@ -1,1 +1,68 @@
+:root {
+    --navy: #022c22;       /* Hijau Background Islami */
+    --hitam-card: #064e3b; /* Zamrud Gelap */
+    --hitam: #020617;
+    --putih: #f8fafc;
+    --merah: #ef4444; 
+    --kuning: #fbbf24; 
+    --oranye: #f97316; 
+    --hijau: #10b981; 
+    --biru: #0ea5e9;
+    --border: #065f46;
+    --text-muted: #94a3b8;
+}
 
+body {
+    font-family: 'Inter', sans-serif; 
+    background-color: var(--navy);
+    /* Injeksi Motif Geometrik Islami tanpa membebani DOM */
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30L0 30z' fill='%23059669' fill-opacity='0.04' fill-rule='evenodd'/%3E%3C/svg%3E");
+    color: var(--putih);
+    margin: 0; padding: 20px; line-height: 1.5; touch-action: manipulation;
+    overflow-x: hidden; box-sizing: border-box; overscroll-behavior-y: none;
+}
+
+.profile-header { display: flex; align-items: center; justify-content: space-between; background: var(--hitam-card); padding: 15px 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; cursor: pointer; }
+.profile-pic-container { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--hijau); overflow: hidden; background: var(--hitam); }
+.profile-title { font-size: 11px; color: var(--kuning); font-weight: 800; letter-spacing: 1px; }
+.profile-name { font-size: 20px; font-weight: 900; margin: 0; }
+.health-badge { border: 1px solid var(--hijau); color: var(--hijau); padding: 6px 10px; border-radius: 8px; font-size: 10px; font-weight: 900; text-align: center; background: rgba(16, 185, 129, 0.1); }
+
+/* Switcher Dompet (Operasional & Wakaf) */
+.wallet-switcher { position: relative; display: flex; width: 100%; background: var(--hitam); padding: 5px; border-radius: 12px; border: 1px solid var(--border); margin-bottom:20px; }
+.wallet-slider { position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); background: var(--hijau); border-radius: 8px; transition: transform 0.4s; }
+.wallet-switcher[data-active="wakaf"] .wallet-slider { transform: translateX(100%); background: var(--kuning); }
+.btn-tab { flex: 1; position: relative; z-index: 1; padding: 14px; background: transparent; border: none; color: var(--text-muted); font-weight: 900; cursor: pointer; transition: 0.3s; }
+.btn-tab.active { color: var(--hitam); }
+
+/* Stats Grid */
+.expand-container { display: flex; gap: 10px; margin-bottom: 15px; }
+.expand-item { flex: 1; background: var(--hitam-card); border: 1px solid var(--border); border-radius: 16px; padding: 15px 10px; text-align: center; }
+.card-label { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+.card-value { font-size: 16px; font-weight: 900; margin: 5px 0 0 0; }
+.text-hijau { color: var(--hijau); } .text-biru { color: var(--biru); } .text-merah { color: var(--merah); }
+
+/* Quick Actions */
+.quick-actions-wrap { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 25px 0; }
+.btn-quick { background: var(--hitam-card); border: 2px solid var(--border); color: var(--putih); padding: 16px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; position: relative; }
+.btn-quick svg { position: absolute; left: 15px; width: 18px; height: 18px; }
+.btn-quick.glow-hijau { border-color: var(--hijau); color: var(--hijau); }
+.btn-quick.glow-biru { border-color: var(--biru); color: var(--biru); }
+.btn-quick.glow-merah { border-color: var(--merah); color: var(--merah); }
+.btn-quick.glow-kuning { border-color: var(--kuning); color: var(--kuning); }
+
+/* Tabel & Form */
+.table-container { background: var(--hitam-card); border-radius: 16px; overflow-x: auto; margin-bottom: 20px; }
+table { width: 100%; min-width: 500px; border-collapse: collapse; }
+th, td { padding: 15px; border-bottom: 1px solid var(--border); text-align: left; }
+.input-label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 800; color: var(--text-muted); }
+.input-field { width: 100%; padding: 16px; background: var(--hitam); border: 1px solid var(--border); border-radius: 10px; color: var(--putih); margin-bottom: 20px; box-sizing: border-box; }
+.btn-modal { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 900; background: var(--hijau); color: var(--hitam); margin-bottom: 10px; cursor: pointer; }
+.btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+
+/* AI Box & Utils */
+.insight-box { background: var(--hitam-card); border-left: 3px solid var(--hijau); padding: 12px; border-radius: 8px; display: flex; gap: 10px; color: var(--putih); font-size: 12px; font-weight: 600; align-items: center; }
+.insight-box svg { color: var(--hijau); width: 20px; flex-shrink: 0; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: flex-start; z-index: 1000; padding: 40px 15px; box-sizing: border-box; opacity: 0; pointer-events: none; transition: 0.3s; }
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-card { background: var(--hitam-card); border-radius: 20px; width: 100%; max-width: 400px; padding: 25px; box-sizing: border-box; border: 1px solid var(--border); }
