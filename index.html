@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.3, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#022c22">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,15 +10,15 @@
     <meta name="apple-mobile-web-app-title" content="TPA Finance">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>TPA Finance v1.1</title>
+    <title>TPA Finance v2.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=201">
-    <script defer src="main.js?v=201"></script>
+    <link rel="stylesheet" href="style.css?v=200">
+    <script defer src="main.js?v=200"></script>
 </head>
 <body>
     <div id="toastBox" class="toast-container"></div>
@@ -33,7 +33,7 @@
             </div>
         </div>
         <div id="healthBadge" class="health-badge health-netral">
-            <span>KAS TPA</span>
+            <span>STATUS</span>
             <div id="healthText">Netral</div>
         </div>
     </div>
@@ -42,7 +42,7 @@
         <div class="wallet-switcher" style="width: 100%; display: flex;" id="walletSwitchContainer" data-active="operasional">
             <div class="wallet-slider"></div>
             <button class="btn-tab active" onclick="switchWallet('operasional')" id="tab-operasional">Kas Operasional</button>
-            <button class="btn-tab" onclick="switchWallet('wakaf')" id="tab-wakaf">Dana Wakaf/Terikat</button>
+            <button class="btn-tab" onclick="switchWallet('wakaf')" id="tab-wakaf">Dana Wakaf/Khusus</button>
         </div>
     </div>
 
@@ -127,7 +127,7 @@
         </div>
     </div>
 
-    <!-- MODAL INPUT TRANSAKSI -->
+    <!-- MODAL INPUT TRANSAKSI (LINK DRIVE PENGGANTI UPLOAD FILE) -->
     <div class="modal-overlay" id="txModal">
         <div class="modal-card">
             <h2 id="modal-title" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Input Data</h2>
@@ -152,8 +152,8 @@
             <label class="input-label" id="label-desc">Deskripsi / Program</label>
             <input type="text" id="tx-desc" class="input-field" autocomplete="off" placeholder="Penjelasan rincian...">
 
-            <label class="input-label">Bukti Digital / Nota (Opsional)</label>
-            <input type="file" id="tx-receipt" class="input-field" accept="image/*" style="padding: 10px; font-size: 12px;">
+            <label class="input-label">Link Bukti Google Drive (Opsional)</label>
+            <input type="url" id="tx-drive" class="input-field" placeholder="Paste link Google Drive disini..." autocomplete="off">
             
             <label class="input-label">Nominal (Rp)</label>
             <input type="text" id="tx-amount" class="input-field text-kuning" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
@@ -179,8 +179,11 @@
     <!-- MODAL CSV -->
     <div class="modal-overlay" id="csvExportModal">
         <div class="modal-card" style="text-align: center;">
+            <div style="background: rgba(16, 185, 129, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--hijau);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
             <h2 style="margin-top:0; color: var(--hijau);">Ekspor Laporan Excel/CSV</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Data akan diekspor sesuai dengan <b>filter waktu</b> yang aktif di halaman utama.</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Data akan diekspor sesuai dengan <b>filter waktu</b> yang aktif.</p>
             <button class="btn-modal" style="background: var(--hijau); color: var(--hitam);" onclick="executeCSVExport()">Unduh Sekarang</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('csvExportModal')" style="margin-top: 10px;">Batal</button>
         </div>
@@ -192,6 +195,7 @@
             <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Info Pengurus</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Untuk mengaktifkan sinkronisasi otomatis, pastikan akun Google terhubung.</p>
             <button class="btn-modal" onclick="document.getElementById('googleAuthModal').classList.add('active'); closeModal('profileViewModal');">Hubungkan Akun Cloud</button>
+            <button class="btn-modal btn-cancel" onclick="executeFactoryReset()" style="margin-top: 10px; color: var(--merah); border-color: var(--merah);">Reset Data Lokal</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('profileViewModal')" style="margin-top: 10px;">Tutup</button>
         </div>
     </div>
