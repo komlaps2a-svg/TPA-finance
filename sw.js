@@ -1,5 +1,5 @@
 // Nama cache diisolasi absolut untuk mencegah tumpang tindih data
-const CACHE_NAME = 'tpa_finance_core_v1.3';
+const CACHE_NAME = 'tpa_finance_core_v1.5';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
