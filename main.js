@@ -1,12 +1,12 @@
-const APP_VERSION = '1.3'; 
+const APP_VERSION = '2.0'; 
 let sbClient = null;
 let db = []; 
 let currentUser = null; 
 let APP_MODE = localStorage.getItem('tpa_app_mode') || 'GUEST';
 
-// KREDENSIAL SUPABASE WAJIB DIISI
-const SUPABASE_URL = 'ISI_DENGAN_URL_PROJECT_BARU';
-const SUPABASE_KEY = 'ISI_DENGAN_ANON_KEY_PROJECT_BARU';
+// KREDENSIAL SUPABASE ANDA WAJIB DIISI DI SINI
+const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kc3l5YXhtaXdza3Jra2xzZWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDU4NjIsImV4cCI6MjEwMDcyMTg2Mn0.uXgAIhUjjkNpe9s6N6LGvRXZLUDQUZJrSfUFf1BDmKU';
 
 let activeWallet = 'operasional'; 
 let currentTimeFilter = 30; 
@@ -25,6 +25,7 @@ const svgs = {
     transport: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
 };
 
+// KATEGORI TPA
 const categories = { 
     masuk: ['Infak Santri', 'Infak Jumat', 'Donasi Masyarakat', 'Wakaf', 'Bantuan Pemerintah', 'Bantuan Masjid', 'Hibah', 'Donatur Tetap', 'Lainnya'], 
     keluar: ['Honor Guru', 'ATK', 'Al-Qur\'an', 'Buku Iqra\'', 'Snack Kegiatan', 'Listrik', 'Air', 'Kebersihan', 'Perbaikan Bangunan', 'Kegiatan Santri', 'Transportasi', 'Lainnya'] 
@@ -102,23 +103,23 @@ function renderShortcuts() {
     if(activeWallet === 'operasional') { 
         c.className = 'quick-actions-wrap grid-mode'; 
         c.innerHTML = ` 
-            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'Infak Santri', '', true)">${svgs.plus} <span>Infak Santri</span></button> 
-            <button class="btn-quick glow-biru" onclick="quickInput('masuk', 'Donatur Tetap', '', true)">${svgs.uang} <span>Donatur</span></button> 
-            <button class="btn-quick glow-merah" onclick="quickInput('keluar', 'Honor Guru', '', true)">${svgs.minus_bold} <span>Honor Guru</span></button> 
-            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'Kegiatan Santri', '')">${svgs.transport} <span>Kegiatan</span></button> 
+            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'Infak Santri', '', true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> <span>Infak Santri</span></button> 
+            <button class="btn-quick glow-biru" onclick="quickInput('masuk', 'Donatur Tetap', '', true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg> <span>Donatur</span></button> 
+            <button class="btn-quick glow-merah" onclick="quickInput('keluar', 'Honor Guru', '', true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg> <span>Honor Guru</span></button> 
+            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'Kegiatan Santri', '')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> <span>Kegiatan</span></button> 
         `; 
     } else { 
         c.className = 'quick-actions-wrap grid-mode'; 
         c.innerHTML = ` 
-            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'Wakaf', '', true)">${svgs.uang} <span>Terima Wakaf</span></button> 
-            <button class="btn-quick glow-merah" onclick="quickInput('keluar', 'Perbaikan Bangunan', '')">${svgs.minus_bold} <span>Pembangunan</span></button> 
-            <button class="btn-quick glow-biru" onclick="quickInput('masuk', 'Hibah', '', true)">${svgs.plus} <span>Dana Khusus</span></button> 
-            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'Lainnya', '')">${svgs.minus_bold} <span>Pengeluaran</span></button> 
+            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'Wakaf', '', true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg> <span>Terima Wakaf</span></button> 
+            <button class="btn-quick glow-merah" onclick="quickInput('keluar', 'Perbaikan Bangunan', '')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg> <span>Pembangunan</span></button> 
+            <button class="btn-quick glow-biru" onclick="quickInput('masuk', 'Hibah', '', true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> <span>Dana Khusus</span></button> 
+            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'Lainnya', '')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg> <span>Pengeluaran</span></button> 
         `; 
     } 
 }
 
-// LOGIKA UI DOM & MODALS (DIKEMBALIKAN UTUH)
+// LOGIKA UI DOM (EVENT CLICK FIX)
 function toggleCustomSelect(id) { 
     const box = document.getElementById(id); 
     const isOpen = box.classList.contains('open'); 
@@ -160,7 +161,6 @@ function expandChart(el, id) {
     if(!el.classList.contains('expanded')) { 
         for(let i of document.getElementById(id).children) i.className = (i === el) ? 'expand-item expanded' : 'expand-item collapsed'; 
         setTimeout(() => { if(pieChart) pieChart.resize(); if(lineChart) lineChart.resize(); }, 100); 
-        setTimeout(() => { if(pieChart) pieChart.resize(); if(lineChart) lineChart.resize(); }, 550); 
     } 
 } 
 
@@ -178,13 +178,13 @@ function toggleSection(sec, icn) {
 function openProfileView() { document.getElementById('profileViewModal').classList.add('active'); }
 function openCSVModal() { document.getElementById('csvExportModal').classList.add('active'); }
 
-// INPUT LOGIC
+// INPUT LOGIC (PENGGUNAAN LINK DRIVE BUKAN UPLOAD FILE)
 function quickInput(type, cat, desc, reqEntity = false) { 
     document.getElementById('tx-type').value = type; 
     document.getElementById('modal-title').innerText = type === 'masuk' ? 'Catat Pemasukan TPA' : 'Catat Pengeluaran TPA'; 
     document.getElementById('tx-desc').value = desc; 
     document.getElementById('tx-entity').value = ''; 
-    document.getElementById('tx-receipt').value = '';
+    document.getElementById('tx-drive').value = '';
     
     document.getElementById('catSelectWrapper').style.display = 'block'; 
     const box = document.getElementById('catOptionsBox'); 
@@ -218,22 +218,9 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
         const cF = document.getElementById('tx-category').value; 
         const dF = properTitleCase(document.getElementById('tx-desc').value.trim()) || '-'; 
         const ent = document.getElementById('borrowerWrapper').style.display === 'block' ? properTitleCase(document.getElementById('tx-entity').value.trim()) : ''; 
-        
-        let receiptUrl = null;
-        const fileInput = document.getElementById('tx-receipt');
-        
-        if (fileInput.files.length > 0 && APP_MODE === 'CLOUD' && sbClient) {
-            showToast("Mengunggah foto...", "syncing");
-            const file = fileInput.files[0];
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
-            const { data, error } = await sbClient.storage.from('receipts').upload(fileName, file);
-            if (!error) {
-                const { data: urlData } = sbClient.storage.from('receipts').getPublicUrl(fileName);
-                receiptUrl = urlData.publicUrl;
-            }
-        }
+        const driveLink = document.getElementById('tx-drive').value.trim();
 
-        const txData = { wallet: activeWallet, type, category: cF, desc: dF, entity: ent, amount: rawAmount, receipt_url: receiptUrl, date: new Date().toISOString() };
+        const txData = { wallet: activeWallet, type, category: cF, desc: dF, entity: ent, amount: rawAmount, receipt_url: driveLink || null, date: new Date().toISOString() };
 
         if (APP_MODE === 'CLOUD' && sbClient) { 
             txData.user_id = currentUser.id;
@@ -299,7 +286,7 @@ function generateAIForecast(data) {
         aiMessages.push("Belum ada pencatatan kas. Mulai catat transaksi pertama TPA.");
     } else if (activeWallet === 'operasional') {
         let outHonor = data.filter(t => t.category === 'Honor Guru').reduce((a,b)=>a+b.amount,0);
-        aiMessages.push("Transparansi adalah kunci. Pastikan pengeluaran dicatat dengan bukti nota digital.");
+        aiMessages.push("Transparansi adalah kunci. Sematkan Link Google Drive untuk arsip nota.");
         if(outHonor === 0 && data.length > 5) aiMessages.push("⚠️ Anggaran Honor Guru belum tercatat bulan ini. Jangan terlewat!");
     } else {
         aiMessages.push("Peringatan: Dana Wakaf dilarang keras digunakan untuk konsumsi operasional harian TPA.");
@@ -328,7 +315,7 @@ function renderTable(data) {
         let c = getDynamicColor(tx.category, tx.type);
         let dr = `<span style="font-weight:700;">${tx.desc}</span>`;
         if(tx.entity) dr += `<br><span style="font-size:11px; color:var(--kuning);">Pihak: <b>${tx.entity}</b></span>`;
-        if(tx.receipt_url) dr += `<br><a href="${tx.receipt_url}" target="_blank" style="font-size:10px; color:var(--biru); text-decoration:underline;">Lihat Bukti Foto</a>`;
+        if(tx.receipt_url) dr += `<br><a href="${tx.receipt_url}" target="_blank" style="font-size:10px; color:var(--biru); text-decoration:underline;">Lihat Arsip/Nota (Drive)</a>`;
         
         let cr = `<div class="badge-cat" style="border:1px solid ${c}; color:${c}; background:rgba(0,0,0,0.3);">${tx.category}</div>`;
         
@@ -381,8 +368,18 @@ async function deleteTx(id) {
     }
 }
 
+async function executeFactoryReset() { 
+    if(confirm("PERINGATAN: Seluruh data lokal Anda akan dihapus permanen. Lanjutkan?")) {
+        db = [];
+        localStorage.removeItem('tpa_db');
+        updateUI(''); 
+        showToast("Database lokal direset.", "success");
+        closeModal('profileViewModal');
+    }
+}
+
 function executeCSVExport() { 
-    let csv = "Tanggal,Waktu,Dompet,Tipe,Kategori,Deskripsi,Entitas,Nominal,Bukti_URL\n"; 
+    let csv = "Tanggal,Waktu,Dompet,Tipe,Kategori,Deskripsi,Entitas,Nominal,Link_Arsip_Drive\n"; 
     db.forEach(row => { 
         csv += `"${new Date(row.date).toLocaleDateString()}","${new Date(row.date).toLocaleTimeString()}","${row.wallet}","${row.type}","${row.category}","${row.desc}","${row.entity||'-'}","${row.amount}","${row.receipt_url||'-'}"\n`; 
     }); 
