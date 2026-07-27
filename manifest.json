@@ -1,11 +1,10 @@
-/* manifest.json */
 {
   "name": "TPA Finance",
   "short_name": "TPA Finance",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a1510",
-  "theme_color": "#0a1510",
+  "background_color": "#05100a",
+  "theme_color": "#05100a",
   "icons": [
     {
       "src": "icon-192x192.png",
