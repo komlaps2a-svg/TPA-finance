@@ -1,4 +1,4 @@
-const APP_VERSION = '1.0'; 
+const APP_VERSION = '1.1'; 
 let sbClient = null;
 let db = []; 
 let pendingSync = JSON.parse(localStorage.getItem('tpa_pending_sync')) || []; 
