@@ -148,9 +148,8 @@ tr:last-child td { border-bottom: none; }
 .sync-online { border: 1px solid var(--border); color: var(--putih); }
 .sync-offline { border: 1px solid var(--border); color: var(--text-muted); }
 .sync-pending { border: 1px solid var(--border); color: var(--text-muted); }
-
 /* ==========================================
-   TEMA LIGHT MODE (TPA OPTIMIZED)
+   TEMA LIGHT MODE (TPA OPTIMIZED - REVISI KONTRAS)
 ========================================== */
 [data-theme="light"] { 
     --navy: #f0fdf4;        
@@ -161,7 +160,6 @@ tr:last-child td { border-bottom: none; }
     --text-muted: #64748b; 
 }
 
-/* Background motif Islami untuk Body Light Theme */
 [data-theme="light"] body {
     background-color: var(--navy);
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") !important;
@@ -173,7 +171,22 @@ tr:last-child td { border-bottom: none; }
     box-shadow: 0 10px 25px rgba(6, 78, 59, 0.2) !important;
 }
 [data-theme="light"] .profile-header * { color: #ffffff !important; border-color: #ffffff !important;}
-[data-theme="light"] #headGender, [data-theme="light"] .health-badge span { color: #cbd5e1 !important; }
+
+/* REVISI KONTRAS: Subtitle Header & Lencana Status Profil */
+[data-theme="light"] #headGender { color: #a7f3d0 !important; font-weight: 800 !important; }
+[data-theme="light"] .sync-online { border-color: #a7f3d0 !important; color: #ffffff !important; background: transparent !important; }
+[data-theme="light"] .sync-offline { border-color: #fcd34d !important; color: #fef3c7 !important; background: transparent !important; }
+[data-theme="light"] .sync-pending { border-color: #93c5fd !important; color: #eff6ff !important; background: transparent !important; }
+
+/* REVISI KONTRAS: Lencana Health (Netral, Sehat, Defisit) */
+[data-theme="light"] .health-badge { background: #ffffff !important; border: 1px solid #d1fae5 !important; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15) !important; }
+[data-theme="light"] .health-badge span { color: #64748b !important; font-weight: 900 !important; opacity: 1 !important; }
+[data-theme="light"] #healthText { font-weight: 900 !important; }
+[data-theme="light"] .health-sehat { color: #059669 !important; border-color: #059669 !important; }
+[data-theme="light"] .health-waspada { color: #d97706 !important; border-color: #d97706 !important; }
+[data-theme="light"] .health-kritis { color: #ea580c !important; border-color: #ea580c !important; }
+[data-theme="light"] .health-defisit { color: #dc2626 !important; border-color: #dc2626 !important; }
+[data-theme="light"] .health-netral { color: #064e3b !important; border-color: #cbd5e1 !important; }
 
 [data-theme="light"] .expand-item,
 [data-theme="light"] .table-container,
@@ -203,6 +216,13 @@ tr:last-child td { border-bottom: none; }
 [data-theme="light"] th { color: #64748b !important; }
 [data-theme="light"] .wallet-switcher .btn-tab.active { color: #064e3b !important; text-shadow: none !important;}
 
+/* REVISI WARNA: Tombol Quick Actions (Logo Berwarna, Teks Netral) */
+[data-theme="light"] .btn-quick span { color: #064e3b !important; font-weight: 800 !important; }
+[data-theme="light"] .btn-quick.svg-hijau svg { color: #059669 !important; }
+[data-theme="light"] .btn-quick.svg-merah svg { color: #dc2626 !important; }
+[data-theme="light"] .btn-quick.svg-biru svg { color: #2563eb !important; }
+[data-theme="light"] .btn-quick.svg-kuning svg { color: #d97706 !important; }
+
 [data-theme="light"] .custom-select-trigger, 
 [data-theme="light"] .search-input,
 [data-theme="light"] .input-field,
@@ -222,5 +242,9 @@ tr:last-child td { border-bottom: none; }
 [data-theme="light"] .receipt-card::before, 
 [data-theme="light"] .receipt-card::after { background: var(--navy) !important; border-color: #cbd5e1 !important; }
 [data-theme="light"] .receipt-head { border-color: #cbd5e1 !important; }
+
+[data-theme="light"] .card-value.text-hijau, [data-theme="light"] .text-hijau { color: #059669 !important; }
+[data-theme="light"] .card-value.text-biru, [data-theme="light"] .text-biru { color: #2563eb !important; }
+[data-theme="light"] .card-value.text-merah, [data-theme="light"] .text-merah { color: #dc2626 !important; }
 
 [data-theme="light"] .badge-cat[style*="var(--border)"] { background: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #64748b !important; box-shadow: none !important; }
