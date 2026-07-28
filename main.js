@@ -1,8 +1,4 @@
-// main.js
-// ==========================================
-// TPA FINANCE MIGRATION & NAMESPACE ISOLATION
-// ==========================================
-const APP_VERSION = '1.9'; 
+const APP_VERSION = '2.1'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -15,28 +11,24 @@ function checkAppVersion() {
         setLS('app_version', APP_VERSION);
         if (navigator.onLine) {
             const updateScreen = document.getElementById('updateScreen');
-            if (updateScreen) {
-                updateScreen.style.display = 'flex';
-                setTimeout(() => { window.location.reload(true); }, 1500);
-            }
+            if (updateScreen) { updateScreen.style.display = 'flex'; setTimeout(() => { window.location.reload(true); }, 1500); }
         }
     }
 }
 checkAppVersion();
 
-// ==========================================
-// KONFIGURASI SUPABASE BARU (TPA)
-// ==========================================
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kc3l5YXhtaXdza3Jra2xzZWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDU4NjIsImV4cCI6MjEwMDcyMTg2Mn0.uXgAIhUjjkNpe9s6N6LGvRXZLUDQUZJrSfUFf1BDmKU';
 
 let sbClient = null;
 let db = []; 
 let pendingSync = JSON.parse(getLS('pending_sync')) || []; 
+let wishlists = JSON.parse(getLS('wishlists')) || [];
+let driveLinks = JSON.parse(getLS('drivelinks')) || [];
 let currentUser = null; 
 
 let APP_MODE = getLS('app_mode') || 'GUEST';
-let activeWallet = 'tunai'; 
+let activeWallet = 'utama'; 
 let currentTimeFilter = 365; 
 let rawAmount = 0;
 let pieChart, barChart, lineChart; 
@@ -47,16 +39,15 @@ let aiCurrentMsgIdx = 0;
 let aiCarouselInterval = null;
 let generatedOTP = "";
 let otpExpiryTime = 0;
-let pendingTxCallback = null;
 
 const defaultProfile = { 
-    name: 'Pengurus', pin: '', txPin: '',
+    name: 'Pengurus', pin: '', 
     photo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzEwYjk4MSI+PHBhdGggZD0iTTEyIDJhNSA1IDAgMSAwIDUgNSBNMTIgMTRhNyA3IDAgMCAwLTcgN3YxSDE5di0xYTcgNyAwIDAgMC03LTdaIi8+PC9zdmc+', 
     joinDate: new Date().toISOString(), birthDate: '', gender: 'Rahasia', googleLinked: false, googleEmail: ''
 };
 
-let profile = JSON.parse(getLS('profile_secure_v1'));
-if (!profile) { profile = { ...defaultProfile }; setLS('profile_secure_v1', JSON.stringify(profile)); }
+let profile = JSON.parse(getLS('profile_secure_v2'));
+if (!profile) { profile = { ...defaultProfile }; setLS('profile_secure_v2', JSON.stringify(profile)); }
 
 const svgs = {
     makan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
@@ -64,7 +55,9 @@ const svgs = {
     book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
     user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
     plus_bold: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-    minus_bold: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>`
+    minus_bold: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+    target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`,
+    link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`
 };
 
 const categories = { 
@@ -80,9 +73,6 @@ function getDynamicColor(categoryStr, type) {
     return `hsl(${Math.abs(hash) % 360}, 70%, 55%)`; 
 }
 
-// ==========================================
-// STORAGE ENGINE (ISOLATED)
-// ==========================================
 const SECRET_KEY = "TPA_Finance_Secure_K3y_99";
 function getDBKey() { return APP_MODE === 'CLOUD' ? LS_PREFIX + 'cloud_db' : LS_PREFIX + 'guest_db'; }
 
@@ -92,24 +82,17 @@ function saveLocalDB(dataToSave) {
         if (typeof CryptoJS !== 'undefined') {
             const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(dataToSave), SECRET_KEY).toString();
             localStorage.setItem(dbKey, ciphertext);
-        } else {
-            localStorage.setItem(dbKey + '_fallback', JSON.stringify(dataToSave));
-        }
-    } catch(e) { console.warn("Gagal simpan lokal:", e); }
+        } else { localStorage.setItem(dbKey + '_fallback', JSON.stringify(dataToSave)); }
+    } catch(e) {}
 }
 
 function loadLocalDB() {
-    const dbKey = getDBKey();
-    let data = [];
+    const dbKey = getDBKey(); let data = [];
     try {
         const ciphertext = localStorage.getItem(dbKey);
-        if (ciphertext) {
-            data = JSON.parse(CryptoJS.AES.decrypt(ciphertext, SECRET_KEY).toString(CryptoJS.enc.Utf8)); 
-        } else {
-            const fallback = localStorage.getItem(dbKey + '_fallback');
-            if (fallback) data = JSON.parse(fallback);
-        }
-    } catch (e) { console.error("Database Lokal TPA Corrupt:", e); }
+        if (ciphertext) { data = JSON.parse(CryptoJS.AES.decrypt(ciphertext, SECRET_KEY).toString(CryptoJS.enc.Utf8)); } 
+        else { const fallback = localStorage.getItem(dbKey + '_fallback'); if (fallback) data = JSON.parse(fallback); }
+    } catch (e) { }
     return Array.isArray(data) ? data : [];
 }
 
@@ -117,25 +100,20 @@ async function hashPIN(pin) {
     if (!pin) return '';
     try {
         if (window.crypto && window.crypto.subtle && window.isSecureContext) {
-            const msgBuffer = new TextEncoder().encode(pin);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        } else if (typeof CryptoJS !== 'undefined') {
-            return CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex);
-        } else { return btoa(pin); }
+            const msgBuffer = new TextEncoder().encode(pin); const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer)); return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } else if (typeof CryptoJS !== 'undefined') { return CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex); } else { return btoa(pin); }
     } catch (error) { return btoa(pin); }
 }
 
-function saveProfileLocal() { setLS('profile_secure_v1', JSON.stringify(profile)); }
+function saveProfileLocal() { setLS('profile_secure_v2', JSON.stringify(profile)); }
 
-// ==========================================
-// BOOT & SYNC ENGINE
-// ==========================================
 function bootApp() {
     renderShortcuts();
     db = loadLocalDB(); 
     initAppHeader();
+    renderWishlist();
+    renderDriveLinks();
     updateUI('');
 
     const netStatus = document.getElementById('networkStatus');
@@ -154,56 +132,43 @@ function forceLogoutToGuest() {
     profile = { ...defaultProfile }; saveProfileLocal();
     removeLS('guest_db'); removeLS('guest_db_fallback'); db = []; 
     initAppHeader(); renderShortcuts(); updateUI(''); 
-    showToast("Berhasil Logout. Kembali ke Guest.", "success");
-    closeModal('profileViewModal');
+    showToast("Berhasil Logout. Kembali ke Guest.", "success"); closeModal('profileViewModal');
     const netStatus = document.getElementById('networkStatus');
     if(netStatus) { netStatus.innerText = navigator.onLine ? "Online Mode (Guest)" : "Offline Mode (Guest)"; netStatus.className = navigator.onLine ? "status-sync sync-online" : "status-sync sync-offline"; }
 }
 
 async function initSupabaseBackground() {
     const netStatus = document.getElementById('networkStatus');
-    if (typeof window.supabase === 'undefined') {
-        if(netStatus) { netStatus.innerText = "Offline Mode (Lokal)"; netStatus.className = "status-sync sync-offline"; }
-        return;
-    }
-    
+    if (typeof window.supabase === 'undefined') { if(netStatus) { netStatus.innerText = "Offline Mode (Lokal)"; netStatus.className = "status-sync sync-offline"; } return; }
     if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     if (APP_MODE === 'CLOUD' && navigator.onLine) {
         try {
             const sessionPromise = sbClient.auth.getSession();
             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
-            
             const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
             if (error) throw error;
-
             if (session && session.user) {
                 currentUser = session.user;
                 if(netStatus) { netStatus.innerText = "Online Mode (Cloud)"; netStatus.className = "status-sync sync-online"; }
-                fetchUserTransactions(); 
-                setupRealtime();
+                fetchUserTransactions(); setupRealtime();
                 if (pendingSync.length > 0) processPendingSync();
             } else { forceLogoutToGuest(); }
-        } catch(err) {
-            if(netStatus) { netStatus.innerText = "Server Lambat (Mode Lokal)"; netStatus.className = "status-sync sync-offline"; }
-        }
+        } catch(err) { if(netStatus) { netStatus.innerText = "Server Lambat (Mode Lokal)"; netStatus.className = "status-sync sync-offline"; } }
     }
 
     if (!window.supabaseListenerAdded) {
         window.supabaseListenerAdded = true;
         sbClient.auth.onAuthStateChange(async (event, currentSession) => {
-            if (event === 'SIGNED_OUT') {
-                forceLogoutToGuest();
-            } else if (event === 'SIGNED_IN' && currentSession) {
+            if (event === 'SIGNED_OUT') { forceLogoutToGuest(); } 
+            else if (event === 'SIGNED_IN' && currentSession) {
                 currentUser = currentSession.user; APP_MODE = 'CLOUD'; setLS('app_mode', 'CLOUD');
                 if(netStatus) { netStatus.innerText = navigator.onLine ? "Online Mode (Cloud)" : "Offline Mode (Cloud)"; netStatus.className = navigator.onLine ? "status-sync sync-online" : "status-sync sync-offline"; }
-                
                 try {
                     const { data: profileData } = await sbClient.from('profiles').select('data').eq('id', currentUser.id).single();
                     if (profileData && profileData.data) { profile = { ...profile, ...profileData.data }; } 
                     else { if(profile.name === 'Pengurus') profile.name = properTitleCase(currentUser.user_metadata?.full_name) || 'Member'; profile.photo = currentUser.user_metadata?.avatar_url || profile.photo; await saveProfileToSupabase(); }
-                } catch(e) { console.warn("Tarik profil dari Cloud gagal."); }
-                
+                } catch(e) {}
                 profile.googleLinked = true; profile.googleEmail = currentUser.email; saveProfileLocal();
                 db = loadLocalDB(); initAppHeader(); renderShortcuts(); fetchUserTransactions(); setupRealtime(); closeModal('googleAuthModal');
                 if (navigator.onLine && pendingSync.length > 0) processPendingSync();
@@ -216,16 +181,13 @@ async function initSupabaseBackground() {
 async function fetchUserTransactions() {
     if (APP_MODE !== 'CLOUD' || !currentUser || currentUser.id === 'offline_user' || !sbClient) return;
     try {
-        if (!navigator.onLine) throw new Error("Offline mode aktif.");
+        if (!navigator.onLine) throw new Error("Offline");
         const fetchPromise = sbClient.from('transactions').select('*').eq('user_id', currentUser.id).order('date', { ascending: true });
         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
-        
         const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
         if (error) throw error;
         db = data; saveLocalDB(db); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
-    } catch (error) {
-        db = loadLocalDB(); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
-    }
+    } catch (error) { db = loadLocalDB(); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
 }
 
 function setupRealtime() {
@@ -242,17 +204,13 @@ async function processPendingSync() {
         const payload = pendingSync.map(t => { let newData = { ...t, user_id: currentUser.id }; if(String(newData.id).length > 10) delete newData.id; return newData; });
         const syncPromise = sbClient.from('transactions').insert(payload);
         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout Sync')), 8000));
-        
         const { error } = await Promise.race([syncPromise, timeoutPromise]);
         if (error) throw error;
         pendingSync = []; setLS('pending_sync', JSON.stringify(pendingSync));
         showToast("Data offline tersimpan ke Cloud!", "success"); fetchUserTransactions();
-    } catch (error) { console.warn("Gagal Auto-Sync", error); }
+    } catch (error) {}
 }
 
-// ==========================================
-// DETEKSI JARINGAN KETAT
-// ==========================================
 window.addEventListener('online', () => { 
     const netStatus = document.getElementById('networkStatus');
     if(netStatus) { netStatus.innerText = APP_MODE === 'CLOUD' ? "Menyambungkan Ulang..." : "Online Mode (Guest)"; netStatus.className = APP_MODE === 'CLOUD' ? "status-sync sync-pending" : "status-sync sync-online"; }
@@ -261,16 +219,12 @@ window.addEventListener('online', () => {
         else { if (pendingSync.length > 0) { processPendingSync(); } else { fetchUserTransactions(); } if(netStatus) { netStatus.innerText = "Online Mode (Cloud)"; netStatus.className = "status-sync sync-online"; } }
     }
 });
-
 window.addEventListener('offline', () => { 
     const netStatus = document.getElementById('networkStatus');
     if(netStatus) { netStatus.innerText = pendingSync.length > 0 ? "Offline (Menunggu Sync)" : (APP_MODE === 'CLOUD' ? "Offline Mode (Cloud)" : "Offline Mode (Guest)"); netStatus.className = pendingSync.length > 0 ? "status-sync sync-pending" : "status-sync sync-offline"; }
     showToast("Koneksi terputus. Mode Offline.", "error"); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
 });
 
-// ==========================================
-// UTILITY SAKTI
-// ==========================================
 function formatRp(num) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num); }
 function formatRpPendek(num) { let str = formatRp(num); return str.replace(/\.000$/, '...'); }
 function formatDetailDate(iso) { if(!iso) return '-'; const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
@@ -288,15 +242,11 @@ let confirmAction = null;
 function openCustomConfirm(title, desc, action) { document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmDesc').innerHTML = desc; confirmAction = action; document.getElementById('confirmModal').classList.add('active'); }
 document.getElementById('btnConfirmYes').addEventListener('click', () => { if(confirmAction) confirmAction(); closeModal('confirmModal'); });
 
-// ==========================================
-// PROFIL, KEAMANAN PIN & GOOGLE AUTH
-// ==========================================
 function initAppHeader() { 
     document.getElementById('headName').innerText = formatSmartName(profile.name); 
     document.getElementById('headGender').innerText = profile.gender || 'Rahasia'; 
     document.getElementById('headProfileImg').src = profile.photo; 
 }
-
 async function saveProfileToSupabase() { 
     if (APP_MODE !== 'CLOUD' || !currentUser || currentUser.id === 'offline_user' || !navigator.onLine || !sbClient) return; 
     try { 
@@ -309,21 +259,20 @@ async function saveProfileToSupabase() {
 document.getElementById('btnRealGoogleLogin').addEventListener('click', async () => { 
     if(typeof window.supabase === 'undefined' || !sbClient || !navigator.onLine) { showToast("Mode Offline. Tidak bisa Login.", "error"); return; }
     const { error } = await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); 
-    if (error) showToast("Gagal Login", "error"); 
 });
 
 let currentProfileTimeFilter = 0; 
 function applyProfileTimeFilter(days, labelText) { currentProfileTimeFilter = days; document.getElementById('dispProfileTimeFilter').innerText = labelText; closeModal(''); renderProfileStats(); }
 
 function renderProfileStats() {
-    let inTunai = 0, outTunai = 0, inOps = 0, outOps = 0; 
+    let inUtama = 0, outUtama = 0, inOps = 0, outOps = 0; 
     const today = new Date(); today.setHours(0,0,0,0);
     db.forEach(t => { 
         if(currentProfileTimeFilter !== 0) { const d = new Date(t.date); d.setHours(0,0,0,0); if(Math.floor(Math.abs(today - d) / 86400000) > currentProfileTimeFilter) return; }
-        if (t.wallet === 'tunai' || t.wallet === 'rekening') { if (t.type === 'masuk') inTunai += t.amount; else outTunai += t.amount; } 
-        else if (t.wallet === 'operasional' || t.wallet === 'wakaf') { if (t.type === 'masuk') inOps += t.amount; else outOps += t.amount; }
+        if (t.wallet === 'utama') { if (t.type === 'masuk') inUtama += t.amount; else outUtama += t.amount; } 
+        else if (t.wallet === 'operasional') { if (t.type === 'masuk') inOps += t.amount; else outOps += t.amount; }
     }); 
-    document.getElementById('viewTotalMasuk').innerText = formatRp(inTunai); document.getElementById('viewTotalKeluar').innerText = formatRp(outTunai); 
+    document.getElementById('viewTotalMasuk').innerText = formatRp(inUtama); document.getElementById('viewTotalKeluar').innerText = formatRp(outUtama); 
     document.getElementById('viewTotalMasukTabungan').innerText = formatRp(inOps); document.getElementById('viewTotalKeluarTabungan').innerText = formatRp(outOps);
 }
 
@@ -373,8 +322,70 @@ async function executeFactoryReset() {
 }
 
 // ==========================================
-// KONTROL UI TPA
+// WISHLIST & DRIVE LINKS ENGINE
 // ==========================================
+function renderWishlist() {
+    const container = document.getElementById('wishlistContainer');
+    if(wishlists.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 20px; color:var(--text-muted); background:var(--hitam-card); border-radius:12px; border:1px solid var(--border);">Belum ada target dana.</div>`;
+        return;
+    }
+    container.innerHTML = wishlists.map(w => `
+        <div style="background:var(--hitam-card); padding:15px; border-radius:12px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Target ${w.type}</div>
+                <div style="font-size:15px; font-weight:900; color:var(--putih);">${w.name}</div>
+                <div style="font-size:13px; font-weight:700; color:var(--text-muted); margin-top:4px;">Estimasi: <span style="color:var(--putih);">${formatRp(w.amount)}</span></div>
+            </div>
+            <button onclick="deleteWishlist('${w.id}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:5px; font-size:16px;">✕</button>
+        </div>
+    `).join('');
+}
+function openAddWishlistModal() {
+    document.getElementById('wishlist-name').value = ''; document.getElementById('wishlist-amount').value = '';
+    document.getElementById('wishlist-type').value = 'Bulanan'; document.getElementById('dispWishlistType').innerText = 'Bulanan';
+    document.getElementById('addWishlistModal').classList.add('active');
+}
+function selectWishlistType(val) { document.getElementById('wishlist-type').value = val; document.getElementById('dispWishlistType').innerText = val; closeModal(''); }
+function saveWishlist() {
+    const name = properTitleCase(document.getElementById('wishlist-name').value.trim());
+    const type = document.getElementById('wishlist-type').value;
+    const amountVal = document.getElementById('wishlist-amount').value.replace(/[^0-9]/g, '');
+    const amount = amountVal ? parseInt(amountVal, 10) : 0;
+    if(!name || amount <= 0) { showToast("Lengkapi data target", "error"); return; }
+    wishlists.push({ id: Date.now().toString(), name, type, amount });
+    setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); closeModal('addWishlistModal'); showToast("Target Tersimpan");
+}
+function deleteWishlist(id) {
+    wishlists = wishlists.filter(w => w.id !== id); setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); showToast("Dihapus");
+}
+document.getElementById('wishlist-amount').addEventListener('input', function() { let v = this.value.replace(/[^0-9]/g, ''); this.value = v ? parseInt(v, 10).toLocaleString('id-ID') : ''; });
+
+function renderDriveLinks() {
+    const container = document.getElementById('driveContainer');
+    if(driveLinks.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 20px; width:100%; color:var(--text-muted); background:var(--hitam-card); border-radius:12px; border:1px solid var(--border);">Belum ada pintasan Drive.</div>`;
+        return;
+    }
+    container.innerHTML = driveLinks.map(d => `
+        <div style="background:var(--hitam-card); border:1px solid var(--border); border-radius:12px; padding:12px 15px; display:flex; align-items:center; gap:10px; min-width:200px; position:relative; flex-shrink:0;">
+            ${svgs.link}
+            <a href="${d.url}" target="_blank" style="color:var(--putih); text-decoration:none; font-size:13px; font-weight:800; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</a>
+            <button onclick="deleteDriveLink('${d.id}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:0; font-size:14px; margin-left:5px;">✕</button>
+        </div>
+    `).join('');
+}
+function openAddDriveModal() { document.getElementById('drive-name').value = ''; document.getElementById('drive-url').value = ''; document.getElementById('addDriveModal').classList.add('active'); }
+function saveDriveLink() {
+    const name = properTitleCase(document.getElementById('drive-name').value.trim());
+    const url = document.getElementById('drive-url').value.trim();
+    if(!name || !url.startsWith('http')) { showToast("Format URL tidak valid", "error"); return; }
+    driveLinks.push({ id: Date.now().toString(), name, url });
+    setLS('drivelinks', JSON.stringify(driveLinks)); renderDriveLinks(); closeModal('addDriveModal'); showToast("Pintasan Tersimpan");
+}
+function deleteDriveLink(id) { driveLinks = driveLinks.filter(d => d.id !== id); setLS('drivelinks', JSON.stringify(driveLinks)); renderDriveLinks(); showToast("Dihapus"); }
+
+
 function switchWallet(type) { activeWallet = type; document.getElementById('walletSwitchContainer').setAttribute('data-active', type); document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderShortcuts(); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
 function toggleCustomSelect(id) { const box = document.getElementById(id); const isOpen = box.classList.contains('open'); document.querySelectorAll('.custom-options.open').forEach(el => el.classList.remove('open')); if(!isOpen) box.classList.add('open'); }
 function applyTimeFilter(days, labelText) { currentTimeFilter = days; document.getElementById('dispTimeFilter').innerText = labelText; closeModal(''); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
@@ -386,32 +397,30 @@ function closeChart(e, btn) { e.stopPropagation(); for(let i of btn.closest('.ex
 
 function renderShortcuts() { 
     const c = document.getElementById('quickActionsContainer'); c.className = 'quick-actions-wrap grid-mode grid-split-4'; 
-    if(activeWallet === 'tunai' || activeWallet === 'rekening') {
+    if(activeWallet === 'utama') {
         c.innerHTML = ` 
-            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak Santri')">${svgs.uang} <span>Infak Santri</span></button> 
-            <button class="btn-quick glow-biru" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span>Donasi Umum</span></button> 
-            <button class="btn-quick glow-merah" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span>Honor Guru</span></button> 
-            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'ATK', 'Beli ATK TPA')">${svgs.book} <span>Beli ATK</span></button> 
-            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'MANUAL', '')">${svgs.minus_bold} <span>Lainnya (-)</span></button> 
-            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'MANUAL', '')">${svgs.plus_bold} <span>Lainnya (+)</span></button> 
+            <button class="btn-quick" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak Santri')">${svgs.uang} <span>Infak Santri</span></button> 
+            <button class="btn-quick" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span>Donasi Umum</span></button> 
+            <button class="btn-quick" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span>Honor Guru</span></button> 
+            <button class="btn-quick" onclick="quickInput('masuk', 'Bantuan Pemerintah', 'Dana Bantuan')">${svgs.plus_bold} <span>Pemasukan Lain</span></button> 
         `;
     } else if(activeWallet === 'wakaf') {
         c.innerHTML = `
-            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'Wakaf', 'Penerimaan Dana Wakaf')">${svgs.uang} <span>Terima Wakaf</span></button> 
-            <button class="btn-quick glow-merah" onclick="quickInput('keluar', 'Perbaikan Bangunan', 'Penggunaan Dana Wakaf')">${svgs.plus_bold} <span>Gunakan Wakaf</span></button>
+            <button class="btn-quick" onclick="quickInput('masuk', 'Wakaf', 'Penerimaan Dana Wakaf')">${svgs.uang} <span>Terima Wakaf</span></button> 
+            <button class="btn-quick" onclick="quickInput('keluar', 'Perbaikan Bangunan', 'Penggunaan Dana Wakaf')">${svgs.plus_bold} <span>Gunakan Wakaf</span></button>
+            <button class="btn-quick" onclick="quickInput('keluar', 'Kebersihan', 'Biaya Kebersihan Wakaf')">${svgs.minus_bold} <span>Pemeliharaan</span></button>
+            <button class="btn-quick" onclick="quickInput('masuk', 'Lainnya', 'Penerimaan Wakaf Lainnya')">${svgs.plus_bold} <span>Lainnya (+)</span></button> 
         `;
     } else if(activeWallet === 'operasional') {
         c.innerHTML = `
-            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'Listrik', 'Bayar Tagihan Listrik')">${svgs.minus_bold} <span>Bayar Listrik</span></button>
-            <button class="btn-quick glow-kuning" onclick="quickInput('keluar', 'Air', 'Bayar Tagihan Air')">${svgs.minus_bold} <span>Bayar Air</span></button>
-            <button class="btn-quick glow-hijau" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span>Tambah Dana</span></button>
+            <button class="btn-quick" onclick="quickInput('keluar', 'Listrik', 'Bayar Tagihan Listrik')">${svgs.minus_bold} <span>Bayar Listrik</span></button>
+            <button class="btn-quick" onclick="quickInput('keluar', 'Air', 'Bayar Tagihan Air')">${svgs.minus_bold} <span>Bayar Air</span></button>
+            <button class="btn-quick" onclick="quickInput('keluar', 'ATK', 'Beli ATK & Kebutuhan')">${svgs.book} <span>Beli ATK</span></button>
+            <button class="btn-quick" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span>Tambah Dana</span></button>
         `;
     }
 }
 
-// ==========================================
-// INPUT TRANSAKSI (TPA)
-// ==========================================
 function quickInput(type, cat, desc) { 
     document.getElementById('tx-type').value = type; 
     document.getElementById('modal-title').innerText = type === 'masuk' ? 'Catat Pemasukan TPA' : 'Catat Pengeluaran TPA'; 
@@ -430,7 +439,6 @@ function quickInput(type, cat, desc) {
         if(!arr.includes(cat)) box.innerHTML += `<div class="custom-option" onclick="selectCategory('${cat}')">${cat}</div>`; 
         selectCategory(cat); 
     } 
-    
     document.getElementById('tx-amount').value = ''; rawAmount = 0; document.getElementById('txModal').classList.add('active'); 
     setTimeout(() => { if(cat === 'MANUAL') document.getElementById('tx-category-manual').focus(); else document.getElementById('tx-amount').focus(); }, 300); 
 }
@@ -475,9 +483,6 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
     } finally { document.getElementById('tx-is-saving').value = 'false'; }
 });
 
-// ==========================================
-// RENDER UI & AI INSIGHT
-// ==========================================
 function updateHealthEngine(filteredDb) { 
     let tIn = 0, tOut = 0; filteredDb.forEach(t => { if(t.type === 'masuk') tIn += t.amount; else tOut += t.amount; }); 
     let balance = tIn - tOut; const badge = document.getElementById('healthBadge'); const text = document.getElementById('healthText'); badge.className = 'health-badge'; 
@@ -490,7 +495,7 @@ function generateAIForecast(data) {
     if (data.length === 0) { 
         aiMessages.push(`Belum ada riwayat transaksi di dompet ${activeWallet.toUpperCase()}.`);
         if(APP_MODE === 'GUEST') aiMessages.push("Info: Hubungkan dengan Akun Google agar data TPA aman tersinkronisasi ke Cloud.");
-        box.style.borderLeftColor = 'var(--biru)'; box.querySelector('svg').style.color = 'var(--biru)'; startAICarousel(textEl); return; 
+        box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; startAICarousel(textEl); return; 
     } 
     
     const today = new Date(); const currentMonthData = data.filter(t => { const d = new Date(t.date); return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear(); }); 
@@ -501,13 +506,13 @@ function generateAIForecast(data) {
     if (keluarData.length > 0) { let catTotals = {}; keluarData.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; }); let biggestCat = Object.keys(catTotals).reduce((a, b) => catTotals[a] > catTotals[b] ? a : b); biggestExpenseMsg = `Pengeluaran operasional terbesar bulan ini: ${properTitleCase(biggestCat)} (${formatRp(catTotals[biggestCat])}).`; }
     
     let statusMsg = "", projectionMsg = "";
-    if (mOut > mIn && mIn > 0) { statusMsg = `⚠️ Peringatan: Pengeluaran dompet ${activeWallet} telah melampaui pemasukan.`; projectionMsg = "Saran AI: Tinjau ulang anggaran operasional TPA untuk menghindari defisit."; box.style.borderLeftColor = 'var(--merah)'; box.querySelector('svg').style.color = 'var(--merah)'; } 
-    else if (mOut > 0) { statusMsg = `Arus kas dompet ${activeWallet} berjalan normal.`; projectionMsg = "Tetap pantau alokasi dana agar sejalan dengan program kegiatan santri."; box.style.borderLeftColor = 'var(--kuning)'; box.querySelector('svg').style.color = 'var(--kuning)'; } 
-    else if (mIn > 0 && mOut === 0) { statusMsg = "Luar biasa! Seluruh dana pemasukan bulan ini masih utuh."; projectionMsg = "Tips: Dana bisa dialokasikan untuk perbaikan fasilitas atau acara santri mendatang."; box.style.borderLeftColor = 'var(--hijau)'; box.querySelector('svg').style.color = 'var(--hijau)'; } 
-    else { statusMsg = "Belum ada pergerakan kas bulan ini."; projectionMsg = "Selalu rutin mencatat donasi/infak yang masuk."; box.style.borderLeftColor = 'var(--biru)'; box.querySelector('svg').style.color = 'var(--biru)';}
+    if (mOut > mIn && mIn > 0) { statusMsg = `⚠️ Peringatan: Pengeluaran dompet ${activeWallet} telah melampaui pemasukan.`; projectionMsg = "Saran AI: Tinjau ulang anggaran operasional TPA untuk menghindari defisit."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; } 
+    else if (mOut > 0) { statusMsg = `Arus kas dompet ${activeWallet} berjalan normal.`; projectionMsg = "Tetap pantau alokasi dana agar sejalan dengan program kegiatan santri."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; } 
+    else if (mIn > 0 && mOut === 0) { statusMsg = "Luar biasa! Seluruh dana pemasukan bulan ini masih utuh."; projectionMsg = "Tips: Dana bisa dialokasikan untuk perbaikan fasilitas atau acara santri mendatang."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; } 
+    else { statusMsg = "Belum ada pergerakan kas bulan ini."; projectionMsg = "Selalu rutin mencatat donasi/infak yang masuk."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)';}
     
     aiMessages.push(statusMsg); aiMessages.push(projectionMsg); aiMessages.push(biggestExpenseMsg);
-    if(activeWallet === 'wakaf') aiMessages.push("Catatan: Pastikan dana Wakaf tidak disalahgunakan untuk operasional harian tanpa syariat yang jelas.");
+    if(activeWallet === 'wakaf') aiMessages.push("Catatan: Pastikan dana Wakaf tidak disalahgunakan untuk operasional harian.");
     aiMessages = [...new Set(aiMessages)].filter(m => m !== ""); startAICarousel(textEl); 
 }
 
@@ -542,25 +547,25 @@ function renderTable(data) {
     const animClass = isInitialTableRender ? 'row-anim' : ''; 
     [...data].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
         const iM = tx.type === 'masuk'; let c = getDynamicColor(tx.category, tx.type);
-        let linkHtml = tx.link_bukti ? `<a href="${tx.link_bukti}" target="_blank" style="color:var(--biru); font-size:11px; text-decoration:underline; display:block; margin-top:2px;">&#128279; Bukti Drive</a>` : '';
-        let pihakHtml = tx.pihak_terkait ? `<br><span style="font-size:11px; color:var(--text-muted);">Pihak: <b style="color:var(--kuning);">${tx.pihak_terkait}</b></span>` : '';
+        let linkHtml = tx.link_bukti ? `<a href="${tx.link_bukti}" target="_blank" style="color:var(--text-muted); font-size:11px; text-decoration:underline; display:block; margin-top:2px;">&#128279; Bukti Drive</a>` : '';
+        let pihakHtml = tx.pihak_terkait ? `<br><span style="font-size:11px; color:var(--text-muted);">Pihak: <b>${tx.pihak_terkait}</b></span>` : '';
         
-        let cr = `<div class="badge-wrapper"><div class="badge-cat" style="border: 1px solid ${c}; color:${c}; background:rgba(0,0,0,0.5);">${tx.category}</div></div>`;
+        let cr = `<div class="badge-wrapper"><div class="badge-cat" style="border: 1px solid var(--border); color:var(--putih); background:var(--border);">${tx.category}</div></div>`;
         htmlStr += `<tr class="clickable-row ${animClass}" onclick="openReceipt('${tx.id || tx.date}')">
             <td style="color:var(--text-muted); font-size:11px; vertical-align:middle;">${formatDetailDate(tx.date).split(' - ')[0]}<br>${formatDetailDate(tx.date).split(' - ')[1]}</td>
             <td class="col-category">${cr}</td>
             <td style="vertical-align:middle; width:100%;"><span style="font-weight:700;">${tx.desc}</span>${pihakHtml}${linkHtml}</td>
             <td style="vertical-align:middle; text-align:center; padding-right:15px; width:1%;">
                 <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
-                    <button type="button" style="background:rgba(245,158,11,0.15); color:var(--kuning); border:1px solid var(--kuning); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'edit', '${tx.id || tx.date}')">
+                    <button type="button" style="background:transparent; color:var(--putih); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'edit', '${tx.id || tx.date}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     </button>
-                    <button type="button" style="background:rgba(239,68,68,0.15); color:var(--merah); border:1px solid var(--merah); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'delete', '${tx.id || tx.date}')">
+                    <button type="button" style="background:transparent; color:var(--putih); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'delete', '${tx.id || tx.date}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/></svg>
                     </button>
                 </div>
             </td>
-            <td class="amt-cell" style="vertical-align:middle; text-align:right; color:${iM?'var(--hijau)':'var(--merah)'}; white-space:nowrap; padding-left:0;">${iM?'+':'-'}${formatRp(tx.amount)}</td>
+            <td class="amt-cell" style="vertical-align:middle; text-align:right; color:var(--putih); white-space:nowrap; padding-left:0;">${iM?'+':'-'}${formatRp(tx.amount)}</td>
         </tr>`;
     });
     t.innerHTML = htmlStr; isInitialTableRender = false; 
@@ -572,12 +577,12 @@ function renderCharts(data) {
     Chart.defaults.color = '#64748b'; Chart.defaults.font.family = 'Inter';
     if(data.length === 0) { if(pieChart) pieChart.destroy(); if(barChart) barChart.destroy(); if(lineChart) lineChart.destroy(); return; }
 
-    const gridLineColor = '#13271c';
+    const gridLineColor = '#cbd5e1';
     const cA = {}; data.forEach(t => { const k = `${t.category}`; if(cA[k]) cA[k].a += t.amount; else cA[k] = { a: t.amount, color: getDynamicColor(t.category, t.type) }; }); 
     const pL = Object.keys(cA);
     
     if(pieChart) pieChart.destroy(); 
-    pieChart = new Chart(document.getElementById('pieChart'), { type: 'doughnut', data: { labels: pL, datasets: [{ data: pL.map(l => cA[l].a), backgroundColor: pL.map(l => cA[l].color), borderWidth: 4, borderColor: '#0a1711' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return ' ' + formatRp(c.raw); } } } } } });
+    pieChart = new Chart(document.getElementById('pieChart'), { type: 'doughnut', data: { labels: pL, datasets: [{ data: pL.map(l => cA[l].a), backgroundColor: pL.map(l => cA[l].color), borderWidth: 2, borderColor: 'var(--hitam-card)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return ' ' + formatRp(c.raw); } } } } } });
 
     const rT = [...data].sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-15);
     if(barChart) barChart.destroy(); 
@@ -592,27 +597,24 @@ function renderCharts(data) {
 function openReceipt(txId) { 
     const strTxId = String(txId); const tx = db.find(t => String(t.id) === strTxId || String(t.date) === strTxId); if(!tx) return; 
     const rDate = formatDetailDate(tx.date); const rId = "TRX-" + new Date(tx.date).getTime().toString().slice(-8); 
-    const rType = tx.type === 'masuk' ? 'Pemasukan' : 'Pengeluaran'; const rColor = tx.type === 'masuk' ? 'var(--hijau)' : 'var(--merah)'; 
+    const rType = tx.type === 'masuk' ? 'Pemasukan' : 'Pengeluaran';
     document.getElementById('receiptContent').innerHTML = ` 
         <div class="receipt-head"><h3 style="margin:0 0 5px 0; color:var(--putih);">BUKTI MUTASI KAS TPA</h3><span style="font-size:11px; color:var(--text-muted); letter-spacing: 1px;">ID: ${rId}</span></div> 
         <div class="receipt-row"><span class="receipt-label">Waktu</span><span class="receipt-val">${rDate}</span></div> 
         <div class="receipt-row"><span class="receipt-label">Dompet Kas</span><span class="receipt-val" style="text-transform:capitalize;">${tx.wallet}</span></div> 
         <div class="receipt-row"><span class="receipt-label">Kategori</span><span class="receipt-val">${tx.category}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Sifat</span><span class="receipt-val" style="color:${rColor};">${rType}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Sifat</span><span class="receipt-val" style="color:var(--putih);">${rType}</span></div> 
         <div class="receipt-row"><span class="receipt-label">Keterangan</span><span class="receipt-val">${tx.desc}</span></div> 
-        ${tx.pihak_terkait ? `<div class="receipt-row"><span class="receipt-label" style="color:var(--kuning);">Pihak Terkait</span><span class="receipt-val" style="color:var(--kuning);">${tx.pihak_terkait}</span></div>` : ''} 
-        ${tx.link_bukti ? `<div class="receipt-row" style="margin-top:10px;"><span class="receipt-label" style="color:var(--biru);">Lampiran Drive</span><span class="receipt-val"><a href="${tx.link_bukti}" target="_blank">Buka Dokumen ↗</a></span></div>` : ''} 
+        ${tx.pihak_terkait ? `<div class="receipt-row"><span class="receipt-label">Pihak Terkait</span><span class="receipt-val">${tx.pihak_terkait}</span></div>` : ''} 
+        ${tx.link_bukti ? `<div class="receipt-row" style="margin-top:10px;"><span class="receipt-label" style="color:var(--text-muted);">Lampiran Drive</span><span class="receipt-val"><a href="${tx.link_bukti}" target="_blank" style="color:var(--putih);">Buka Dokumen ↗</a></span></div>` : ''} 
         <div class="receipt-row" style="margin-top:25px; border-top:2px dashed var(--border); padding-top:20px; align-items: flex-end; flex-wrap: nowrap !important;"> 
-            <span class="receipt-label" style="font-size:14px; color:var(--putih); flex-shrink: 0;">TOTAL</span> 
-            <span class="receipt-val" style="font-size: clamp(16px, 5.5vw, 22px); color:${rColor}; letter-spacing:-1px; white-space: nowrap !important; word-break: keep-all !important; flex-grow: 1; text-align: right;">${formatRp(tx.amount)}</span> 
+            <span class="receipt-label" style="font-size:14px; color:var(--text-muted); flex-shrink: 0;">TOTAL</span> 
+            <span class="receipt-val" style="font-size: clamp(16px, 5.5vw, 22px); color:var(--putih); letter-spacing:-1px; white-space: nowrap !important; word-break: keep-all !important; flex-grow: 1; text-align: right;">${formatRp(tx.amount)}</span> 
         </div> 
     `; 
     document.getElementById('receiptModal').classList.add('active'); 
 }
 
-// ==========================================
-// EXPORT & EDIT/DELETE LOGIC
-// ==========================================
 function openCSVModal() { if(db.length === 0) { showToast("Data kosong.", "error"); return; } document.getElementById('csvExportModal').classList.add('active'); }
 function executeCSVExport() { 
     closeModal('csvExportModal'); let csv = "Tanggal,Dompet,Tipe,Kategori,Keterangan,Pihak_Terkait,Link_Drive,Nominal\n"; 
@@ -624,47 +626,28 @@ function executeCSVExport() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("CSV Berhasil Diunduh", "success"); 
 }
 
-function promptActionPin(action, txId) {
-    closeModal('receiptModal');
-    if (!profile.pin || profile.pin.trim() === '') { if (action === 'edit') openEditTxModal(txId); else executeTxDeleteFinal(txId); return; }
-    document.getElementById('actionPinType').value = action; document.getElementById('actionPinTxId').value = txId; document.getElementById('inputActionPin').value = ''; document.getElementById('actionPinModal').classList.add('active'); setTimeout(() => document.getElementById('inputActionPin').focus(), 300);
-}
+function promptActionPin(action, txId) { closeModal('receiptModal'); if (!profile.pin || profile.pin.trim() === '') { if (action === 'edit') openEditTxModal(txId); else executeTxDeleteFinal(txId); return; } document.getElementById('actionPinType').value = action; document.getElementById('actionPinTxId').value = txId; document.getElementById('inputActionPin').value = ''; document.getElementById('actionPinModal').classList.add('active'); setTimeout(() => document.getElementById('inputActionPin').focus(), 300); }
 function promptActionPinFromTable(e, action, txId) { e.stopPropagation(); promptActionPin(action, txId); }
 
-async function verifyActionPinFinal() {
-    const inputVal = document.getElementById('inputActionPin').value; const hashedInput = await hashPIN(inputVal);
-    if (hashedInput === profile.pin) { closeModal('actionPinModal'); const action = document.getElementById('actionPinType').value; const txId = document.getElementById('actionPinTxId').value; if (action === 'edit') openEditTxModal(txId); else if (action === 'delete') executeTxDeleteFinal(txId); } else { showToast("PIN Salah! Akses Ditolak.", "error"); }
-}
+async function verifyActionPinFinal() { const inputVal = document.getElementById('inputActionPin').value; const hashedInput = await hashPIN(inputVal); if (hashedInput === profile.pin) { closeModal('actionPinModal'); const action = document.getElementById('actionPinType').value; const txId = document.getElementById('actionPinTxId').value; if (action === 'edit') openEditTxModal(txId); else if (action === 'delete') executeTxDeleteFinal(txId); } else { showToast("PIN Salah! Akses Ditolak.", "error"); } }
 
-function openEditTxModal(txId) {
-    const tx = db.find(t => String(t.id) === txId || String(t.date) === txId); if(!tx) return;
-    document.getElementById('edit-tx-id').value = txId; document.getElementById('edit-tx-category').value = tx.category; document.getElementById('edit-tx-desc').value = tx.desc;
-    document.getElementById('edit-tx-pihak-terkait').value = tx.pihak_terkait || '';
-    document.getElementById('edit-tx-link-bukti').value = tx.link_bukti || '';
-    editRawAmount = tx.amount; document.getElementById('edit-tx-amount').value = editRawAmount.toLocaleString('id-ID'); document.getElementById('editTxModal').classList.add('active');
-}
+function openEditTxModal(txId) { const tx = db.find(t => String(t.id) === txId || String(t.date) === txId); if(!tx) return; document.getElementById('edit-tx-id').value = txId; document.getElementById('edit-tx-category').value = tx.category; document.getElementById('edit-tx-desc').value = tx.desc; document.getElementById('edit-tx-pihak-terkait').value = tx.pihak_terkait || ''; document.getElementById('edit-tx-link-bukti').value = tx.link_bukti || ''; editRawAmount = tx.amount; document.getElementById('edit-tx-amount').value = editRawAmount.toLocaleString('id-ID'); document.getElementById('editTxModal').classList.add('active'); }
 
 async function saveEditedTx() {
     const txId = document.getElementById('edit-tx-id').value; const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return;
     const nCat = properTitleCase(document.getElementById('edit-tx-category').value.trim()); const nDesc = properTitleCase(document.getElementById('edit-tx-desc').value.trim());
     const nPihak = properTitleCase(document.getElementById('edit-tx-pihak-terkait').value.trim()); const nLink = document.getElementById('edit-tx-link-bukti').value.trim();
-    if(!nCat || !nDesc || editRawAmount <= 0) { showToast("Gagal: Data manipulasi tidak lengkap.", "error"); return; }
-
+    if(!nCat || !nDesc || editRawAmount <= 0) { showToast("Data tidak lengkap.", "error"); return; }
     db[idx].category = nCat; db[idx].desc = nDesc; db[idx].pihak_terkait = nPihak; db[idx].link_bukti = nLink; db[idx].amount = editRawAmount;
-    if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && db[idx].id) {
-        try { await sbClient.from('transactions').update({ category: nCat, "desc": nDesc, pihak_terkait: nPihak, link_bukti: nLink, amount: editRawAmount }).eq('id', db[idx].id); } 
-        catch(e) { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) pendingSync[syncIdx] = db[idx]; else pendingSync.push(db[idx]); setLS('pending_sync', JSON.stringify(pendingSync)); }
-    } else { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) { pendingSync[syncIdx] = db[idx]; setLS('pending_sync', JSON.stringify(pendingSync)); } }
-    saveLocalDB(db); closeModal('editTxModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Transaksi Berhasil Diperbarui.", "success");
+    if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && db[idx].id) { try { await sbClient.from('transactions').update({ category: nCat, "desc": nDesc, pihak_terkait: nPihak, link_bukti: nLink, amount: editRawAmount }).eq('id', db[idx].id); } catch(e) { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) pendingSync[syncIdx] = db[idx]; else pendingSync.push(db[idx]); setLS('pending_sync', JSON.stringify(pendingSync)); } } else { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) { pendingSync[syncIdx] = db[idx]; setLS('pending_sync', JSON.stringify(pendingSync)); } }
+    saveLocalDB(db); closeModal('editTxModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Berhasil Diperbarui.", "success");
 }
 
 function executeTxDeleteFinal(txId) {
-    openCustomConfirm("Konfirmasi Hapus Mutlak", "Tindakan ini tidak dapat dibatalkan. Riwayat akan dihapus secara permanen dari server dan lokal. Lanjutkan?", async () => {
+    openCustomConfirm("Hapus Mutlak", "Tindakan ini tidak dapat dibatalkan. Lanjutkan?", async () => {
         const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return; const delTx = db[idx]; db.splice(idx, 1);
-        if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && delTx.id) {
-            try { await sbClient.from('transactions').delete().eq('id', delTx.id); } catch(e) {}
-        } else { pendingSync = pendingSync.filter(t => String(t.id) !== txId && String(t.date) !== txId); setLS('pending_sync', JSON.stringify(pendingSync)); }
-        saveLocalDB(db); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Transaksi Dihapus Secara Permanen.", "success");
+        if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && delTx.id) { try { await sbClient.from('transactions').delete().eq('id', delTx.id); } catch(e) {} } else { pendingSync = pendingSync.filter(t => String(t.id) !== txId && String(t.date) !== txId); setLS('pending_sync', JSON.stringify(pendingSync)); }
+        saveLocalDB(db); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Dihapus Permanen.", "success");
     });
 }
 
@@ -672,74 +655,24 @@ const searchInput = document.getElementById('searchTxInput'); const searchClear 
 if(searchInput) { searchInput.addEventListener('input', function(e) { let val = e.target.value.toLowerCase(); searchClear.style.display = val.length > 0 ? 'block' : 'none'; updateUI(val); }); }
 function clearSearch() { searchInput.value = ''; searchClear.style.display = 'none'; updateUI(''); }
 
-// ==========================================
-// SISTEM LUPA PIN & OTP EMAIL
-// ==========================================
-function startOTPResetProcess() {
-    closeModal('pinAuthModal'); closeModal('resetPinModal'); closeModal('resetTxPinAuthModal');
-    if(!profile.googleLinked || !profile.googleEmail) { showToast("Akun belum terhubung ke Google!", "error"); return; }
-    if(!navigator.onLine) { showToast("Reset PIN butuh koneksi internet!", "error"); return; }
-    document.getElementById('displayUserEmail').innerText = profile.googleEmail; document.getElementById('otpRequestModal').classList.add('active');
-}
-function sendOTPEmail() {
-    if(!navigator.onLine) { showToast("Koneksi terputus!", "error"); return; }
-    const btn = document.getElementById('btnSendOTP'); btn.innerText = "Mengirim..."; btn.disabled = true;
-    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpExpiryTime = Date.now() + (5 * 60 * 1000);
-    const templateParams = { to_email: profile.googleEmail, to_name: profile.name, otp_code: generatedOTP };
-    emailjs.send('service_4v89q7h', 'template_w9fgvcf', templateParams).then(function() { showToast("Kode terkirim ke Email!", "success"); closeModal('otpRequestModal'); document.getElementById('inputOTP').value = ''; document.getElementById('inputNewPinOTP').value = ''; document.getElementById('otpVerifyModal').classList.add('active'); btn.innerText = "Kirim Kode Sekarang"; btn.disabled = false; }, function(error) { showToast("Error: " + (error.text || "Ditolak EmailJS"), "error"); btn.innerText = "Kirim Kode Sekarang"; btn.disabled = false; });
-}
-async function verifyOTPAndSavePin() {
-    const inputCode = document.getElementById('inputOTP').value; const newPin = document.getElementById('inputNewPinOTP').value;
-    if(Date.now() > otpExpiryTime) { showToast("Kode OTP Kadaluarsa!", "error"); return; }
-    if(inputCode !== generatedOTP) { showToast("Kode OTP Salah!", "error"); return; }
-    if(newPin.length < 4) { showToast("PIN Baru minimal 4 digit!", "error"); return; }
-    profile.pin = await hashPIN(newPin); profile.txPin = ''; saveProfileLocal(); await saveProfileToSupabase(); generatedOTP = ""; closeModal('otpVerifyModal'); showToast("PIN Utama berhasil direset!", "success");
-}
+function startOTPResetProcess() { closeModal('pinAuthModal'); closeModal('resetPinModal'); if(!profile.googleLinked || !profile.googleEmail) { showToast("Belum terhubung Google!", "error"); return; } if(!navigator.onLine) { showToast("Butuh koneksi internet!", "error"); return; } document.getElementById('displayUserEmail').innerText = profile.googleEmail; document.getElementById('otpRequestModal').classList.add('active'); }
+function sendOTPEmail() { if(!navigator.onLine) { showToast("Koneksi terputus!", "error"); return; } const btn = document.getElementById('btnSendOTP'); btn.innerText = "Mengirim..."; btn.disabled = true; generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpExpiryTime = Date.now() + (5 * 60 * 1000); const templateParams = { to_email: profile.googleEmail, to_name: profile.name, otp_code: generatedOTP }; emailjs.send('service_4v89q7h', 'template_w9fgvcf', templateParams).then(function() { showToast("Terkirim ke Email!"); closeModal('otpRequestModal'); document.getElementById('inputOTP').value = ''; document.getElementById('inputNewPinOTP').value = ''; document.getElementById('otpVerifyModal').classList.add('active'); btn.innerText = "Kirim Kode"; btn.disabled = false; }, function(e) { showToast("Error EmailJS", "error"); btn.innerText = "Kirim Kode"; btn.disabled = false; }); }
+async function verifyOTPAndSavePin() { const inputCode = document.getElementById('inputOTP').value; const newPin = document.getElementById('inputNewPinOTP').value; if(Date.now() > otpExpiryTime) { showToast("OTP Kadaluarsa!", "error"); return; } if(inputCode !== generatedOTP) { showToast("OTP Salah!", "error"); return; } if(newPin.length < 4) { showToast("PIN min 4 digit!", "error"); return; } profile.pin = await hashPIN(newPin); saveProfileLocal(); await saveProfileToSupabase(); generatedOTP = ""; closeModal('otpVerifyModal'); showToast("PIN direset!"); }
+
 const iconSun = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
 const iconMoon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-
 const savedTheme = getLS('app_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
-
-window.addEventListener('DOMContentLoaded', () => {
-    updateThemeIcon(savedTheme);
-});
+window.addEventListener('DOMContentLoaded', () => { updateThemeIcon(savedTheme); });
 
 function toggleTheme() {
-    const htmlEl = document.documentElement;
-    const currentTheme = htmlEl.getAttribute('data-theme') || 'dark';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    htmlEl.setAttribute('data-theme', newTheme);
-    setLS('app_theme', newTheme);
-    updateThemeIcon(newTheme);
-    
-    const searchTerm = document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '';
-    if(typeof updateUI === 'function') updateUI(searchTerm);
+    const htmlEl = document.documentElement; const currentTheme = htmlEl.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', newTheme); setLS('app_theme', newTheme); updateThemeIcon(newTheme);
+    if(typeof updateUI === 'function') updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
 }
 
-function updateThemeIcon(theme) {
-    const btn = document.getElementById('themeToggleBtn');
-    if (!btn) return;
-    if (theme === 'light') {
-        btn.innerHTML = iconMoon;
-        btn.style.color = '#64748b'; 
-    } else {
-        btn.innerHTML = iconSun;
-        btn.style.color = 'var(--kuning)'; 
-    }
-}
+function updateThemeIcon(theme) { const btn = document.getElementById('themeToggleBtn'); if (!btn) return; if (theme === 'light') { btn.innerHTML = iconMoon; btn.style.color = '#ffffff'; } else { btn.innerHTML = iconSun; btn.style.color = 'var(--text-muted)'; } }
 
-// INIT
 window.addEventListener('load', () => { bootApp(); });
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-            reg.addEventListener('updatefound', () => { const newWorker = reg.installing; newWorker.addEventListener('statechange', () => { if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { const updateScreen = document.getElementById('updateScreen'); if (updateScreen) { updateScreen.style.display = 'flex'; } setTimeout(() => window.location.reload(true), 1500); } }); });
-        });
-    });
-    let refreshing = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!refreshing) { refreshing = true; window.location.reload(true); } });
-}
-
+if ('serviceWorker' in navigator) { window.addEventListener('load', async () => { navigator.serviceWorker.register('./sw.js').then(reg => { reg.addEventListener('updatefound', () => { const newWorker = reg.installing; newWorker.addEventListener('statechange', () => { if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { const updateScreen = document.getElementById('updateScreen'); if (updateScreen) { updateScreen.style.display = 'flex'; } setTimeout(() => window.location.reload(true), 1500); } }); }); }); }); let refreshing = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!refreshing) { refreshing = true; window.location.reload(true); } }); }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { setTimeout(() => { if (typeof Chart !== 'undefined') { for (let id in Chart.instances) { Chart.instances[id].resize(); Chart.instances[id].update(); } } }, 300); } });
