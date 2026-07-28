@@ -1,9 +1,8 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.7, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a1128">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="TPA Finance">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>TPA Finance v1.9</title>
+    <title>TPA Finance v2.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,8 +18,8 @@
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=106">
-    <script defer src="main.js?v=106"></script>
+    <link rel="stylesheet" href="style.css?v=201">
+    <script defer src="main.js?v=201"></script>
 </head>
 <body>
 
@@ -46,12 +45,11 @@
         </div>
     </div>
 
-    <!-- Modifikasi Tab Switcher (Dari 2 menjadi 4) Struktur Sama Persis -->
+    <!-- WALLET SWITCHER 3 TAB (Penyederhanaan Tunai & Bank) -->
     <div class="controls-header" style="display: block; width: 100%; box-sizing: border-box;">
-        <div class="wallet-switcher" style="width: 100%; display: flex;" id="walletSwitchContainer" data-active="tunai">
+        <div class="wallet-switcher" style="width: 100%; display: flex;" id="walletSwitchContainer" data-active="utama">
             <div class="wallet-slider"></div>
-            <button class="btn-tab active" onclick="switchWallet('tunai')" id="tab-tunai">Tunai</button>
-            <button class="btn-tab" onclick="switchWallet('rekening')" id="tab-rekening">Bank</button>
+            <button class="btn-tab active" onclick="switchWallet('utama')" id="tab-utama">Kas Utama</button>
             <button class="btn-tab" onclick="switchWallet('wakaf')" id="tab-wakaf">Wakaf</button>
             <button class="btn-tab" onclick="switchWallet('operasional')" id="tab-operasional">Operasional</button>
         </div>
@@ -69,11 +67,6 @@
                 <div class="custom-option" onclick="applyTimeFilter(7, '7 Hari Terakhir')">7 Hari Terakhir</div>
                 <div class="custom-option" onclick="applyTimeFilter(30, '30 Hari Terakhir')">30 Hari Terakhir</div>
                 <div class="custom-option" onclick="applyTimeFilter(365, '1 Tahun Belakang')">1 Tahun Belakang</div>
-                <div class="custom-option" onclick="applyTimeFilter(730, '2 Tahun Belakang')">2 Tahun Belakang</div>
-                <div class="custom-option" onclick="applyTimeFilter(1095, '3 Tahun Belakang')">3 Tahun Belakang</div>
-                <div class="custom-option" onclick="applyTimeFilter(1825, '5 Tahun Belakang')">5 Tahun Belakang</div>
-                <div class="custom-option" onclick="applyTimeFilter(3650, '10 Tahun Belakang')">10 Tahun Belakang</div>
-                <div class="custom-option" onclick="applyTimeFilter(36500, '100 Tahun Arsip')">100 Tahun Arsip</div>
             </div>
         </div>
         
@@ -83,20 +76,22 @@
         </div>
     </div>
 
+    <!-- STATISTIK (Warna Font Netral) -->
     <div class="expand-container" id="statContainer">
         <div class="expand-item" onclick="toggleExpandStat(this, 'statContainer')">
             <span class="card-label">Saldo Aktif</span>
-            <p class="card-value text-hijau" id="disp-saldo" data-short="Rp 0" data-full="Rp 0"></p>
+            <p class="card-value" id="disp-saldo" data-short="Rp 0" data-full="Rp 0"></p>
         </div>
         <div class="expand-item" onclick="toggleExpandStat(this, 'statContainer')">
             <span class="card-label">Pemasukan</span>
-            <p class="card-value text-biru" id="disp-masuk" data-short="Rp 0" data-full="Rp 0"></p>
+            <p class="card-value" id="disp-masuk" data-short="Rp 0" data-full="Rp 0"></p>
         </div>
         <div class="expand-item" onclick="toggleExpandStat(this, 'statContainer')">
             <span class="card-label">Pengeluaran</span>
-            <p class="card-value text-merah" id="disp-keluar" data-short="Rp 0" data-full="Rp 0"></p>
+            <p class="card-value" id="disp-keluar" data-short="Rp 0" data-full="Rp 0"></p>
         </div>
     </div>
+
     <div class="section-header" onclick="toggleSection('chartsSection', 'chartToggleIcon')">
         <h2 class="section-title">Analitik Visual</h2>
         <svg id="chartToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -122,6 +117,36 @@
     </div>
 
     <div class="quick-actions-wrap" id="quickActionsContainer"></div>
+
+    <!-- TARGET & WISHLIST DANA -->
+    <div class="section-header" style="cursor: default;">
+        <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('wishlistSection', 'wishlistToggleIcon')">
+            <h2 class="section-title">Target & Wishlist Dana</h2>
+            <svg id="wishlistToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <button onclick="openAddWishlistModal()" style="background:transparent; border:1px solid var(--text-muted); color:var(--text-muted); padding:6px 10px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; display:flex; gap:6px; align-items:center; text-transform:uppercase;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Tambah Target
+        </button>
+    </div>
+    <div class="collapsible-content" id="wishlistSection">
+        <div id="wishlistContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 20px;"></div>
+    </div>
+
+    <!-- PINTASAN GOOGLE DRIVE -->
+    <div class="section-header" style="cursor: default;">
+        <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('driveSection', 'driveToggleIcon')">
+            <h2 class="section-title">Pintasan Bukti Drive</h2>
+            <svg id="driveToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <button onclick="openAddDriveModal()" style="background:transparent; border:1px solid var(--text-muted); color:var(--text-muted); padding:6px 10px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; display:flex; gap:6px; align-items:center; text-transform:uppercase;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Tambah Link
+        </button>
+    </div>
+    <div class="collapsible-content" id="driveSection">
+        <div class="quick-actions-wrap" id="driveContainer" style="margin-top:0; margin-bottom: 20px;"></div>
+    </div>
 
     <div class="section-header" style="cursor: default;">
         <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('historySection', 'historyToggleIcon')">
@@ -151,20 +176,16 @@
         </div>
     </div>
 
-    <!-- ===== SEMUA MODAL ASLI DIKEMBALIKAN 100% ===== -->
-
+    <!-- MODAL PROFIL (Warna Dinonaktifkan) -->
     <div class="modal-overlay" id="profileViewModal">
         <div class="modal-card">
             <div style="text-align: center; margin-bottom: 25px; position: relative;">
-                
                 <button id="themeToggleBtn" onclick="toggleTheme()" style="position: absolute; top: 0; left: 0; background:var(--hitam); border:1px solid var(--border); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; z-index: 10;">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
                 </button>
-
                 <button onclick="requestProfileEdit()" style="position: absolute; top: 0; right: 0; background:var(--hitam); border:1px solid var(--border); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; z-index: 10;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-
                 <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto; border-color:var(--putih);">
                     <img src="" id="viewProfileImg" class="profile-pic" alt="Profile View">
                 </div>
@@ -192,42 +213,24 @@
             <div class="prof-detail-grid">
                 <div class="prof-detail-box"><span class="prof-detail-label">Gender</span><p class="prof-detail-val" id="viewGender">-</p></div>
                 <div class="prof-detail-box"><span class="prof-detail-label">Tgl Lahir</span><p class="prof-detail-val" id="viewBirth">-</p></div>
-                <div class="prof-detail-box"><span class="prof-detail-label">Masuk Tunai</span><p class="prof-detail-val text-hijau" id="viewTotalMasuk">Rp 0</p></div>
-                <div class="prof-detail-box"><span class="prof-detail-label">Keluar Tunai</span><p class="prof-detail-val text-merah" id="viewTotalKeluar">Rp 0</p></div>
-                <div class="prof-detail-box"><span class="prof-detail-label">Masuk Operasional</span><p class="prof-detail-val text-hijau" id="viewTotalMasukTabungan">Rp 0</p></div>
-                <div class="prof-detail-box"><span class="prof-detail-label">Keluar Operasional</span><p class="prof-detail-val text-merah" id="viewTotalKeluarTabungan">Rp 0</p></div>
+                <div class="prof-detail-box"><span class="prof-detail-label">Masuk Kas Utama</span><p class="prof-detail-val" id="viewTotalMasuk">Rp 0</p></div>
+                <div class="prof-detail-box"><span class="prof-detail-label">Keluar Kas Utama</span><p class="prof-detail-val" id="viewTotalKeluar">Rp 0</p></div>
+                <div class="prof-detail-box"><span class="prof-detail-label">Masuk Operasional</span><p class="prof-detail-val" id="viewTotalMasukTabungan">Rp 0</p></div>
+                <div class="prof-detail-box"><span class="prof-detail-label">Keluar Operasional</span><p class="prof-detail-val" id="viewTotalKeluarTabungan">Rp 0</p></div>
                 
-                <div class="prof-detail-box" style="grid-column: span 2; display:flex; flex-direction: row; justify-content:space-between; align-items:center; border-color:#4285F4; gap: 10px; padding: 15px;">
+                <div class="prof-detail-box" style="grid-column: span 2; display:flex; flex-direction: row; justify-content:space-between; align-items:center; gap: 10px; padding: 15px;">
                     <div style="text-align: left; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
                         <span class="prof-detail-label">Status Akun</span>
                         <p class="prof-detail-val" id="viewGoogleStatus" style="color:var(--text-muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">Tidak Terhubung</p>
                     </div>
-                    <button id="btnGoogleLink" class="btn-quick glow-biru" style="padding: 8px 12px; font-size:11px; border-color:#4285F4; color:#4285F4; flex-shrink: 0; width: auto; height: fit-content; display: flex; align-items: center;" onclick="openGoogleAuthModal()">
+                    <button id="btnGoogleLink" class="btn-quick" style="padding: 8px 12px; font-size:11px; flex-shrink: 0; width: auto; height: fit-content; display: flex; align-items: center;" onclick="openGoogleAuthModal()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> 
                         <span id="textGoogleLink">Hubungkan</span>
                     </button>
                 </div>
             </div>
-
-            <div style="margin-bottom: 25px;">
-                <span class="prof-detail-label" style="text-align: center; margin-bottom: 10px;">Support Developer</span>
-                <div class="sosmed-container">
-                    <a href="https://www.instagram.com/daengtio_?igsh=MXY4dTVhMGEzNDJxZA==" target="_blank" class="btn-sosmed ig">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                        Instagram
-                    </a>
-                    <a href="https://www.tiktok.com/@daengtio_0?_r=1&_t=ZS-94Cu2soiSXJ" target="_blank" class="btn-sosmed tt">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
-                        TikTok
-                    </a>
-                    <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" class="btn-sosmed sw">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        Traktir Kopi
-                    </a>
-                </div>
-            </div>
             
-            <button class="btn-modal" onclick="initResetSequence()" style="background: transparent; border: 1px solid var(--merah); color: var(--merah); margin-bottom: 10px;">
+            <button class="btn-modal btn-cancel" onclick="initResetSequence()" style="margin-bottom: 10px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: text-bottom; margin-right: 5px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 Reset Semua Data
             </button>
@@ -235,12 +238,12 @@
         </div>
     </div>
 
+    <!-- MODAL EDIT PROFIL -->
     <div class="modal-overlay" id="profileEditModal">
         <div class="modal-card">
             <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Edit Profil</h2>
-            
             <div style="text-align: center; margin-bottom: 25px;">
-                <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto; border-color: var(--kuning);">
+                <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto;">
                     <img src="" id="editProfileImg" class="profile-pic" alt="Edit Profile">
                 </div>
                 <button type="button" onclick="document.getElementById('profileUploader').click()" style="background: var(--hitam-card); border: 1px solid var(--border); color: var(--putih); padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
@@ -250,7 +253,6 @@
             </div>
             <label class="input-label">Nama Lengkap</label>
             <input type="text" id="editName" class="input-field" placeholder="Nama Anda" autocomplete="off">
-            
             <label class="input-label">Gender</label>
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger" onclick="toggleCustomSelect('genderOptions')">
@@ -264,18 +266,17 @@
                 </div>
             </div>
             <input type="hidden" id="editGender">
-
-            <label class="input-label">Tanggal Lahir (Ketik Angka Saja)</label>
+            <label class="input-label">Tanggal Lahir (Angka)</label>
             <input type="text" id="editBirth" class="input-field" placeholder="DD/MM/YYYY" inputmode="numeric" autocomplete="off">
-            
-            <label class="input-label text-kuning">Security PIN (Wajib untuk Reset)</label>
-            <input type="password" id="editPin" class="input-field" placeholder="Ketik PIN untuk kunci profil" inputmode="numeric" maxlength="6" style="border-color:var(--kuning);">
+            <label class="input-label">Security PIN (Wajib)</label>
+            <input type="password" id="editPin" class="input-field" placeholder="Ketik PIN untuk kunci profil" inputmode="numeric" maxlength="6">
 
             <button class="btn-modal" onclick="saveProfileData()">Simpan Perubahan</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('profileEditModal')">Batal</button>
         </div>
     </div>
-    
+
+    <!-- MODAL AUTH PIN & RESET -->
     <div class="modal-overlay" id="pinAuthModal">
         <div class="modal-card" style="max-width: 320px; text-align: center;">
             <h2 style="margin-top:0;">Otorisasi Profil</h2>
@@ -284,82 +285,33 @@
             <button class="btn-modal" onclick="verifyPinAuth('edit')">Verifikasi PIN</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('pinAuthModal')">Batal</button>
             <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
-                <button class="btn-modal btn-cancel" style="color: var(--biru); font-size: 11px; padding: 10px; border: none;" onclick="startOTPResetProcess()">Lupa PIN? Kirim Kode ke Email</button>
+                <button class="btn-modal btn-cancel" style="font-size: 11px; padding: 10px; border: none;" onclick="startOTPResetProcess()">Lupa PIN? Kirim Kode ke Email</button>
             </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="resetPinModal">
         <div class="modal-card" style="max-width: 320px; text-align: center;">
-            <h2 style="margin-top:0; color: var(--merah);">Otorisasi Reset</h2>
+            <h2 style="margin-top:0;">Otorisasi Reset</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Masukkan PIN keamanan Anda untuk mereset data.</p>
-            <input type="password" id="inputResetPin" class="input-field" placeholder="****" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 8px; border-color: var(--merah); margin-bottom: 10px;">
-            <button class="btn-modal" style="background: var(--merah);" onclick="verifyPinAuth('reset')">Verifikasi PIN</button>
+            <input type="password" id="inputResetPin" class="input-field" placeholder="****" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 8px; margin-bottom: 10px;">
+            <button class="btn-modal" onclick="verifyPinAuth('reset')">Verifikasi PIN</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('resetPinModal')">Batal</button>
             <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
-                <button class="btn-modal btn-cancel" style="color: var(--biru); font-size: 11px; padding: 10px; border: none;" onclick="startOTPResetProcess()">Lupa PIN? Kirim Kode ke Email</button>
+                <button class="btn-modal btn-cancel" style="font-size: 11px; padding: 10px; border: none;" onclick="startOTPResetProcess()">Lupa PIN? Kirim Kode ke Email</button>
             </div>
         </div>
     </div>
 
     <div class="modal-overlay" id="resetConfirmModal">
-        <div class="modal-card" style="text-align:center; border-color: var(--merah);">
-            <div style="background: rgba(239, 68, 68, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--merah);">
+        <div class="modal-card" style="text-align:center;">
+            <div style="background: rgba(100, 116, 139, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
-            <h2 style="margin-top:0; color: var(--merah);">PERINGATAN FATAL</h2>
+            <h2 style="margin-top:0;">PERINGATAN FATAL</h2>
             <p style="color:var(--text-muted); font-size:14px; margin-bottom: 25px;">Seluruh data transaksi, saldo, dan riwayat di server akan <b>dihapus permanen</b>. Tindakan ini tidak dapat dibatalkan!</p>
-            <button class="btn-modal" style="background: var(--merah); color: white;" onclick="executeFactoryReset()">Saya Yakin (Hapus)</button>
+            <button class="btn-modal" onclick="executeFactoryReset()">Saya Yakin (Hapus)</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('resetConfirmModal')">Batalkan</button>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="loanPaymentModal">
-        <div class="modal-card" style="max-width: 320px; text-align: center;">
-            <h2 style="margin-top:0; color: var(--kuning);">Bayar Pinjaman</h2>
-            <div class="modal-msg" id="loanPaymentMsg" style="margin-bottom: 15px; font-size: 13px; color: var(--text-muted); line-height: 1.5;">Sisa Pinjaman: Rp 0</div>
-            <input type="hidden" id="loanPaymentId">
-            <input type="hidden" id="loanMaxAmount">
-
-            <button class="btn-modal" style="background: var(--kuning); color: var(--hitam); margin-bottom: 15px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="setFullLoanAmount()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                LUNASKAN SEMUA
-            </button>
-
-            <label style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: block;">Atau Ketik Cicilan (Rp)</label>
-            <input type="text" id="loanPaymentInput" class="input-field text-kuning" inputmode="numeric" placeholder="0" style="text-align: center; font-size: 26px; font-weight: 900; margin-bottom: 20px; letter-spacing: 2px;" oninput="let v = this.value.replace(/[^0-9]/g, ''); this.value = v ? parseInt(v, 10).toLocaleString('id-ID') : '';">
-
-            <button class="btn-modal" id="btnProsesLoan" style="background: var(--hijau); color: var(--hitam);" onclick="processLoanPayment()">Proses Pembayaran</button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('loanPaymentModal')">Batal</button>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="txPinModal">
-        <div class="modal-card" style="max-width: 320px; text-align: center;">
-            <h2 style="margin-top:0; color: var(--kuning);" id="txPinTitle">Sandi Transaksi</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;" id="txPinDesc">Masukkan sandi khusus untuk menyetujui pelunasan.</p>
-            <input type="password" id="inputTxPin" class="input-field" placeholder="****" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 8px; border-color: var(--kuning); margin-bottom: 10px;" autocomplete="off">
-            <button class="btn-modal" style="background: var(--kuning); color: var(--hitam);" id="btnVerifyTxPin" onclick="verifyTxPin()">Konfirmasi</button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('txPinModal')">Batal</button>
-            <div style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px;">
-                <button class="btn-modal btn-cancel" style="color: var(--merah); font-size: 11px; padding: 10px; border: none;" onclick="openResetTxPinModal()">Reset Sandi Transaksi</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="resetTxPinAuthModal">
-        <div class="modal-card" style="max-width: 320px; text-align: center;">
-            <div style="background: rgba(239, 68, 68, 0.1); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--merah);">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <h2 style="margin-top:0; color: var(--merah); font-size: 20px;">Otorisasi Reset</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Masukkan <b>PIN Profil</b> utama Anda untuk mereset Sandi Transaksi.</p>
-            <input type="password" id="inputResetTxAuthPin" class="input-field" placeholder="****" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 8px; border-color: var(--merah); margin-bottom: 10px;" autocomplete="off">
-            <button class="btn-modal" style="background: var(--merah);" onclick="executeResetTxPin()">Verifikasi & Reset</button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('resetTxPinAuthModal')">Batal</button>
-            <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
-                <button class="btn-modal btn-cancel" style="color: var(--biru); font-size: 11px; padding: 10px; border: none;" onclick="startOTPResetProcess()">Lupa PIN? Kirim Kode ke Email</button>
-            </div>
         </div>
     </div>
 
@@ -375,15 +327,15 @@
         </div>
     </div>
 
+    <!-- MODAL CSV (Icon dipertahankan berwarna sebagai simbol) -->
     <div class="modal-overlay" id="csvExportModal">
         <div class="modal-card" style="text-align: center;">
             <div style="background: rgba(16, 185, 129, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--hijau);">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </div>
-            <h2 style="margin-top:0; color: var(--hijau);">Ekspor Laporan CSV</h2>
+            <h2 style="margin-top:0;">Ekspor Laporan CSV</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Data yang diekspor akan menyesuaikan dengan <b>filter waktu</b> yang sedang aktif di halaman utama.</p>
-            
-            <button class="btn-modal" style="background: var(--hijau); color: var(--hitam);" onclick="executeCSVExport()">Unduh Sekarang</button>
+            <button class="btn-modal" onclick="executeCSVExport()">Unduh Sekarang</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('csvExportModal')">Batal</button>
         </div>
     </div>
@@ -404,32 +356,70 @@
                     </div>
                     <div class="custom-options" id="catOptionsBox"></div>
                 </div>
-                <input type="text" id="tx-category-manual" class="input-field" placeholder="Ketik kategori / nama manual..." style="margin:0; display: none;">
+                <input type="text" id="tx-category-manual" class="input-field" placeholder="Ketik kategori manual..." style="margin:0; display: none;">
             </div>
             
             <input type="hidden" id="tx-category">
 
-            <div id="borrowerWrapper" style="display: none;">
-                <label class="input-label text-kuning">Nama Peminjam</label>
-                <input type="text" id="tx-borrower" class="input-field" placeholder="Ketik nama peminjam..." autocomplete="off">
-            </div>
-
             <label class="input-label" id="label-desc">Deskripsi / Keterangan</label>
             <input type="text" id="tx-desc" class="input-field" autocomplete="off">
             
-            <!-- Tambahan Fitur TPA -->
-            <label class="input-label text-kuning">Pihak Terkait (Opsional)</label>
+            <label class="input-label">Pihak Terkait (Opsional)</label>
             <input type="text" id="tx-pihak-terkait" class="input-field" placeholder="Nama Donatur / Penerima..." autocomplete="off">
 
-            <label class="input-label text-biru">Link Arsip / Bukti (Google Drive)</label>
+            <label class="input-label">Link Arsip / Bukti (Google Drive)</label>
             <input type="url" id="tx-link-bukti" class="input-field" placeholder="https://drive.google.com/..." autocomplete="off">
-            <!-- Selesai Tambahan -->
 
             <label class="input-label">Nominal (Rp)</label>
-            <input type="text" id="tx-amount" class="input-field text-kuning" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
+            <input type="text" id="tx-amount" class="input-field" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
             
             <button type="button" class="btn-modal" id="btnExecuteTx">Eksekusi Transaksi</button>
             <button type="button" class="btn-modal btn-cancel" onclick="closeModal('txModal')">Batal</button>
+        </div>
+    </div>
+
+    <!-- MODAL BARU: TAMBAH DRIVE LINK -->
+    <div class="modal-overlay" id="addDriveModal">
+        <div class="modal-card">
+            <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Tambah Link Drive</h2>
+            <label class="input-label">Nama Pintasan</label>
+            <input type="text" id="drive-name" class="input-field" placeholder="Contoh: Folder Nota Konsumsi..." autocomplete="off">
+            
+            <label class="input-label">URL Google Drive</label>
+            <input type="url" id="drive-url" class="input-field" placeholder="https://drive.google.com/..." autocomplete="off">
+            
+            <button type="button" class="btn-modal" onclick="saveDriveLink()">Simpan Pintasan</button>
+            <button type="button" class="btn-modal btn-cancel" onclick="closeModal('addDriveModal')">Batal</button>
+        </div>
+    </div>
+
+    <!-- MODAL BARU: TAMBAH WISHLIST DANA -->
+    <div class="modal-overlay" id="addWishlistModal">
+        <div class="modal-card">
+            <h2 style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Tambah Target Dana</h2>
+            <label class="input-label">Nama Target</label>
+            <input type="text" id="wishlist-name" class="input-field" placeholder="Contoh: Beli Karpet Masjid..." autocomplete="off">
+            
+            <label class="input-label">Tipe Target Waktu</label>
+            <div class="custom-select-wrapper">
+                <div class="custom-select-trigger" onclick="toggleCustomSelect('wishlistTypeOptions')">
+                    <span id="dispWishlistType">Pilih Tipe</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+                <div class="custom-options" id="wishlistTypeOptions">
+                    <div class="custom-option" onclick="selectWishlistType('Mingguan')">Mingguan</div>
+                    <div class="custom-option" onclick="selectWishlistType('Bulanan')">Bulanan</div>
+                    <div class="custom-option" onclick="selectWishlistType('Tahunan')">Tahunan</div>
+                    <div class="custom-option" onclick="selectWishlistType('Jangka Panjang')">Jangka Panjang</div>
+                </div>
+            </div>
+            <input type="hidden" id="wishlist-type">
+
+            <label class="input-label">Estimasi Dana (Rp)</label>
+            <input type="text" id="wishlist-amount" class="input-field" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
+            
+            <button type="button" class="btn-modal" onclick="saveWishlist()">Simpan Target</button>
+            <button type="button" class="btn-modal btn-cancel" onclick="closeModal('addWishlistModal')">Batal</button>
         </div>
     </div>
     
@@ -452,14 +442,14 @@
 
     <div class="modal-overlay" id="otpVerifyModal">
         <div class="modal-card" style="text-align: center;">
-            <h2 style="margin-top:0; color: var(--hijau);">Verifikasi Kode</h2>
+            <h2 style="margin-top:0;">Verifikasi Kode</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Masukkan 6 digit kode dari email Anda.</p>
             <input type="number" id="inputOTP" class="input-field" placeholder="Kode OTP" style="text-align: center; font-size: 20px; letter-spacing: 5px; margin-bottom: 20px;">
             
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">Buat PIN Utama Baru Anda:</p>
             <input type="password" id="inputNewPinOTP" class="input-field" placeholder="PIN Baru (min 4 digit)" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 20px; letter-spacing: 5px; margin-bottom: 20px;">
             
-            <button class="btn-modal" style="background: var(--hijau); color: var(--hitam);" onclick="verifyOTPAndSavePin()">Verifikasi & Ganti PIN</button>
+            <button class="btn-modal" onclick="verifyOTPAndSavePin()">Verifikasi & Ganti PIN</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('otpVerifyModal')">Batal</button>
         </div>
     </div>
@@ -472,24 +462,17 @@
             <label class="input-label">Kategori</label>
             <input type="text" id="edit-tx-category" class="input-field" autocomplete="off">
 
-            <div id="editBorrowerWrapper" style="display: none;">
-                <label class="input-label text-kuning">Nama Peminjam</label>
-                <input type="text" id="edit-tx-borrower" class="input-field" autocomplete="off">
-            </div>
-
             <label class="input-label">Deskripsi</label>
             <input type="text" id="edit-tx-desc" class="input-field" autocomplete="off">
 
-            <!-- Tambahan Fitur TPA Edit -->
-            <label class="input-label text-kuning">Pihak Terkait</label>
+            <label class="input-label">Pihak Terkait</label>
             <input type="text" id="edit-tx-pihak-terkait" class="input-field" autocomplete="off">
 
-            <label class="input-label text-biru">Link Arsip / Bukti</label>
+            <label class="input-label">Link Arsip / Bukti</label>
             <input type="url" id="edit-tx-link-bukti" class="input-field" autocomplete="off">
-            <!-- Selesai Tambahan Edit -->
 
             <label class="input-label">Nominal (Rp)</label>
-            <input type="text" id="edit-tx-amount" class="input-field text-kuning" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
+            <input type="text" id="edit-tx-amount" class="input-field" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
 
             <button type="button" class="btn-modal" onclick="saveEditedTx()">Simpan Perubahan</button>
             <button type="button" class="btn-modal btn-cancel" onclick="closeModal('editTxModal')">Batal</button>
@@ -498,22 +481,22 @@
 
     <div class="modal-overlay" id="actionPinModal">
         <div class="modal-card" style="max-width: 320px; text-align: center;">
-            <h2 style="margin-top:0; color: var(--kuning);">Otorisasi Keamanan</h2>
+            <h2 style="margin-top:0;">Otorisasi Keamanan</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Masukkan PIN Profil utama Anda untuk melanjutkan modifikasi data.</p>
-            <input type="password" id="inputActionPin" class="input-field" placeholder="****" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 8px; border-color: var(--kuning); margin-bottom: 10px;" autocomplete="off">
+            <input type="password" id="inputActionPin" class="input-field" placeholder="****" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 8px; margin-bottom: 10px;" autocomplete="off">
             <input type="hidden" id="actionPinType">
             <input type="hidden" id="actionPinTxId">
-            <button class="btn-modal" style="background: var(--kuning); color: var(--hitam);" onclick="verifyActionPinFinal()">Verifikasi PIN</button>
+            <button class="btn-modal" onclick="verifyActionPinFinal()">Verifikasi PIN</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('actionPinModal')">Batal</button>
         </div>
     </div>
 
     <div class="modal-overlay" id="otpRequestModal">
         <div class="modal-card" style="max-width: 320px; text-align: center;">
-            <h2 style="margin-top:0; color: var(--biru);">Reset PIN</h2>
+            <h2 style="margin-top:0;">Reset PIN</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Kode OTP akan dikirimkan ke email yang terhubung:</p>
             <p style="font-size: 14px; font-weight: 900; color: var(--putih); margin-bottom: 25px;" id="displayUserEmail">-</p>
-            <button class="btn-modal" id="btnSendOTP" style="background: var(--biru); color: var(--putih);" onclick="sendOTPEmail()">Kirim Kode Sekarang</button>
+            <button class="btn-modal" id="btnSendOTP" onclick="sendOTPEmail()">Kirim Kode Sekarang</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('otpRequestModal')">Batal</button>
         </div>
     </div>
