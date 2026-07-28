@@ -1,4 +1,4 @@
-const APP_VERSION = '2.1'; 
+const APP_VERSION = '2.2'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -396,27 +396,29 @@ function expandChart(el, id) { if(!el.classList.contains('expanded')) { for(let 
 function closeChart(e, btn) { e.stopPropagation(); for(let i of btn.closest('.expand-container').children) i.className = 'expand-item'; setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 100); setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 550); }
 
 function renderShortcuts() { 
-    const c = document.getElementById('quickActionsContainer'); c.className = 'quick-actions-wrap grid-mode grid-split-4'; 
+    const c = document.getElementById('quickActionsContainer'); 
+    c.className = 'quick-actions-wrap grid-mode grid-split-4'; 
+    
     if(activeWallet === 'utama') {
         c.innerHTML = ` 
-            <button class="btn-quick" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak Santri')">${svgs.uang} <span>Infak Santri</span></button> 
-            <button class="btn-quick" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span>Donasi Umum</span></button> 
-            <button class="btn-quick" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span>Honor Guru</span></button> 
-            <button class="btn-quick" onclick="quickInput('masuk', 'Bantuan Pemerintah', 'Dana Bantuan')">${svgs.plus_bold} <span>Pemasukan Lain</span></button> 
+            <button class="btn-quick svg-hijau" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak Santri')">${svgs.uang} <span>Infak Santri</span></button> 
+            <button class="btn-quick svg-biru" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span>Donasi Umum</span></button> 
+            <button class="btn-quick svg-merah" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span>Honor Guru</span></button> 
+            <button class="btn-quick svg-kuning" onclick="quickInput('masuk', 'Bantuan Pemerintah', 'Dana Bantuan')">${svgs.plus_bold} <span>Pemasukan Lain</span></button> 
         `;
     } else if(activeWallet === 'wakaf') {
         c.innerHTML = `
-            <button class="btn-quick" onclick="quickInput('masuk', 'Wakaf', 'Penerimaan Dana Wakaf')">${svgs.uang} <span>Terima Wakaf</span></button> 
-            <button class="btn-quick" onclick="quickInput('keluar', 'Perbaikan Bangunan', 'Penggunaan Dana Wakaf')">${svgs.plus_bold} <span>Gunakan Wakaf</span></button>
-            <button class="btn-quick" onclick="quickInput('keluar', 'Kebersihan', 'Biaya Kebersihan Wakaf')">${svgs.minus_bold} <span>Pemeliharaan</span></button>
-            <button class="btn-quick" onclick="quickInput('masuk', 'Lainnya', 'Penerimaan Wakaf Lainnya')">${svgs.plus_bold} <span>Lainnya (+)</span></button> 
+            <button class="btn-quick svg-hijau" onclick="quickInput('masuk', 'Wakaf', 'Penerimaan Dana Wakaf')">${svgs.uang} <span>Terima Wakaf</span></button> 
+            <button class="btn-quick svg-merah" onclick="quickInput('keluar', 'Perbaikan Bangunan', 'Penggunaan Dana Wakaf')">${svgs.plus_bold} <span>Gunakan Wakaf</span></button>
+            <button class="btn-quick svg-kuning" onclick="quickInput('keluar', 'Kebersihan', 'Biaya Kebersihan Wakaf')">${svgs.minus_bold} <span>Pemeliharaan</span></button>
+            <button class="btn-quick svg-biru" onclick="quickInput('masuk', 'Lainnya', 'Penerimaan Wakaf Lainnya')">${svgs.plus_bold} <span>Lainnya (+)</span></button> 
         `;
     } else if(activeWallet === 'operasional') {
         c.innerHTML = `
-            <button class="btn-quick" onclick="quickInput('keluar', 'Listrik', 'Bayar Tagihan Listrik')">${svgs.minus_bold} <span>Bayar Listrik</span></button>
-            <button class="btn-quick" onclick="quickInput('keluar', 'Air', 'Bayar Tagihan Air')">${svgs.minus_bold} <span>Bayar Air</span></button>
-            <button class="btn-quick" onclick="quickInput('keluar', 'ATK', 'Beli ATK & Kebutuhan')">${svgs.book} <span>Beli ATK</span></button>
-            <button class="btn-quick" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span>Tambah Dana</span></button>
+            <button class="btn-quick svg-merah" onclick="quickInput('keluar', 'Listrik', 'Bayar Tagihan Listrik')">${svgs.minus_bold} <span>Bayar Listrik</span></button>
+            <button class="btn-quick svg-biru" onclick="quickInput('keluar', 'Air', 'Bayar Tagihan Air')">${svgs.minus_bold} <span>Bayar Air</span></button>
+            <button class="btn-quick svg-kuning" onclick="quickInput('keluar', 'ATK', 'Beli ATK & Kebutuhan')">${svgs.book} <span>Beli ATK</span></button>
+            <button class="btn-quick svg-hijau" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span>Tambah Dana</span></button>
         `;
     }
 }
