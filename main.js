@@ -1,4 +1,4 @@
-const APP_VERSION = '3.0'; 
+const APP_VERSION = '3.1'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -74,29 +74,6 @@ function getDynamicColor(categoryStr, type) {
     return `hsl(${Math.abs(hash) % 360}, 70%, 55%)`; 
 }
 
-const SECRET_KEY = "TPA_Finance_Secure_K3y_99";
-function getDBKey() { return APP_MODE === 'CLOUD' ? LS_PREFIX + 'cloud_db' : LS_PREFIX + 'guest_db'; }
-
-function saveLocalDB(dataToSave) {
-    const dbKey = getDBKey();
-    try {
-        if (typeof CryptoJS !== 'undefined') {
-            const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(dataToSave), SECRET_KEY).toString();
-            localStorage.setItem(dbKey, ciphertext);
-        } else { localStorage.setItem(dbKey + '_fallback', JSON.stringify(dataToSave)); }
-    } catch(e) {}
-}
-
-function loadLocalDB() {
-    const dbKey = getDBKey(); let data = [];
-    try {
-        const ciphertext = localStorage.getItem(dbKey);
-        if (ciphertext) { data = JSON.parse(CryptoJS.AES.decrypt(ciphertext, SECRET_KEY).toString(CryptoJS.enc.Utf8)); } 
-        else { const fallback = localStorage.getItem(dbKey + '_fallback'); if (fallback) data = JSON.parse(fallback); }
-    } catch (e) { }
-    return Array.isArray(data) ? data : [];
-}
-
 async function hashPIN(pin) {
     if (!pin) return '';
     try {
@@ -106,8 +83,6 @@ async function hashPIN(pin) {
         } else if (typeof CryptoJS !== 'undefined') { return CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex); } else { return btoa(pin); }
     } catch (error) { return btoa(pin); }
 }
-
-function saveProfileLocal() { setLS('profile_secure_v2', JSON.stringify(profile)); }
 
 function bootApp() {
     renderShortcuts();
@@ -176,7 +151,6 @@ async function initSupabaseBackground() {
             }
         });
     }
-    if (typeof window.emailjs !== 'undefined') { window.emailjs.init("vHhCqrnVXplmKz16K"); }
 }
 
 async function fetchUserTransactions() {
@@ -322,21 +296,21 @@ async function executeFactoryReset() {
     closeModal('resetConfirmModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
 }
 
-// ==========================================
-// WISHLIST & DRIVE LINKS ENGINE
-// ==========================================
+/* ==========================================
+   MODUL WISHLIST & DRIVE LINKS
+========================================== */
 function renderWishlist() {
     const container = document.getElementById('wishlistContainer');
     if(wishlists.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 20px; color:var(--text-muted); background:var(--hitam-card); border-radius:12px; border:1px solid var(--border);">Belum ada target dana.</div>`;
+        container.innerHTML = `<div class="glass-card text-neutral" style="text-align:center; padding: 20px; font-size:13px;">Belum ada target dana.</div>`;
         return;
     }
     container.innerHTML = wishlists.map(w => `
-        <div style="background:var(--hitam-card); padding:15px; border-radius:12px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <div class="glass-card" style="padding:15px; display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Target ${w.type}</div>
-                <div style="font-size:15px; font-weight:900; color:var(--putih);">${w.name}</div>
-                <div style="font-size:13px; font-weight:700; color:var(--text-muted); margin-top:4px;">Estimasi: <span style="color:var(--putih);">${formatRp(w.amount)}</span></div>
+                <div style="font-size:15px; font-weight:900;" class="text-neutral">${w.name}</div>
+                <div style="font-size:13px; font-weight:700; color:var(--text-muted); margin-top:4px;">Estimasi: <span class="text-neutral">${formatRp(w.amount)}</span></div>
             </div>
             <button onclick="deleteWishlist('${w.id}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:5px; font-size:16px;">✕</button>
         </div>
@@ -357,21 +331,19 @@ function saveWishlist() {
     wishlists.push({ id: Date.now().toString(), name, type, amount });
     setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); closeModal('addWishlistModal'); showToast("Target Tersimpan");
 }
-function deleteWishlist(id) {
-    wishlists = wishlists.filter(w => w.id !== id); setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); showToast("Dihapus");
-}
+function deleteWishlist(id) { wishlists = wishlists.filter(w => w.id !== id); setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); showToast("Dihapus"); }
 document.getElementById('wishlist-amount').addEventListener('input', function() { let v = this.value.replace(/[^0-9]/g, ''); this.value = v ? parseInt(v, 10).toLocaleString('id-ID') : ''; });
 
 function renderDriveLinks() {
     const container = document.getElementById('driveContainer');
     if(driveLinks.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 20px; width:100%; color:var(--text-muted); background:var(--hitam-card); border-radius:12px; border:1px solid var(--border);">Belum ada pintasan Drive.</div>`;
+        container.innerHTML = `<div class="glass-card text-neutral" style="text-align:center; padding: 20px; width:100%; font-size:13px;">Belum ada pintasan Drive.</div>`;
         return;
     }
     container.innerHTML = driveLinks.map(d => `
-        <div style="background:var(--hitam-card); border:1px solid var(--border); border-radius:12px; padding:12px 15px; display:flex; align-items:center; gap:10px; min-width:200px; position:relative; flex-shrink:0;">
+        <div class="glass-card" style="padding:12px 15px; display:flex; align-items:center; gap:10px; min-width:200px; position:relative; flex-shrink:0;">
             ${svgs.link}
-            <a href="${d.url}" target="_blank" style="color:var(--putih); text-decoration:none; font-size:13px; font-weight:800; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</a>
+            <a href="${d.url}" target="_blank" class="text-neutral" style="text-decoration:none; font-size:13px; font-weight:800; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</a>
             <button onclick="deleteDriveLink('${d.id}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:0; font-size:14px; margin-left:5px;">✕</button>
         </div>
     `).join('');
@@ -386,43 +358,48 @@ function saveDriveLink() {
 }
 function deleteDriveLink(id) { driveLinks = driveLinks.filter(d => d.id !== id); setLS('drivelinks', JSON.stringify(driveLinks)); renderDriveLinks(); showToast("Dihapus"); }
 
+/* ==========================================
+   UI NAVIGATION & RENDERING
+========================================== */
 function switchWallet(type) { activeWallet = type; document.getElementById('walletSwitchContainer').setAttribute('data-active', type); document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderShortcuts(); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
 function toggleCustomSelect(id) { const box = document.getElementById(id); const isOpen = box.classList.contains('open'); document.querySelectorAll('.custom-options.open').forEach(el => el.classList.remove('open')); if(!isOpen) box.classList.add('open'); }
 function applyTimeFilter(days, labelText) { currentTimeFilter = days; document.getElementById('dispTimeFilter').innerText = labelText; closeModal(''); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
 function selectCategory(val) { document.getElementById('tx-category').value = val; document.getElementById('dispTxCat').innerText = val; closeModal(''); }
 function toggleSection(sec, icn) { document.getElementById(sec).classList.toggle('hidden'); document.getElementById(icn).classList.toggle('rotated'); }
-function toggleExpandStat(el, id) { const items = document.getElementById(id).children; if (el.classList.contains('expanded')) { for(let i of items) i.className = 'expand-item'; } else { for(let i of items) i.className = (i === el) ? 'expand-item expanded' : 'expand-item collapsed'; } } 
-function expandChart(el, id) { if(!el.classList.contains('expanded')) { for(let i of document.getElementById(id).children) i.className = (i === el) ? 'expand-item expanded' : 'expand-item collapsed'; setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 100); setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 550); } } 
-function closeChart(e, btn) { e.stopPropagation(); for(let i of btn.closest('.expand-container').children) i.className = 'expand-item'; setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 100); setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 550); }
+function toggleExpandStat(el, id) { const items = document.getElementById(id).children; if (el.classList.contains('expanded')) { for(let i of items) i.className = 'expand-item glass-card'; } else { for(let i of items) i.className = (i === el) ? 'expand-item expanded glass-card' : 'expand-item collapsed'; } } 
+function expandChart(el, id) { if(!el.classList.contains('expanded')) { for(let i of document.getElementById(id).children) i.className = (i === el) ? 'expand-item expanded glass-card' : 'expand-item collapsed'; setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 100); setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 550); } } 
+function closeChart(e, btn) { e.stopPropagation(); for(let i of btn.closest('.expand-container').children) i.className = 'expand-item glass-card'; setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 100); setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 550); }
 
 function renderShortcuts() { 
     const c = document.getElementById('quickActionsContainer'); 
     c.className = 'quick-actions-wrap grid-mode grid-split-4'; 
-    
     if(activeWallet === 'utama') {
         c.innerHTML = ` 
-            <button class="btn-quick svg-hijau" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak Santri')">${svgs.uang} <span>Infak Santri</span></button> 
-            <button class="btn-quick svg-biru" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span>Donasi Umum</span></button> 
-            <button class="btn-quick svg-merah" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span>Honor Guru</span></button> 
-            <button class="btn-quick svg-kuning" onclick="quickInput('masuk', 'Bantuan Pemerintah', 'Dana Bantuan')">${svgs.plus_bold} <span>Pemasukan Lain</span></button> 
+            <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak Santri')">${svgs.uang} <span class="text-neutral">Infak Santri</span></button> 
+            <button class="btn-quick svg-biru glass-card" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span class="text-neutral">Donasi Umum</span></button> 
+            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span class="text-neutral">Honor Guru</span></button> 
+            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('masuk', 'Bantuan Pemerintah', 'Dana Bantuan')">${svgs.plus_bold} <span class="text-neutral">Pemasukan Lain</span></button> 
         `;
     } else if(activeWallet === 'wakaf') {
         c.innerHTML = `
-            <button class="btn-quick svg-hijau" onclick="quickInput('masuk', 'Wakaf', 'Penerimaan Dana Wakaf')">${svgs.uang} <span>Terima Wakaf</span></button> 
-            <button class="btn-quick svg-merah" onclick="quickInput('keluar', 'Perbaikan Bangunan', 'Penggunaan Dana Wakaf')">${svgs.plus_bold} <span>Gunakan Wakaf</span></button>
-            <button class="btn-quick svg-kuning" onclick="quickInput('keluar', 'Kebersihan', 'Biaya Kebersihan Wakaf')">${svgs.minus_bold} <span>Pemeliharaan</span></button>
-            <button class="btn-quick svg-biru" onclick="quickInput('masuk', 'Lainnya', 'Penerimaan Wakaf Lainnya')">${svgs.plus_bold} <span>Lainnya (+)</span></button> 
+            <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Wakaf', 'Penerimaan Dana Wakaf')">${svgs.uang} <span class="text-neutral">Terima Wakaf</span></button> 
+            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Perbaikan Bangunan', 'Penggunaan Dana Wakaf')">${svgs.plus_bold} <span class="text-neutral">Gunakan Wakaf</span></button>
+            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('keluar', 'Kebersihan', 'Biaya Kebersihan Wakaf')">${svgs.minus_bold} <span class="text-neutral">Pemeliharaan</span></button>
+            <button class="btn-quick svg-biru glass-card" onclick="quickInput('masuk', 'Lainnya', 'Penerimaan Wakaf Lainnya')">${svgs.plus_bold} <span class="text-neutral">Lainnya (+)</span></button> 
         `;
     } else if(activeWallet === 'operasional') {
         c.innerHTML = `
-            <button class="btn-quick svg-merah" onclick="quickInput('keluar', 'Listrik', 'Bayar Tagihan Listrik')">${svgs.minus_bold} <span>Bayar Listrik</span></button>
-            <button class="btn-quick svg-biru" onclick="quickInput('keluar', 'Air', 'Bayar Tagihan Air')">${svgs.minus_bold} <span>Bayar Air</span></button>
-            <button class="btn-quick svg-kuning" onclick="quickInput('keluar', 'ATK', 'Beli ATK & Kebutuhan')">${svgs.book} <span>Beli ATK</span></button>
-            <button class="btn-quick svg-hijau" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span>Tambah Dana</span></button>
+            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Listrik', 'Bayar Tagihan Listrik')">${svgs.minus_bold} <span class="text-neutral">Bayar Listrik</span></button>
+            <button class="btn-quick svg-biru glass-card" onclick="quickInput('keluar', 'Air', 'Bayar Tagihan Air')">${svgs.minus_bold} <span class="text-neutral">Bayar Air</span></button>
+            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('keluar', 'ATK', 'Beli ATK & Kebutuhan')">${svgs.book} <span class="text-neutral">Beli ATK</span></button>
+            <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span class="text-neutral">Tambah Dana</span></button>
         `;
     }
 }
 
+/* ==========================================
+   FUNGSI INPUT & EDIT TRANSAKSI (Dengan Kalender)
+========================================== */
 function quickInput(type, cat, desc) { 
     document.getElementById('tx-type').value = type; 
     document.getElementById('modal-title').innerText = type === 'masuk' ? 'Catat Pemasukan TPA' : 'Catat Pengeluaran TPA'; 
@@ -430,6 +407,7 @@ function quickInput(type, cat, desc) {
     document.getElementById('tx-pihak-terkait').value = ''; 
     document.getElementById('tx-link-bukti').value = '';
     document.getElementById('tx-category-manual').value = '';
+    document.getElementById('tx-date').value = ''; // Kosongkan agar pakai tanggal default (sekarang)
     document.getElementById('tx-is-saving').value = 'false'; 
     
     if(cat === 'MANUAL') { 
@@ -437,8 +415,8 @@ function quickInput(type, cat, desc) {
     } else { 
         document.getElementById('catSelectWrapper').style.display = 'block'; document.getElementById('tx-category-manual').style.display = 'none'; document.getElementById('label-kategori').innerText = 'Kategori'; 
         const box = document.getElementById('catOptionsBox'); const arr = type === 'masuk' ? categories.masuk : categories.keluar; 
-        box.innerHTML = arr.map(c => `<div class="custom-option" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
-        if(!arr.includes(cat)) box.innerHTML += `<div class="custom-option" onclick="selectCategory('${cat}')">${cat}</div>`; 
+        box.innerHTML = arr.map(c => `<div class="custom-option text-neutral" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
+        if(!arr.includes(cat)) box.innerHTML += `<div class="custom-option text-neutral" onclick="selectCategory('${cat}')">${cat}</div>`; 
         selectCategory(cat); 
     } 
     document.getElementById('tx-amount').value = ''; rawAmount = 0; document.getElementById('txModal').classList.add('active'); 
@@ -459,10 +437,13 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
         const pihak = document.getElementById('tx-pihak-terkait').value.trim();
         const link = document.getElementById('tx-link-bukti').value.trim();
         
+        let txDateInput = document.getElementById('tx-date').value;
+        let finalDate = txDateInput ? new Date(txDateInput).toISOString() : new Date().toISOString();
+
         if(!cF || !dF) { showToast("Kategori & Deskripsi wajib diisi", "error"); return; } 
         cF = properTitleCase(cF); dF = properTitleCase(dF);
         
-        let tx = { wallet: activeWallet, type: type, category: cF, desc: dF, pihak_terkait: properTitleCase(pihak), link_bukti: link, amount: rawAmount, status: 'normal', date: new Date().toISOString() };
+        let tx = { wallet: activeWallet, type: type, category: cF, desc: dF, pihak_terkait: properTitleCase(pihak), link_bukti: link, amount: rawAmount, status: 'normal', date: finalDate };
         
         if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient && (!currentUser || currentUser.id !== 'offline_user')) { 
             try { 
@@ -484,6 +465,58 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
         }
     } finally { document.getElementById('tx-is-saving').value = 'false'; }
 });
+
+function openEditTxModal(txId) { 
+    const tx = db.find(t => String(t.id) === txId || String(t.date) === txId); 
+    if(!tx) return; 
+    document.getElementById('edit-tx-id').value = txId; 
+    document.getElementById('edit-tx-category').value = tx.category; 
+    document.getElementById('edit-tx-desc').value = tx.desc; 
+    document.getElementById('edit-tx-pihak-terkait').value = tx.pihak_terkait || ''; 
+    document.getElementById('edit-tx-link-bukti').value = tx.link_bukti || ''; 
+    
+    // Bind tanggal ke input kalender (Format HTML datetime-local)
+    if(tx.date) {
+        let dt = new Date(tx.date);
+        dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+        document.getElementById('edit-tx-date').value = dt.toISOString().slice(0,16);
+    }
+
+    editRawAmount = tx.amount; 
+    document.getElementById('edit-tx-amount').value = editRawAmount.toLocaleString('id-ID'); 
+    document.getElementById('editTxModal').classList.add('active'); 
+}
+
+async function saveEditedTx() {
+    const txId = document.getElementById('edit-tx-id').value; const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return;
+    const nCat = properTitleCase(document.getElementById('edit-tx-category').value.trim()); const nDesc = properTitleCase(document.getElementById('edit-tx-desc').value.trim());
+    const nPihak = properTitleCase(document.getElementById('edit-tx-pihak-terkait').value.trim()); const nLink = document.getElementById('edit-tx-link-bukti').value.trim();
+    const nDateInput = document.getElementById('edit-tx-date').value;
+
+    if(!nCat || !nDesc || editRawAmount <= 0) { showToast("Data tidak lengkap.", "error"); return; }
+    db[idx].category = nCat; db[idx].desc = nDesc; db[idx].pihak_terkait = nPihak; db[idx].link_bukti = nLink; db[idx].amount = editRawAmount;
+    if(nDateInput) db[idx].date = new Date(nDateInput).toISOString();
+
+    if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && db[idx].id) { 
+        try { await sbClient.from('transactions').update({ category: nCat, "desc": nDesc, pihak_terkait: nPihak, link_bukti: nLink, amount: editRawAmount, date: db[idx].date }).eq('id', db[idx].id); } 
+        catch(e) { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) pendingSync[syncIdx] = db[idx]; else pendingSync.push(db[idx]); setLS('pending_sync', JSON.stringify(pendingSync)); } 
+    } else { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) { pendingSync[syncIdx] = db[idx]; setLS('pending_sync', JSON.stringify(pendingSync)); } }
+    saveLocalDB(db); closeModal('editTxModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Berhasil Diperbarui.", "success");
+}
+
+function executeTxDeleteFinal(txId) {
+    openCustomConfirm("Hapus Mutlak", "Tindakan ini tidak dapat dibatalkan. Lanjutkan?", async () => {
+        const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return; const delTx = db[idx]; db.splice(idx, 1);
+        if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && delTx.id) { try { await sbClient.from('transactions').delete().eq('id', delTx.id); } catch(e) {} } else { pendingSync = pendingSync.filter(t => String(t.id) !== txId && String(t.date) !== txId); setLS('pending_sync', JSON.stringify(pendingSync)); }
+        saveLocalDB(db); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Dihapus Permanen.", "success");
+    });
+}
+
+function promptActionPin(action, txId) { closeModal('receiptModal'); if (!profile.pin || profile.pin.trim() === '') { if (action === 'edit') openEditTxModal(txId); else executeTxDeleteFinal(txId); return; } document.getElementById('actionPinType').value = action; document.getElementById('actionPinTxId').value = txId; document.getElementById('inputActionPin').value = ''; document.getElementById('actionPinModal').classList.add('active'); setTimeout(() => document.getElementById('inputActionPin').focus(), 300); }
+function promptActionPinFromTable(e, action, txId) { e.stopPropagation(); promptActionPin(action, txId); }
+
+async function verifyActionPinFinal() { const inputVal = document.getElementById('inputActionPin').value; const hashedInput = await hashPIN(inputVal); if (hashedInput === profile.pin) { closeModal('actionPinModal'); const action = document.getElementById('actionPinType').value; const txId = document.getElementById('actionPinTxId').value; if (action === 'edit') openEditTxModal(txId); else if (action === 'delete') executeTxDeleteFinal(txId); } else { showToast("PIN Salah! Akses Ditolak.", "error"); } }
+
 
 function updateHealthEngine(filteredDb) { 
     let tIn = 0, tOut = 0; filteredDb.forEach(t => { if(t.type === 'masuk') tIn += t.amount; else tOut += t.amount; }); 
@@ -508,10 +541,10 @@ function generateAIForecast(data) {
     if (keluarData.length > 0) { let catTotals = {}; keluarData.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; }); let biggestCat = Object.keys(catTotals).reduce((a, b) => catTotals[a] > catTotals[b] ? a : b); biggestExpenseMsg = `Pengeluaran operasional terbesar bulan ini: ${properTitleCase(biggestCat)} (${formatRp(catTotals[biggestCat])}).`; }
     
     let statusMsg = "", projectionMsg = "";
-    if (mOut > mIn && mIn > 0) { statusMsg = `⚠️ Peringatan: Pengeluaran dompet ${activeWallet} telah melampaui pemasukan.`; projectionMsg = "Saran AI: Tinjau ulang anggaran operasional TPA untuk menghindari defisit."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; } 
-    else if (mOut > 0) { statusMsg = `Arus kas dompet ${activeWallet} berjalan normal.`; projectionMsg = "Tetap pantau alokasi dana agar sejalan dengan program kegiatan santri."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; } 
-    else if (mIn > 0 && mOut === 0) { statusMsg = "Luar biasa! Seluruh dana pemasukan bulan ini masih utuh."; projectionMsg = "Tips: Dana bisa dialokasikan untuk perbaikan fasilitas atau acara santri mendatang."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; } 
-    else { statusMsg = "Belum ada pergerakan kas bulan ini."; projectionMsg = "Selalu rutin mencatat donasi/infak yang masuk."; box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)';}
+    if (mOut > mIn && mIn > 0) { statusMsg = `⚠️ Peringatan: Pengeluaran dompet ${activeWallet} telah melampaui pemasukan.`; projectionMsg = "Saran AI: Tinjau ulang anggaran operasional TPA untuk menghindari defisit."; box.style.borderLeftColor = 'var(--merah)'; box.querySelector('svg').style.color = 'var(--merah)'; } 
+    else if (mOut > 0) { statusMsg = `Arus kas dompet ${activeWallet} berjalan normal.`; projectionMsg = "Tetap pantau alokasi dana agar sejalan dengan program kegiatan santri."; box.style.borderLeftColor = 'var(--kuning)'; box.querySelector('svg').style.color = 'var(--kuning)'; } 
+    else if (mIn > 0 && mOut === 0) { statusMsg = "Luar biasa! Seluruh dana pemasukan bulan ini masih utuh."; projectionMsg = "Tips: Dana bisa dialokasikan untuk perbaikan fasilitas atau acara santri mendatang."; box.style.borderLeftColor = 'var(--hijau)'; box.querySelector('svg').style.color = 'var(--hijau)'; } 
+    else { statusMsg = "Belum ada pergerakan kas bulan ini."; projectionMsg = "Selalu rutin mencatat donasi/infak yang masuk."; box.style.borderLeftColor = 'var(--biru)'; box.querySelector('svg').style.color = 'var(--biru)';}
     
     aiMessages.push(statusMsg); aiMessages.push(projectionMsg); aiMessages.push(biggestExpenseMsg);
     if(activeWallet === 'wakaf') aiMessages.push("Catatan: Pastikan dana Wakaf tidak disalahgunakan untuk operasional harian.");
@@ -550,24 +583,24 @@ function renderTable(data) {
     [...data].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
         const iM = tx.type === 'masuk'; let c = getDynamicColor(tx.category, tx.type);
         let linkHtml = tx.link_bukti ? `<a href="${tx.link_bukti}" target="_blank" style="color:var(--text-muted); font-size:11px; text-decoration:underline; display:block; margin-top:2px;">&#128279; Bukti Drive</a>` : '';
-        let pihakHtml = tx.pihak_terkait ? `<br><span style="font-size:11px; color:var(--text-muted);">Pihak: <b>${tx.pihak_terkait}</b></span>` : '';
+        let pihakHtml = tx.pihak_terkait ? `<br><span style="font-size:11px; color:var(--text-muted);">Pihak: <b class="text-neutral">${tx.pihak_terkait}</b></span>` : '';
         
-        let cr = `<div class="badge-wrapper"><div class="badge-cat" style="border: 1px solid var(--border); color:var(--putih); background:var(--border);">${tx.category}</div></div>`;
+        let cr = `<div class="badge-wrapper"><div class="badge-cat" style="border: 1px solid var(--border); color:var(--teks-netral); background:var(--border);">${tx.category}</div></div>`;
         htmlStr += `<tr class="clickable-row ${animClass}" onclick="openReceipt('${tx.id || tx.date}')">
             <td style="color:var(--text-muted); font-size:11px; vertical-align:middle;">${formatDetailDate(tx.date).split(' - ')[0]}<br>${formatDetailDate(tx.date).split(' - ')[1]}</td>
             <td class="col-category">${cr}</td>
-            <td style="vertical-align:middle; width:100%;"><span style="font-weight:700;">${tx.desc}</span>${pihakHtml}${linkHtml}</td>
+            <td style="vertical-align:middle; width:100%;"><span class="text-neutral" style="font-weight:700;">${tx.desc}</span>${pihakHtml}${linkHtml}</td>
             <td style="vertical-align:middle; text-align:center; padding-right:15px; width:1%;">
                 <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
-                    <button type="button" style="background:transparent; color:var(--putih); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'edit', '${tx.id || tx.date}')">
+                    <button type="button" style="background:transparent; color:var(--teks-netral); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'edit', '${tx.id || tx.date}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     </button>
-                    <button type="button" style="background:transparent; color:var(--putih); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'delete', '${tx.id || tx.date}')">
+                    <button type="button" style="background:transparent; color:var(--teks-netral); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'delete', '${tx.id || tx.date}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/></svg>
                     </button>
                 </div>
             </td>
-            <td class="amt-cell" style="vertical-align:middle; text-align:right; color:var(--putih); white-space:nowrap; padding-left:0;">${iM?'+':'-'}${formatRp(tx.amount)}</td>
+            <td class="amt-cell" style="vertical-align:middle; text-align:right; color:var(--teks-netral); white-space:nowrap; padding-left:0;">${iM?'+':'-'}${formatRp(tx.amount)}</td>
         </tr>`;
     });
     t.innerHTML = htmlStr; isInitialTableRender = false; 
@@ -601,56 +634,54 @@ function openReceipt(txId) {
     const rDate = formatDetailDate(tx.date); const rId = "TRX-" + new Date(tx.date).getTime().toString().slice(-8); 
     const rType = tx.type === 'masuk' ? 'Pemasukan' : 'Pengeluaran';
     document.getElementById('receiptContent').innerHTML = ` 
-        <div class="receipt-head"><h3 style="margin:0 0 5px 0; color:var(--putih);">BUKTI MUTASI KAS TPA</h3><span style="font-size:11px; color:var(--text-muted); letter-spacing: 1px;">ID: ${rId}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Waktu</span><span class="receipt-val">${rDate}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Dompet Kas</span><span class="receipt-val" style="text-transform:capitalize;">${tx.wallet}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Kategori</span><span class="receipt-val">${tx.category}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Sifat</span><span class="receipt-val" style="color:var(--putih);">${rType}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Keterangan</span><span class="receipt-val">${tx.desc}</span></div> 
-        ${tx.pihak_terkait ? `<div class="receipt-row"><span class="receipt-label">Pihak Terkait</span><span class="receipt-val">${tx.pihak_terkait}</span></div>` : ''} 
-        ${tx.link_bukti ? `<div class="receipt-row" style="margin-top:10px;"><span class="receipt-label" style="color:var(--text-muted);">Lampiran Drive</span><span class="receipt-val"><a href="${tx.link_bukti}" target="_blank" style="color:var(--putih);">Buka Dokumen ↗</a></span></div>` : ''} 
+        <div class="receipt-head"><h3 style="margin:0 0 5px 0;" class="text-neutral">BUKTI MUTASI KAS TPA</h3><span style="font-size:11px; color:var(--text-muted); letter-spacing: 1px;">ID: ${rId}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Waktu</span><span class="receipt-val text-neutral">${rDate}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Dompet Kas</span><span class="receipt-val text-neutral" style="text-transform:capitalize;">${tx.wallet}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Kategori</span><span class="receipt-val text-neutral">${tx.category}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Sifat</span><span class="receipt-val text-neutral">${rType}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Keterangan</span><span class="receipt-val text-neutral">${tx.desc}</span></div> 
+        ${tx.pihak_terkait ? `<div class="receipt-row"><span class="receipt-label">Pihak Terkait</span><span class="receipt-val text-neutral">${tx.pihak_terkait}</span></div>` : ''} 
+        ${tx.link_bukti ? `<div class="receipt-row" style="margin-top:10px;"><span class="receipt-label" style="color:var(--text-muted);">Lampiran Drive</span><span class="receipt-val"><a href="${tx.link_bukti}" target="_blank" style="color:var(--biru); text-decoration:underline;">Buka Dokumen ↗</a></span></div>` : ''} 
         <div class="receipt-row" style="margin-top:25px; border-top:2px dashed var(--border); padding-top:20px; align-items: flex-end; flex-wrap: nowrap !important;"> 
             <span class="receipt-label" style="font-size:14px; color:var(--text-muted); flex-shrink: 0;">TOTAL</span> 
-            <span class="receipt-val" style="font-size: clamp(16px, 5.5vw, 22px); color:var(--putih); letter-spacing:-1px; white-space: nowrap !important; word-break: keep-all !important; flex-grow: 1; text-align: right;">${formatRp(tx.amount)}</span> 
+            <span class="receipt-val text-neutral" style="font-size: clamp(16px, 5.5vw, 22px); letter-spacing:-1px; white-space: nowrap !important; word-break: keep-all !important; flex-grow: 1; text-align: right;">${formatRp(tx.amount)}</span> 
         </div> 
     `; 
     document.getElementById('receiptModal').classList.add('active'); 
 }
 
+/* ==========================================
+   MODUL EXPORT CSV (DENGAN FILTER KALENDER)
+========================================== */
 function openCSVModal() { if(db.length === 0) { showToast("Data kosong.", "error"); return; } document.getElementById('csvExportModal').classList.add('active'); }
 function executeCSVExport() { 
     closeModal('csvExportModal'); let csv = "Tanggal,Dompet,Tipe,Kategori,Keterangan,Pihak_Terkait,Link_Drive,Nominal\n"; 
     const today = new Date(); today.setHours(0,0,0,0);
-    const filteredData = db.filter(tx => { if(tx.wallet !== activeWallet) return false; if(currentTimeFilter !== 0) { const d = new Date(tx.date); d.setHours(0,0,0,0); if(Math.floor(Math.abs(today - d) / 86400000) > currentTimeFilter) return false; } return true; });
+    
+    // Tarik nilai filter kalender
+    const startDateVal = document.getElementById('csv-start-date').value;
+    const endDateVal = document.getElementById('csv-end-date').value;
+
+    const filteredData = db.filter(tx => { 
+        if(tx.wallet !== activeWallet) return false; 
+        
+        let txDate = new Date(tx.date);
+        txDate.setHours(0,0,0,0);
+        
+        // Filter Filter Dropdown Normal
+        if(currentTimeFilter !== 0) { if(Math.floor(Math.abs(today - txDate) / 86400000) > currentTimeFilter) return false; } 
+        
+        // Filter Kalender Custom
+        if (startDateVal) { let sDate = new Date(startDateVal); sDate.setHours(0,0,0,0); if (txDate < sDate) return false; }
+        if (endDateVal) { let eDate = new Date(endDateVal); eDate.setHours(23,59,59,999); if (txDate > eDate) return false; }
+
+        return true; 
+    });
+
     if(filteredData.length === 0) { showToast("Data filter kosong.", "error"); return; }
     [...filteredData].sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(row => { let r = [formatDetailDate(row.date), row.wallet, row.type, row.category, row.desc, row.pihak_terkait||'-', row.link_bukti||'-', row.amount]; csv += r.map(v => `"${v}"`).join(",") + "\n"; }); 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Laporan_TPA_${activeWallet.toUpperCase()}_${new Date().toISOString().split('T')[0]}.csv`; 
     document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("CSV Berhasil Diunduh", "success"); 
-}
-
-function promptActionPin(action, txId) { closeModal('receiptModal'); if (!profile.pin || profile.pin.trim() === '') { if (action === 'edit') openEditTxModal(txId); else executeTxDeleteFinal(txId); return; } document.getElementById('actionPinType').value = action; document.getElementById('actionPinTxId').value = txId; document.getElementById('inputActionPin').value = ''; document.getElementById('actionPinModal').classList.add('active'); setTimeout(() => document.getElementById('inputActionPin').focus(), 300); }
-function promptActionPinFromTable(e, action, txId) { e.stopPropagation(); promptActionPin(action, txId); }
-
-async function verifyActionPinFinal() { const inputVal = document.getElementById('inputActionPin').value; const hashedInput = await hashPIN(inputVal); if (hashedInput === profile.pin) { closeModal('actionPinModal'); const action = document.getElementById('actionPinType').value; const txId = document.getElementById('actionPinTxId').value; if (action === 'edit') openEditTxModal(txId); else if (action === 'delete') executeTxDeleteFinal(txId); } else { showToast("PIN Salah! Akses Ditolak.", "error"); } }
-
-function openEditTxModal(txId) { const tx = db.find(t => String(t.id) === txId || String(t.date) === txId); if(!tx) return; document.getElementById('edit-tx-id').value = txId; document.getElementById('edit-tx-category').value = tx.category; document.getElementById('edit-tx-desc').value = tx.desc; document.getElementById('edit-tx-pihak-terkait').value = tx.pihak_terkait || ''; document.getElementById('edit-tx-link-bukti').value = tx.link_bukti || ''; editRawAmount = tx.amount; document.getElementById('edit-tx-amount').value = editRawAmount.toLocaleString('id-ID'); document.getElementById('editTxModal').classList.add('active'); }
-
-async function saveEditedTx() {
-    const txId = document.getElementById('edit-tx-id').value; const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return;
-    const nCat = properTitleCase(document.getElementById('edit-tx-category').value.trim()); const nDesc = properTitleCase(document.getElementById('edit-tx-desc').value.trim());
-    const nPihak = properTitleCase(document.getElementById('edit-tx-pihak-terkait').value.trim()); const nLink = document.getElementById('edit-tx-link-bukti').value.trim();
-    if(!nCat || !nDesc || editRawAmount <= 0) { showToast("Data tidak lengkap.", "error"); return; }
-    db[idx].category = nCat; db[idx].desc = nDesc; db[idx].pihak_terkait = nPihak; db[idx].link_bukti = nLink; db[idx].amount = editRawAmount;
-    if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && db[idx].id) { try { await sbClient.from('transactions').update({ category: nCat, "desc": nDesc, pihak_terkait: nPihak, link_bukti: nLink, amount: editRawAmount }).eq('id', db[idx].id); } catch(e) { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) pendingSync[syncIdx] = db[idx]; else pendingSync.push(db[idx]); setLS('pending_sync', JSON.stringify(pendingSync)); } } else { let syncIdx = pendingSync.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(syncIdx > -1) { pendingSync[syncIdx] = db[idx]; setLS('pending_sync', JSON.stringify(pendingSync)); } }
-    saveLocalDB(db); closeModal('editTxModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Berhasil Diperbarui.", "success");
-}
-
-function executeTxDeleteFinal(txId) {
-    openCustomConfirm("Hapus Mutlak", "Tindakan ini tidak dapat dibatalkan. Lanjutkan?", async () => {
-        const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return; const delTx = db[idx]; db.splice(idx, 1);
-        if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && delTx.id) { try { await sbClient.from('transactions').delete().eq('id', delTx.id); } catch(e) {} } else { pendingSync = pendingSync.filter(t => String(t.id) !== txId && String(t.date) !== txId); setLS('pending_sync', JSON.stringify(pendingSync)); }
-        saveLocalDB(db); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Dihapus Permanen.", "success");
-    });
 }
 
 const searchInput = document.getElementById('searchTxInput'); const searchClear = document.getElementById('searchClearBtn'); 
@@ -676,10 +707,10 @@ function toggleTheme() {
     if(typeof updateUI === 'function') updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
 }
 
-function updateThemeIcon(theme) { const btn = document.getElementById('themeToggleBtn'); if (!btn) return; if (theme === 'light') { btn.innerHTML = iconMoon; btn.style.color = '#ffffff'; } else { btn.innerHTML = iconSun; btn.style.color = 'var(--text-muted)'; } }
+function updateThemeIcon(theme) { const btn = document.getElementById('themeToggleBtn'); if (!btn) return; if (theme === 'light') { btn.innerHTML = iconMoon; btn.style.color = '#cbd5e1'; } else { btn.innerHTML = iconSun; btn.style.color = 'var(--text-muted)'; } }
 
 /* ==========================================
-   MODUL MANAJEMEN SPP SANTRI (LOCAL STORAGE)
+   MODUL MANAJEMEN SPP SANTRI (DENGAN SEARCH)
 ========================================== */
 function openSPPModal() { document.getElementById('sppModal').classList.add('active'); renderSppTable(); }
 
@@ -690,11 +721,11 @@ function addSppStudent() {
     setLS('spp_data', JSON.stringify(sppData)); input.value = ''; renderSppTable(); showToast("Santri ditambahkan", "success");
 }
 
-function deleteSppStudent(id) { sppData = sppData.filter(s => s.id !== id); setLS('spp_data', JSON.stringify(sppData)); renderSppTable(); showToast("Data santri dihapus", "success"); }
+function deleteSppStudent(id) { sppData = sppData.filter(s => s.id !== id); setLS('spp_data', JSON.stringify(sppData)); renderSppTable(); showToast("Data dihapus", "success"); }
 
 function updateSppMonth(id, selectElement) {
     const idx = sppData.findIndex(s => s.id === id);
-    if (idx > -1) { sppData[idx].lastMonth = selectElement.value; setLS('spp_data', JSON.stringify(sppData)); showToast("Status SPP diperbarui", "success"); }
+    if (idx > -1) { sppData[idx].lastMonth = selectElement.value; setLS('spp_data', JSON.stringify(sppData)); showToast("SPP diperbarui", "success"); }
 }
 
 function renderSppTable() {
@@ -704,10 +735,10 @@ function renderSppTable() {
     tbody.innerHTML = sppData.map(s => {
         const options = months.map(m => `<option value="${m}" ${s.lastMonth === m ? 'selected' : ''}>${m}</option>`).join('');
         return `
-        <tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:10px; font-size:13px; font-weight:700; color:var(--putih); white-space:nowrap;">${s.name}</td>
+        <tr style="border-bottom:1px solid var(--border);" class="spp-row">
+            <td style="padding:10px; font-size:13px; font-weight:700; white-space:nowrap;" class="text-neutral">${s.name}</td>
             <td style="padding:10px;">
-                <select onchange="updateSppMonth('${s.id}', this)" style="background:transparent; border:1px solid var(--border); color:var(--putih); padding:6px; border-radius:6px; font-size:12px; font-weight:600; outline:none; width:100%;">
+                <select onchange="updateSppMonth('${s.id}', this)" class="text-neutral" style="background:transparent; border:1px solid var(--border); padding:6px; border-radius:6px; font-size:12px; font-weight:600; outline:none; width:100%;">
                     ${options}
                 </select>
             </td>
@@ -718,6 +749,16 @@ function renderSppTable() {
             </td>
         </tr>`;
     }).join('');
+}
+
+function filterSppTable() {
+    const query = document.getElementById('searchSppInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.spp-row');
+    rows.forEach(row => {
+        const name = row.querySelector('td').innerText.toLowerCase();
+        if(name.includes(query)) row.style.display = '';
+        else row.style.display = 'none';
+    });
 }
 
 /* ==========================================
@@ -747,14 +788,30 @@ function enforcePublicReadOnlyMode() {
         const adminSection = document.getElementById('adminToggleIcon')?.closest('.section-header');
         if(adminSection) { adminSection.style.display = 'none'; document.getElementById('adminSection').style.display = 'none'; }
 
+        // Menyembunyikan tombol aksi Tambah/Export, kecuali Export CSV & SPP yang diizinkan untuk Publik
         const actionButtons = document.querySelectorAll('.btn-quick, .btn-outline-small, .btn-modal:not(.btn-cancel), .search-clear');
-        actionButtons.forEach(btn => { if(btn.innerText && btn.innerText.includes('Export CSV')) return; btn.style.display = 'none'; });
+        actionButtons.forEach(btn => { 
+            const text = btn.innerText || '';
+            if(text.includes('Export Laporan') || text.includes('Pantau SPP Santri')) return; 
+            btn.style.display = 'none'; 
+        });
+
+        // Sembunyikan Input Data SPP di Modal
+        const sppInputGroup = document.getElementById('sppInputGroup');
+        if(sppInputGroup) sppInputGroup.style.display = 'none';
 
         const iconButtons = document.querySelectorAll('.icon-btn');
         iconButtons.forEach(btn => btn.style.display = 'none');
 
+        // MEMATIKAN AKSI DI TABEL TRANSAKSI TAPI TETAP BISA DI-KLIK UNTUK MELIHAT RECEIPT
         const style = document.createElement('style');
-        style.innerHTML = `.clickable-row { pointer-events: none !important; } .col-category + td + td { display: none !important; } th:nth-child(4) { display: none !important; } #receiptModal { display: none !important; }`;
+        style.innerHTML = `
+            .col-category + td + td { display: none !important; } 
+            th:nth-child(4) { display: none !important; }
+            /* Mematikan aksi select option SPP */
+            #sppTableBody select { pointer-events: none; -webkit-appearance: none; -moz-appearance: none; appearance: none; border:none !important; }
+            #sppTableBody td:nth-child(3), th#sppActionCol { display: none !important; }
+        `;
         document.head.appendChild(style);
 
         setTimeout(() => { showToast("Mode Baca Saja Aktif", "syncing"); }, 1000);
