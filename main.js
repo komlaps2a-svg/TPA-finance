@@ -1,4 +1,4 @@
-const APP_VERSION = '2.2'; 
+const APP_VERSION = '3.0'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -25,6 +25,7 @@ let db = [];
 let pendingSync = JSON.parse(getLS('pending_sync')) || []; 
 let wishlists = JSON.parse(getLS('wishlists')) || [];
 let driveLinks = JSON.parse(getLS('drivelinks')) || [];
+let sppData = JSON.parse(getLS('spp_data')) || [];
 let currentUser = null; 
 
 let APP_MODE = getLS('app_mode') || 'GUEST';
@@ -385,7 +386,6 @@ function saveDriveLink() {
 }
 function deleteDriveLink(id) { driveLinks = driveLinks.filter(d => d.id !== id); setLS('drivelinks', JSON.stringify(driveLinks)); renderDriveLinks(); showToast("Dihapus"); }
 
-
 function switchWallet(type) { activeWallet = type; document.getElementById('walletSwitchContainer').setAttribute('data-active', type); document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderShortcuts(); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
 function toggleCustomSelect(id) { const box = document.getElementById(id); const isOpen = box.classList.contains('open'); document.querySelectorAll('.custom-options.open').forEach(el => el.classList.remove('open')); if(!isOpen) box.classList.add('open'); }
 function applyTimeFilter(days, labelText) { currentTimeFilter = days; document.getElementById('dispTimeFilter').innerText = labelText; closeModal(''); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
@@ -487,7 +487,7 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
 
 function updateHealthEngine(filteredDb) { 
     let tIn = 0, tOut = 0; filteredDb.forEach(t => { if(t.type === 'masuk') tIn += t.amount; else tOut += t.amount; }); 
-    let balance = tIn - tOut; const badge = document.getElementById('healthBadge'); const text = document.getElementById('healthText'); badge.className = 'health-badge'; 
+    let balance = tIn - tOut; const badge = document.getElementById('healthBadge'); const text = document.getElementById('healthText'); badge.className = 'health-badge glass-card'; 
     if (tIn === 0 && tOut === 0) { badge.classList.add('health-netral'); text.innerText = 'Netral'; } else if (balance < 0) { badge.classList.add('health-defisit'); text.innerText = 'Defisit'; } else if (balance >= 0 && balance <= 50000) { badge.classList.add('health-kritis'); text.innerText = 'Kritis'; } else { if (tOut > (tIn * 0.8)) { badge.classList.add('health-waspada'); text.innerText = 'Waspada'; } else { badge.classList.add('health-sehat'); text.innerText = 'Sehat'; } } 
     generateAIForecast(filteredDb); 
 }
@@ -543,7 +543,7 @@ function updateUI(searchTerm = '') {
 
 function renderTable(data) {
     const t = document.getElementById('table-body');
-    if(data.length === 0) { t.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color:var(--text-muted);">Tidak ada transaksi pada dompet ini.</td></tr>`; isInitialTableRender = false; return; }
+    if(data.length === 0) { t.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color:var(--text-muted);">Tidak ada riwayat transaksi di dompet ini.</td></tr>`; isInitialTableRender = false; return; }
     
     let htmlStr = '';
     const animClass = isInitialTableRender ? 'row-anim' : ''; 
@@ -665,7 +665,10 @@ const iconSun = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" str
 const iconMoon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
 const savedTheme = getLS('app_theme') || 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
-window.addEventListener('DOMContentLoaded', () => { updateThemeIcon(savedTheme); });
+window.addEventListener('DOMContentLoaded', () => { 
+    updateThemeIcon(savedTheme); 
+    if(typeof enforcePublicReadOnlyMode === 'function') enforcePublicReadOnlyMode();
+});
 
 function toggleTheme() {
     const htmlEl = document.documentElement; const currentTheme = htmlEl.getAttribute('data-theme') || 'dark';
@@ -674,6 +677,89 @@ function toggleTheme() {
 }
 
 function updateThemeIcon(theme) { const btn = document.getElementById('themeToggleBtn'); if (!btn) return; if (theme === 'light') { btn.innerHTML = iconMoon; btn.style.color = '#ffffff'; } else { btn.innerHTML = iconSun; btn.style.color = 'var(--text-muted)'; } }
+
+/* ==========================================
+   MODUL MANAJEMEN SPP SANTRI (LOCAL STORAGE)
+========================================== */
+function openSPPModal() { document.getElementById('sppModal').classList.add('active'); renderSppTable(); }
+
+function addSppStudent() {
+    const input = document.getElementById('newSppName'); const name = properTitleCase(input.value.trim());
+    if (!name) { showToast("Nama santri wajib diisi", "error"); return; }
+    sppData.push({ id: Date.now().toString(), name: name, lastMonth: "-" });
+    setLS('spp_data', JSON.stringify(sppData)); input.value = ''; renderSppTable(); showToast("Santri ditambahkan", "success");
+}
+
+function deleteSppStudent(id) { sppData = sppData.filter(s => s.id !== id); setLS('spp_data', JSON.stringify(sppData)); renderSppTable(); showToast("Data santri dihapus", "success"); }
+
+function updateSppMonth(id, selectElement) {
+    const idx = sppData.findIndex(s => s.id === id);
+    if (idx > -1) { sppData[idx].lastMonth = selectElement.value; setLS('spp_data', JSON.stringify(sppData)); showToast("Status SPP diperbarui", "success"); }
+}
+
+function renderSppTable() {
+    const tbody = document.getElementById('sppTableBody');
+    if (sppData.length === 0) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Belum ada data santri terdaftar.</td></tr>`; return; }
+    const months = ["-", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    tbody.innerHTML = sppData.map(s => {
+        const options = months.map(m => `<option value="${m}" ${s.lastMonth === m ? 'selected' : ''}>${m}</option>`).join('');
+        return `
+        <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px; font-size:13px; font-weight:700; color:var(--putih); white-space:nowrap;">${s.name}</td>
+            <td style="padding:10px;">
+                <select onchange="updateSppMonth('${s.id}', this)" style="background:transparent; border:1px solid var(--border); color:var(--putih); padding:6px; border-radius:6px; font-size:12px; font-weight:600; outline:none; width:100%;">
+                    ${options}
+                </select>
+            </td>
+            <td style="padding:10px; text-align:center;">
+                <button onclick="deleteSppStudent('${s.id}')" style="background:rgba(239, 68, 68, 0.15); border:1px solid var(--merah); color:var(--merah); padding:6px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin:auto; transition:0.2s;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/></svg>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+/* ==========================================
+   MODUL TRANSPARANSI PUBLIK (READ-ONLY)
+========================================== */
+function openShareLinkModal() {
+    const currentDomain = window.location.origin + window.location.pathname;
+    document.getElementById('publicLinkInput').value = `${currentDomain}?view=public`;
+    document.getElementById('shareLinkModal').classList.add('active');
+}
+
+function copyPublicLink() {
+    const input = document.getElementById('publicLinkInput'); input.select(); input.setSelectionRange(0, 99999); 
+    try { navigator.clipboard.writeText(input.value).then(() => { showToast("Tautan disalin!", "success"); }).catch(err => { document.execCommand("copy"); showToast("Tautan disalin!", "success"); });
+    } catch (err) { document.execCommand("copy"); showToast("Tautan disalin!", "success"); }
+}
+
+function enforcePublicReadOnlyMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'public') {
+        document.getElementById('headName').innerText = "Transparansi TPA";
+        document.getElementById('headGender').innerText = "Laporan Publik";
+        
+        const healthBadge = document.getElementById('healthBadge');
+        if(healthBadge) healthBadge.style.display = 'none';
+        
+        const adminSection = document.getElementById('adminToggleIcon')?.closest('.section-header');
+        if(adminSection) { adminSection.style.display = 'none'; document.getElementById('adminSection').style.display = 'none'; }
+
+        const actionButtons = document.querySelectorAll('.btn-quick, .btn-outline-small, .btn-modal:not(.btn-cancel), .search-clear');
+        actionButtons.forEach(btn => { if(btn.innerText && btn.innerText.includes('Export CSV')) return; btn.style.display = 'none'; });
+
+        const iconButtons = document.querySelectorAll('.icon-btn');
+        iconButtons.forEach(btn => btn.style.display = 'none');
+
+        const style = document.createElement('style');
+        style.innerHTML = `.clickable-row { pointer-events: none !important; } .col-category + td + td { display: none !important; } th:nth-child(4) { display: none !important; } #receiptModal { display: none !important; }`;
+        document.head.appendChild(style);
+
+        setTimeout(() => { showToast("Mode Baca Saja Aktif", "syncing"); }, 1000);
+    }
+}
 
 window.addEventListener('load', () => { bootApp(); });
 if ('serviceWorker' in navigator) { window.addEventListener('load', async () => { navigator.serviceWorker.register('./sw.js').then(reg => { reg.addEventListener('updatefound', () => { const newWorker = reg.installing; newWorker.addEventListener('statechange', () => { if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { const updateScreen = document.getElementById('updateScreen'); if (updateScreen) { updateScreen.style.display = 'flex'; } setTimeout(() => window.location.reload(true), 1500); } }); }); }); }); let refreshing = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!refreshing) { refreshing = true; window.location.reload(true); } }); }
