@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="TPA Finance">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>TPA Finance v3.0</title>
+    <title>TPA Finance v3.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -18,8 +18,9 @@
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=301">
-    <script defer src="main.js?v=301"></script>
+    <!-- Versi dinaikkan untuk memaksa hapus cache -->
+    <link rel="stylesheet" href="style.css?v=303">
+    <script defer src="main.js?v=303"></script>
 </head>
 <body>
 
@@ -30,74 +31,77 @@
 
     <div id="toastBox" class="toast-container"></div>
     
-    <!-- HEADER PROFIL (Glass / Paper Card) -->
-    <div class="profile-header glass-card" onclick="openProfileView()">
-        <div class="profile-info">
-            <div class="profile-pic-container"><img src="" id="headProfileImg" class="profile-pic" alt="Profile"></div>
-            <div class="profile-name-wrap">
-                <span class="profile-title" id="headGender">PENGURUS TPA</span>
-                <h1 class="profile-name" id="headName">Guest</h1>
-                <div id="networkStatus" class="status-sync sync-offline">Offline Mode</div>
+    <!-- HEADER PROFIL (Dibuat Sticky via CSS nantinya) -->
+    <div class="header-wrapper">
+        <div class="profile-header glass-card" onclick="openProfileView()">
+            <div class="profile-info">
+                <div class="profile-pic-container"><img src="" id="headProfileImg" class="profile-pic" alt="Profile"></div>
+                <div class="profile-name-wrap">
+                    <span class="profile-title" id="headGender">PENGURUS TPA</span>
+                    <h1 class="profile-name text-neutral" id="headName">Guest</h1>
+                    <div id="networkStatus" class="status-sync sync-offline">Offline Mode</div>
+                </div>
+            </div>
+            <div id="healthBadge" class="health-badge health-netral glass-card">
+                <span>STATUS</span>
+                <div id="healthText">Netral</div>
             </div>
         </div>
-        <div id="healthBadge" class="health-badge health-netral glass-card">
-            <span>STATUS</span>
-            <div id="healthText">Netral</div>
-        </div>
-    </div>
 
-    <!-- WALLET SWITCHER 3 TAB -->
-    <div class="controls-header">
-        <div class="wallet-switcher glass-card" id="walletSwitchContainer" data-active="utama">
-            <div class="wallet-slider"></div>
-            <button class="btn-tab active" onclick="switchWallet('utama')" id="tab-utama">Kas Utama</button>
-            <button class="btn-tab" onclick="switchWallet('wakaf')" id="tab-wakaf">Wakaf</button>
-            <button class="btn-tab" onclick="switchWallet('operasional')" id="tab-operasional">Operasional</button>
+        <!-- WALLET SWITCHER -->
+        <div class="controls-header">
+            <div class="wallet-switcher glass-card" id="walletSwitchContainer" data-active="utama">
+                <div class="wallet-slider"></div>
+                <button class="btn-tab active" onclick="switchWallet('utama')" id="tab-utama">Kas Utama</button>
+                <button class="btn-tab" onclick="switchWallet('wakaf')" id="tab-wakaf">Wakaf</button>
+                <button class="btn-tab" onclick="switchWallet('operasional')" id="tab-operasional">Operasional</button>
+            </div>
         </div>
     </div>
 
     <!-- FILTER & AI INSIGHT -->
     <div class="filter-insight-row">
         <div class="custom-select-wrapper time-filter-wrapper">
-            <div class="custom-select-trigger glass-card" onclick="toggleCustomSelect('timeFilterOptions')">
+            <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('timeFilterOptions')">
                 <span id="dispTimeFilter">Semua Waktu</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
             </div>
             <div class="custom-options glass-card" id="timeFilterOptions">
-                <div class="custom-option" onclick="applyTimeFilter(365, 'Semua Waktu')">Semua Waktu</div>
-                <div class="custom-option" onclick="applyTimeFilter(1, 'Hari Ini')">Hari Ini</div>
-                <div class="custom-option" onclick="applyTimeFilter(7, '7 Hari Terakhir')">7 Hari Terakhir</div>
-                <div class="custom-option" onclick="applyTimeFilter(30, '30 Hari Terakhir')">30 Hari Terakhir</div>
-                <div class="custom-option" onclick="applyTimeFilter(365, '1 Tahun Belakang')">1 Tahun Belakang</div>
+                <div class="custom-option text-neutral" onclick="applyTimeFilter(365, 'Semua Waktu')">Semua Waktu</div>
+                <div class="custom-option text-neutral" onclick="applyTimeFilter(1, 'Hari Ini')">Hari Ini</div>
+                <div class="custom-option text-neutral" onclick="applyTimeFilter(7, '7 Hari Terakhir')">7 Hari Terakhir</div>
+                <div class="custom-option text-neutral" onclick="applyTimeFilter(30, '30 Hari Terakhir')">30 Hari Terakhir</div>
+                <div class="custom-option text-neutral" onclick="applyTimeFilter(365, '1 Tahun Belakang')">1 Tahun Belakang</div>
             </div>
         </div>
         
         <div id="aiInsightBox" class="insight-box glass-card">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            <span id="aiInsightText" class="fade-transition">Menganalisis data keuanganmu...</span>
+            <span id="aiInsightText" class="fade-transition text-neutral">Menganalisis data keuanganmu...</span>
         </div>
     </div>
 
-    <!-- STATISTIK KARTU (Glass / Paper) -->
+    <!-- STATISTIK -->
     <div class="expand-container" id="statContainer">
         <div class="expand-item glass-card" onclick="toggleExpandStat(this, 'statContainer')">
             <span class="card-label">Saldo Aktif</span>
-            <p class="card-value" id="disp-saldo" data-short="Rp 0" data-full="Rp 0"></p>
+            <p class="card-value text-neutral" id="disp-saldo" data-short="Rp 0" data-full="Rp 0"></p>
         </div>
         <div class="expand-item glass-card" onclick="toggleExpandStat(this, 'statContainer')">
             <span class="card-label">Pemasukan</span>
-            <p class="card-value" id="disp-masuk" data-short="Rp 0" data-full="Rp 0"></p>
+            <p class="card-value text-neutral" id="disp-masuk" data-short="Rp 0" data-full="Rp 0"></p>
         </div>
         <div class="expand-item glass-card" onclick="toggleExpandStat(this, 'statContainer')">
             <span class="card-label">Pengeluaran</span>
-            <p class="card-value" id="disp-keluar" data-short="Rp 0" data-full="Rp 0"></p>
+            <p class="card-value text-neutral" id="disp-keluar" data-short="Rp 0" data-full="Rp 0"></p>
         </div>
     </div>
 
     <!-- PINTASAN INPUT TRANSAKSI -->
     <div class="quick-actions-wrap" id="quickActionsContainer"></div>
 
-    <!-- FITUR BARU: MANAJEMEN SPP & TRANSPARANSI -->
+    <!-- MANAJEMEN & TRANSPARANSI -->
+    <div class="section-divider"></div>
     <div class="section-header" onclick="toggleSection('adminSection', 'adminToggleIcon')">
         <h2 class="section-title">Manajemen & Transparansi</h2>
         <svg id="adminToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -106,37 +110,39 @@
         <div class="quick-actions-wrap grid-mode grid-split-2" style="margin-top:0; margin-bottom:20px;">
             <button class="btn-quick glass-card svg-hijau" onclick="openSPPModal()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <span>Pantau SPP Santri</span>
+                <span class="text-neutral">Pantau SPP Santri</span>
             </button>
             <button class="btn-quick glass-card svg-biru" onclick="openShareLinkModal()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                <span>Bagikan Laporan</span>
+                <span class="text-neutral">Bagikan Laporan</span>
             </button>
         </div>
     </div>
 
     <!-- TARGET & WISHLIST DANA -->
+    <div class="section-divider"></div>
     <div class="section-header" style="cursor: default;">
         <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('wishlistSection', 'wishlistToggleIcon')">
             <h2 class="section-title">Target Dana</h2>
             <svg id="wishlistToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
-        <button onclick="openAddWishlistModal()" class="btn-outline-small">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Target
+        <button onclick="openAddWishlistModal()" class="btn-outline-small glass-card">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Tambah
         </button>
     </div>
     <div class="collapsible-content" id="wishlistSection">
         <div id="wishlistContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 20px;"></div>
     </div>
 
-    <!-- PINTASAN GOOGLE DRIVE -->
+    <!-- PINTASAN BUKTI DRIVE -->
+    <div class="section-divider"></div>
     <div class="section-header" style="cursor: default;">
         <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('driveSection', 'driveToggleIcon')">
             <h2 class="section-title">Pintasan Drive</h2>
             <svg id="driveToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
-        <button onclick="openAddDriveModal()" class="btn-outline-small">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Link
+        <button onclick="openAddDriveModal()" class="btn-outline-small glass-card">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Link Baru
         </button>
     </div>
     <div class="collapsible-content" id="driveSection">
@@ -144,6 +150,7 @@
     </div>
 
     <!-- ANALITIK VISUAL -->
+    <div class="section-divider"></div>
     <div class="section-header" onclick="toggleSection('chartsSection', 'chartToggleIcon')">
         <h2 class="section-title">Analitik Visual</h2>
         <svg id="chartToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -169,20 +176,21 @@
     </div>
 
     <!-- RIWAYAT TRANSAKSI -->
+    <div class="section-divider"></div>
     <div class="section-header" style="cursor: default;">
         <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('historySection', 'historyToggleIcon')">
             <h2 class="section-title">Riwayat Transaksi</h2>
             <svg id="historyToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </div>
-        <button onclick="openCSVModal()" class="btn-outline-small" style="border-color:var(--hijau); color:var(--hijau);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export CSV
+        <button onclick="openCSVModal()" class="btn-outline-small glass-card svg-hijau" style="border-color:var(--hijau); color:var(--hijau);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export Laporan
         </button>
     </div>
     
     <div id="debtBannerContainer"></div>
     <div class="collapsible-content" id="historySection">
         <div class="search-container">
-            <input type="text" id="searchTxInput" class="search-input glass-card" placeholder="Cari transaksi, kategori, atau nama..." autocomplete="off">
+            <input type="text" id="searchTxInput" class="search-input glass-card text-neutral" placeholder="Cari transaksi, kategori, atau nama..." autocomplete="off">
             <span class="search-clear" id="searchClearBtn" onclick="clearSearch()">✕</span>
         </div>
         
@@ -220,17 +228,17 @@
             
             <div style="display: flex; justify-content: flex-start; margin-bottom: 15px;">
                 <div class="custom-select-wrapper" style="width: auto; margin-bottom: 0; z-index: 10;">
-                    <div class="custom-select-trigger glass-card" onclick="toggleCustomSelect('profileTimeFilterOptions')" style="padding: 8px 12px; font-size: 11px; height: auto; gap: 8px;">
+                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('profileTimeFilterOptions')" style="padding: 8px 12px; font-size: 11px; height: auto; gap: 8px;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         <span id="dispProfileTimeFilter">Semua Waktu</span>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options profile-roll-down glass-card" id="profileTimeFilterOptions" style="width: max-content; min-width: 100%; left: 0; right: auto; top: calc(100% + 5px);">
-                        <div class="custom-option" onclick="applyProfileTimeFilter(0, 'Semua Waktu')">Semua Waktu</div>
-                        <div class="custom-option" onclick="applyProfileTimeFilter(1, 'Hari Ini')">Hari Ini</div>
-                        <div class="custom-option" onclick="applyProfileTimeFilter(3, '3 Hari Terakhir')">3 Hari Terakhir</div>
-                        <div class="custom-option" onclick="applyProfileTimeFilter(7, '7 Hari Terakhir')">7 Hari Terakhir</div>
-                        <div class="custom-option" onclick="applyProfileTimeFilter(30, '30 Hari Terakhir')">30 Hari Terakhir</div>
+                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(0, 'Semua Waktu')">Semua Waktu</div>
+                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(1, 'Hari Ini')">Hari Ini</div>
+                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(3, '3 Hari Terakhir')">3 Hari Terakhir</div>
+                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(7, '7 Hari Terakhir')">7 Hari Terakhir</div>
+                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(30, '30 Hari Terakhir')">30 Hari Terakhir</div>
                     </div>
                 </div>
             </div>
@@ -248,7 +256,6 @@
                         <span class="prof-detail-label">Status Akun Cloud</span>
                         <p class="prof-detail-val text-neutral" id="viewGoogleStatus" style="font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">Tidak Terhubung</p>
                     </div>
-                    <!-- BUG FIX: Google Button overlapping SVG/Text -->
                     <button id="btnGoogleLink" class="btn-outline-small" style="border-color:var(--biru); color:var(--biru); gap: 6px;" onclick="openGoogleAuthModal()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> 
                         <span id="textGoogleLink">Hubungkan</span>
@@ -260,16 +267,13 @@
                 <span class="prof-detail-label" style="text-align: center; margin-bottom: 10px;">Support Developer</span>
                 <div class="sosmed-container">
                     <a href="https://www.instagram.com/daengtio_?igsh=MXY4dTVhMGEzNDJxZA==" target="_blank" class="btn-sosmed ig">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                        Instagram
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> Instagram
                     </a>
                     <a href="https://www.tiktok.com/@daengtio_0?_r=1&_t=ZS-94Cu2soiSXJ" target="_blank" class="btn-sosmed tt">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
-                        TikTok
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> TikTok
                     </a>
                     <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" class="btn-sosmed sw">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        Traktir Kopi
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Traktir Kopi
                     </a>
                 </div>
             </div>
@@ -357,7 +361,6 @@
         <div class="modal-card" style="text-align: center;">
             <h2 class="text-neutral" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Sinkronisasi Cloud</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Login untuk menyimpan data Anda dengan aman ke server Supabase secara real-time.</p>
-            <!-- BUG FIX Google Login Alignment -->
             <button class="btn-modal" id="btnRealGoogleLogin" style="background:#fff; color:#0f172a; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> 
                 <span>Login dengan Google</span>
@@ -366,19 +369,32 @@
         </div>
     </div>
 
+    <!-- MODAL EXPORT CSV (DENGAN FILTER KALENDER) -->
     <div class="modal-overlay" id="csvExportModal">
         <div class="modal-card" style="text-align: center;">
             <div style="background: rgba(16, 185, 129, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--hijau);">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </div>
             <h2 class="text-neutral" style="margin-top:0;">Ekspor Laporan CSV</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Data yang diekspor akan menyesuaikan dengan <b>filter waktu</b> yang sedang aktif di halaman utama.</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Tentukan rentang tanggal laporan. Kosongkan jika ingin mengunduh semua data.</p>
+            
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                <div style="flex:1; text-align:left;">
+                    <label class="input-label" style="font-size:10px;">Dari Tanggal</label>
+                    <input type="date" id="csv-start-date" class="input-field glass-card text-neutral" style="margin-bottom:0; padding:12px;">
+                </div>
+                <div style="flex:1; text-align:left;">
+                    <label class="input-label" style="font-size:10px;">Sampai Tanggal</label>
+                    <input type="date" id="csv-end-date" class="input-field glass-card text-neutral" style="margin-bottom:0; padding:12px;">
+                </div>
+            </div>
+
             <button class="btn-modal btn-primary" onclick="executeCSVExport()">Unduh Sekarang</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('csvExportModal')">Batal</button>
         </div>
     </div>
 
-    <!-- MODAL INPUT TRANSAKSI -->
+    <!-- MODAL INPUT TRANSAKSI (DENGAN INPUT KALENDER CUSTOM) -->
     <div class="modal-overlay" id="txModal">
         <div class="modal-card">
             <h2 id="modal-title" class="text-neutral" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Input Data</h2>
@@ -398,6 +414,10 @@
             </div>
             
             <input type="hidden" id="tx-category">
+
+            <!-- Fitur Baru: Input Kalender Transaksi Custom -->
+            <label class="input-label">Waktu Transaksi (Opsional, abaikan jika saat ini)</label>
+            <input type="datetime-local" id="tx-date" class="input-field glass-card text-neutral">
 
             <label class="input-label" id="label-desc">Deskripsi / Keterangan</label>
             <input type="text" id="tx-desc" class="input-field glass-card text-neutral" autocomplete="off">
@@ -469,9 +489,60 @@
 
     <div class="modal-overlay" id="receiptModal">
         <div class="modal-card">
+            <!-- BUG FIX: Invisible Text in Receipt. Diatur via CSS di mode terang -->
             <div class="receipt-card glass-card" id="receiptContent">
             </div>
             <button class="btn-modal btn-cancel" onclick="closeModal('receiptModal')" style="margin-top: 15px;">Tutup Bukti Transaksi</button>
+        </div>
+    </div>
+
+    <!-- MODAL SPP SANTRI (DENGAN SEARCH BOX) -->
+    <div class="modal-overlay" id="sppModal">
+        <div class="modal-card" style="max-width: 500px; padding: 20px;">
+            <h2 class="text-neutral" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Pantau Pembayaran SPP</h2>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom: 15px;">Catat bulan pembayaran santri di sini. Data ini tersimpan lokal.</p>
+            
+            <div style="display:flex; gap:10px; margin-bottom: 15px;" id="sppInputGroup">
+                <input type="text" id="newSppName" class="input-field glass-card text-neutral" placeholder="Nama Santri Baru..." style="margin-bottom:0; padding:10px; font-size:13px;">
+                <button class="btn-modal btn-primary" style="margin-top:0; padding:10px 15px; width:auto;" onclick="addSppStudent()">Tambah</button>
+            </div>
+
+            <!-- Fitur Baru: Search SPP -->
+            <input type="text" id="searchSppInput" class="input-field glass-card text-neutral" placeholder="Cari nama santri..." oninput="filterSppTable()" style="margin-bottom: 10px; padding: 10px; font-size: 13px;">
+            
+            <div style="overflow-x:auto; background:var(--hitam-card); border-radius:10px; border:1px solid var(--border); max-height:300px; overflow-y:auto; margin-bottom:20px;">
+                <table style="width:100%; border-collapse:collapse; text-align:left;">
+                    <thead>
+                        <tr style="background:var(--border);">
+                            <th style="padding:10px; font-size:11px; position:sticky; top:0; background:var(--border); z-index:2;">Nama Santri</th>
+                            <th style="padding:10px; font-size:11px; position:sticky; top:0; background:var(--border); z-index:2;">Bulan Lunas</th>
+                            <th style="padding:10px; font-size:11px; position:sticky; top:0; background:var(--border); z-index:2; text-align:center;" id="sppActionCol">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sppTableBody">
+                        <!-- Rendered by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn-modal btn-cancel" onclick="closeModal('sppModal')">Tutup</button>
+        </div>
+    </div>
+
+    <!-- MODAL SHARE LINK -->
+    <div class="modal-overlay" id="shareLinkModal">
+        <div class="modal-card" style="text-align: center;">
+            <div style="background: rgba(59, 130, 246, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--biru);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            </div>
+            <h2 class="text-neutral" style="margin-top:0;">Transparansi Publik</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Bagikan URL di bawah ini kepada wali santri. Mereka hanya dapat <b>melihat</b> laporan tanpa bisa mengedit.</p>
+            
+            <div style="display:flex; align-items:center; background:var(--hitam-card); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:20px;">
+                <input type="text" id="publicLinkInput" class="text-neutral" readonly value="https://omlaps2a-svg.github.io/?view=public" style="background:transparent; border:none; width:100%; outline:none; font-size:12px; font-family:monospace;">
+            </div>
+
+            <button class="btn-modal btn-primary" onclick="copyPublicLink()">Salin Tautan</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('shareLinkModal')">Tutup</button>
         </div>
     </div>
 
@@ -479,6 +550,10 @@
         <div class="modal-card">
             <h2 class="text-neutral" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Edit Data Transaksi</h2>
             <input type="hidden" id="edit-tx-id">
+            
+            <label class="input-label">Waktu Transaksi</label>
+            <input type="datetime-local" id="edit-tx-date" class="input-field glass-card text-neutral">
+            
             <label class="input-label">Kategori</label>
             <input type="text" id="edit-tx-category" class="input-field glass-card text-neutral" autocomplete="off">
             <label class="input-label">Deskripsi</label>
@@ -494,50 +569,37 @@
         </div>
     </div>
 
-    <!-- FITUR BARU: MODAL SPP SANTRI -->
-    <div class="modal-overlay" id="sppModal">
-        <div class="modal-card" style="max-width: 500px; padding: 20px;">
-            <h2 class="text-neutral" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Pantau Pembayaran SPP</h2>
-            <p style="font-size:12px; color:var(--text-muted); margin-bottom: 15px;">Catat bulan pembayaran santri di sini. Data ini tersimpan lokal.</p>
-            
-            <div style="display:flex; gap:10px; margin-bottom: 15px;">
-                <input type="text" id="newSppName" class="input-field glass-card text-neutral" placeholder="Nama Santri Baru..." style="margin-bottom:0; padding:10px; font-size:13px;">
-                <button class="btn-modal btn-primary" style="margin-top:0; padding:10px 15px; width:auto;" onclick="addSppStudent()">Tambah</button>
-            </div>
-            
-            <div style="overflow-x:auto; background:var(--hitam); border-radius:10px; border:1px solid var(--border); max-height:300px; overflow-y:auto; margin-bottom:20px;">
-                <table style="width:100%; border-collapse:collapse; text-align:left;">
-                    <thead>
-                        <tr style="background:var(--border);">
-                            <th style="padding:10px; font-size:11px; position:sticky; top:0; background:var(--border); z-index:2;">Nama Santri</th>
-                            <th style="padding:10px; font-size:11px; position:sticky; top:0; background:var(--border); z-index:2;">Bulan Lunas</th>
-                            <th style="padding:10px; font-size:11px; position:sticky; top:0; background:var(--border); z-index:2; text-align:center;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sppTableBody">
-                        <!-- Rendered by JS -->
-                    </tbody>
-                </table>
-            </div>
-            <button class="btn-modal btn-cancel" onclick="closeModal('sppModal')">Tutup</button>
+    <div class="modal-overlay" id="actionPinModal">
+        <div class="modal-card" style="max-width: 320px; text-align: center;">
+            <h2 class="text-neutral" style="margin-top:0;">Otorisasi Keamanan</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Masukkan PIN Profil utama Anda untuk melanjutkan modifikasi data.</p>
+            <input type="password" id="inputActionPin" class="input-field glass-card text-neutral" placeholder="****" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 8px; margin-bottom: 10px;" autocomplete="off">
+            <input type="hidden" id="actionPinType">
+            <input type="hidden" id="actionPinTxId">
+            <button class="btn-modal btn-primary" onclick="verifyActionPinFinal()">Verifikasi PIN</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('actionPinModal')">Batal</button>
         </div>
     </div>
 
-    <!-- FITUR BARU: MODAL SHARE LINK -->
-    <div class="modal-overlay" id="shareLinkModal">
-        <div class="modal-card" style="text-align: center;">
-            <div style="background: rgba(59, 130, 246, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--biru);">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-            </div>
-            <h2 class="text-neutral" style="margin-top:0;">Transparansi Publik</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px;">Bagikan URL di bawah ini kepada wali santri. Mereka hanya dapat <b>melihat</b> (Read-Only) laporan tanpa bisa mengedit.</p>
-            
-            <div style="display:flex; align-items:center; background:var(--hitam); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:20px;">
-                <input type="text" id="publicLinkInput" class="text-neutral" readonly value="https://omlaps2a-svg.github.io/?view=public" style="background:transparent; border:none; width:100%; outline:none; font-size:12px; font-family:monospace;">
-            </div>
+    <div class="modal-overlay" id="otpRequestModal">
+        <div class="modal-card" style="max-width: 320px; text-align: center;">
+            <h2 class="text-neutral" style="margin-top:0;">Reset PIN</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Kode OTP akan dikirimkan ke email yang terhubung:</p>
+            <p style="font-size: 14px; font-weight: 900; color: var(--putih); margin-bottom: 25px;" id="displayUserEmail">-</p>
+            <button class="btn-modal btn-primary" id="btnSendOTP" onclick="sendOTPEmail()">Kirim Kode Sekarang</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('otpRequestModal')">Batal</button>
+        </div>
+    </div>
 
-            <button class="btn-modal btn-primary" onclick="copyPublicLink()">Salin Tautan</button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('shareLinkModal')">Tutup</button>
+    <div class="modal-overlay" id="otpVerifyModal">
+        <div class="modal-card" style="text-align: center;">
+            <h2 class="text-neutral" style="margin-top:0;">Verifikasi Kode</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Masukkan 6 digit kode dari email Anda.</p>
+            <input type="number" id="inputOTP" class="input-field glass-card text-neutral" placeholder="Kode OTP" style="text-align: center; font-size: 20px; letter-spacing: 5px; margin-bottom: 20px;">
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">Buat PIN Utama Baru Anda:</p>
+            <input type="password" id="inputNewPinOTP" class="input-field glass-card text-neutral" placeholder="PIN Baru (min 4 digit)" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 20px; letter-spacing: 5px; margin-bottom: 20px;">
+            <button class="btn-modal btn-primary" onclick="verifyOTPAndSavePin()">Verifikasi & Ganti PIN</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('otpVerifyModal')">Batal</button>
         </div>
     </div>
 
