@@ -1,4 +1,4 @@
-const APP_VERSION = '3.1'; 
+const APP_VERSION = '3.3'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -57,7 +57,6 @@ const svgs = {
     user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
     plus_bold: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
     minus_bold: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-    target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>`,
     link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`
 };
 
@@ -74,6 +73,29 @@ function getDynamicColor(categoryStr, type) {
     return `hsl(${Math.abs(hash) % 360}, 70%, 55%)`; 
 }
 
+const SECRET_KEY = "TPA_Finance_Secure_K3y_99";
+function getDBKey() { return APP_MODE === 'CLOUD' ? LS_PREFIX + 'cloud_db' : LS_PREFIX + 'guest_db'; }
+
+function saveLocalDB(dataToSave) {
+    const dbKey = getDBKey();
+    try {
+        if (typeof CryptoJS !== 'undefined') {
+            const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(dataToSave), SECRET_KEY).toString();
+            localStorage.setItem(dbKey, ciphertext);
+        } else { localStorage.setItem(dbKey + '_fallback', JSON.stringify(dataToSave)); }
+    } catch(e) {}
+}
+
+function loadLocalDB() {
+    const dbKey = getDBKey(); let data = [];
+    try {
+        const ciphertext = localStorage.getItem(dbKey);
+        if (ciphertext) { data = JSON.parse(CryptoJS.AES.decrypt(ciphertext, SECRET_KEY).toString(CryptoJS.enc.Utf8)); } 
+        else { const fallback = localStorage.getItem(dbKey + '_fallback'); if (fallback) data = JSON.parse(fallback); }
+    } catch (e) { }
+    return Array.isArray(data) ? data : [];
+}
+
 async function hashPIN(pin) {
     if (!pin) return '';
     try {
@@ -83,6 +105,8 @@ async function hashPIN(pin) {
         } else if (typeof CryptoJS !== 'undefined') { return CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex); } else { return btoa(pin); }
     } catch (error) { return btoa(pin); }
 }
+
+function saveProfileLocal() { setLS('profile_secure_v2', JSON.stringify(profile)); }
 
 function bootApp() {
     renderShortcuts();
@@ -106,9 +130,9 @@ function bootApp() {
 function forceLogoutToGuest() {
     currentUser = null; APP_MODE = 'GUEST'; setLS('app_mode', 'GUEST');
     profile = { ...defaultProfile }; saveProfileLocal();
-    removeLS('guest_db'); removeLS('guest_db_fallback'); db = []; 
+    removeLS('cloud_db'); removeLS('cloud_db_fallback'); db = loadLocalDB(); 
     initAppHeader(); renderShortcuts(); updateUI(''); 
-    showToast("Berhasil Logout. Kembali ke Guest.", "success"); closeModal('profileViewModal');
+    showToast("Berhasil Logout.", "success"); closeModal('profileViewModal');
     const netStatus = document.getElementById('networkStatus');
     if(netStatus) { netStatus.innerText = navigator.onLine ? "Online Mode (Guest)" : "Offline Mode (Guest)"; netStatus.className = navigator.onLine ? "status-sync sync-online" : "status-sync sync-offline"; }
 }
@@ -243,7 +267,12 @@ function renderProfileStats() {
     let inUtama = 0, outUtama = 0, inOps = 0, outOps = 0; 
     const today = new Date(); today.setHours(0,0,0,0);
     db.forEach(t => { 
-        if(currentProfileTimeFilter !== 0) { const d = new Date(t.date); d.setHours(0,0,0,0); if(Math.floor(Math.abs(today - d) / 86400000) > currentProfileTimeFilter) return; }
+        if(currentProfileTimeFilter !== 0) { 
+            const d = new Date(t.date); d.setHours(0,0,0,0); 
+            const diffDays = Math.ceil(Math.abs(today - d) / 86400000);
+            if(currentProfileTimeFilter === 1 && diffDays > 0) return; // Hari Ini logic
+            if(currentProfileTimeFilter > 1 && diffDays > currentProfileTimeFilter) return; 
+        }
         if (t.wallet === 'utama') { if (t.type === 'masuk') inUtama += t.amount; else outUtama += t.amount; } 
         else if (t.wallet === 'operasional') { if (t.type === 'masuk') inOps += t.amount; else outOps += t.amount; }
     }); 
@@ -296,9 +325,9 @@ async function executeFactoryReset() {
     closeModal('resetConfirmModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
 }
 
-/* ==========================================
-   MODUL WISHLIST & DRIVE LINKS
-========================================== */
+// ==========================================
+// WISHLIST & DRIVE LINKS ENGINE
+// ==========================================
 function renderWishlist() {
     const container = document.getElementById('wishlistContainer');
     if(wishlists.length === 0) {
@@ -312,7 +341,7 @@ function renderWishlist() {
                 <div style="font-size:15px; font-weight:900;" class="text-neutral">${w.name}</div>
                 <div style="font-size:13px; font-weight:700; color:var(--text-muted); margin-top:4px;">Estimasi: <span class="text-neutral">${formatRp(w.amount)}</span></div>
             </div>
-            <button onclick="deleteWishlist('${w.id}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:5px; font-size:16px;">✕</button>
+            <button class="btn-wish-del" onclick="deleteWishlist('${w.id}')" style="background:transparent; border:none; color:var(--merah); cursor:pointer; padding:5px; font-size:16px;">✕</button>
         </div>
     `).join('');
 }
@@ -344,7 +373,7 @@ function renderDriveLinks() {
         <div class="glass-card" style="padding:12px 15px; display:flex; align-items:center; gap:10px; min-width:200px; position:relative; flex-shrink:0;">
             ${svgs.link}
             <a href="${d.url}" target="_blank" class="text-neutral" style="text-decoration:none; font-size:13px; font-weight:800; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</a>
-            <button onclick="deleteDriveLink('${d.id}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; padding:0; font-size:14px; margin-left:5px;">✕</button>
+            <button class="btn-drive-del" onclick="deleteDriveLink('${d.id}')" style="background:transparent; border:none; color:var(--merah); cursor:pointer; padding:0; font-size:14px; margin-left:5px;">✕</button>
         </div>
     `).join('');
 }
@@ -407,7 +436,7 @@ function quickInput(type, cat, desc) {
     document.getElementById('tx-pihak-terkait').value = ''; 
     document.getElementById('tx-link-bukti').value = '';
     document.getElementById('tx-category-manual').value = '';
-    document.getElementById('tx-date').value = ''; // Kosongkan agar pakai tanggal default (sekarang)
+    document.getElementById('tx-date').value = ''; 
     document.getElementById('tx-is-saving').value = 'false'; 
     
     if(cat === 'MANUAL') { 
@@ -475,7 +504,6 @@ function openEditTxModal(txId) {
     document.getElementById('edit-tx-pihak-terkait').value = tx.pihak_terkait || ''; 
     document.getElementById('edit-tx-link-bukti').value = tx.link_bukti || ''; 
     
-    // Bind tanggal ke input kalender (Format HTML datetime-local)
     if(tx.date) {
         let dt = new Date(tx.date);
         dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
@@ -516,7 +544,6 @@ function promptActionPin(action, txId) { closeModal('receiptModal'); if (!profil
 function promptActionPinFromTable(e, action, txId) { e.stopPropagation(); promptActionPin(action, txId); }
 
 async function verifyActionPinFinal() { const inputVal = document.getElementById('inputActionPin').value; const hashedInput = await hashPIN(inputVal); if (hashedInput === profile.pin) { closeModal('actionPinModal'); const action = document.getElementById('actionPinType').value; const txId = document.getElementById('actionPinTxId').value; if (action === 'edit') openEditTxModal(txId); else if (action === 'delete') executeTxDeleteFinal(txId); } else { showToast("PIN Salah! Akses Ditolak.", "error"); } }
-
 
 function updateHealthEngine(filteredDb) { 
     let tIn = 0, tOut = 0; filteredDb.forEach(t => { if(t.type === 'masuk') tIn += t.amount; else tOut += t.amount; }); 
@@ -560,7 +587,17 @@ function updateUI(searchTerm = '') {
     const today = new Date(); today.setHours(0,0,0,0);
     const fd = db.filter(tx => { 
         if(tx.wallet !== activeWallet) return false; 
-        if(currentTimeFilter !== 0) { const d = new Date(tx.date); d.setHours(0,0,0,0); if(Math.floor(Math.abs(today - d) / 86400000) > currentTimeFilter) return false; } 
+        
+        let txDate = new Date(tx.date);
+        txDate.setHours(0,0,0,0);
+        
+        if(currentTimeFilter !== 0) { 
+            const diffTime = Math.abs(today - txDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            if(currentTimeFilter === 1 && diffDays > 1) return false; 
+            if(currentTimeFilter > 1 && diffDays > currentTimeFilter) return false; 
+        } 
+        
         if(searchTerm) { return tx.desc.toLowerCase().includes(searchTerm) || tx.category.toLowerCase().includes(searchTerm) || (tx.pihak_terkait && tx.pihak_terkait.toLowerCase().includes(searchTerm)); } 
         return true; 
     });
@@ -582,7 +619,7 @@ function renderTable(data) {
     const animClass = isInitialTableRender ? 'row-anim' : ''; 
     [...data].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
         const iM = tx.type === 'masuk'; let c = getDynamicColor(tx.category, tx.type);
-        let linkHtml = tx.link_bukti ? `<a href="${tx.link_bukti}" target="_blank" style="color:var(--text-muted); font-size:11px; text-decoration:underline; display:block; margin-top:2px;">&#128279; Bukti Drive</a>` : '';
+        let linkHtml = tx.link_bukti ? `<a href="${tx.link_bukti}" target="_blank" style="color:var(--text-muted); font-size:11px; text-decoration:underline; display:block; margin-top:2px; cursor:pointer;" onclick="event.stopPropagation()">&#128279; Bukti Drive</a>` : '';
         let pihakHtml = tx.pihak_terkait ? `<br><span style="font-size:11px; color:var(--text-muted);">Pihak: <b class="text-neutral">${tx.pihak_terkait}</b></span>` : '';
         
         let cr = `<div class="badge-wrapper"><div class="badge-cat" style="border: 1px solid var(--border); color:var(--teks-netral); background:var(--border);">${tx.category}</div></div>`;
@@ -590,12 +627,12 @@ function renderTable(data) {
             <td style="color:var(--text-muted); font-size:11px; vertical-align:middle;">${formatDetailDate(tx.date).split(' - ')[0]}<br>${formatDetailDate(tx.date).split(' - ')[1]}</td>
             <td class="col-category">${cr}</td>
             <td style="vertical-align:middle; width:100%;"><span class="text-neutral" style="font-weight:700;">${tx.desc}</span>${pihakHtml}${linkHtml}</td>
-            <td style="vertical-align:middle; text-align:center; padding-right:15px; width:1%;">
+            <td class="td-aksi" style="vertical-align:middle; text-align:center; padding-right:15px; width:1%;">
                 <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
                     <button type="button" style="background:transparent; color:var(--teks-netral); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'edit', '${tx.id || tx.date}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     </button>
-                    <button type="button" style="background:transparent; color:var(--teks-netral); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'delete', '${tx.id || tx.date}')">
+                    <button type="button" style="background:transparent; color:var(--merah); border:1px solid var(--border); width:32px; height:32px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;" onclick="promptActionPinFromTable(event, 'delete', '${tx.id || tx.date}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/></svg>
                     </button>
                 </div>
@@ -617,7 +654,7 @@ function renderCharts(data) {
     const pL = Object.keys(cA);
     
     if(pieChart) pieChart.destroy(); 
-    pieChart = new Chart(document.getElementById('pieChart'), { type: 'doughnut', data: { labels: pL, datasets: [{ data: pL.map(l => cA[l].a), backgroundColor: pL.map(l => cA[l].color), borderWidth: 2, borderColor: 'var(--hitam-card)' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return ' ' + formatRp(c.raw); } } } } } });
+    pieChart = new Chart(document.getElementById('pieChart'), { type: 'doughnut', data: { labels: pL, datasets: [{ data: pL.map(l => cA[l].a), backgroundColor: pL.map(l => cA[l].color), borderWidth: 2, borderColor: 'transparent' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c) { return ' ' + formatRp(c.raw); } } } } } });
 
     const rT = [...data].sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-15);
     if(barChart) barChart.destroy(); 
@@ -650,31 +687,20 @@ function openReceipt(txId) {
     document.getElementById('receiptModal').classList.add('active'); 
 }
 
-/* ==========================================
-   MODUL EXPORT CSV (DENGAN FILTER KALENDER)
-========================================== */
 function openCSVModal() { if(db.length === 0) { showToast("Data kosong.", "error"); return; } document.getElementById('csvExportModal').classList.add('active'); }
 function executeCSVExport() { 
     closeModal('csvExportModal'); let csv = "Tanggal,Dompet,Tipe,Kategori,Keterangan,Pihak_Terkait,Link_Drive,Nominal\n"; 
     const today = new Date(); today.setHours(0,0,0,0);
     
-    // Tarik nilai filter kalender
     const startDateVal = document.getElementById('csv-start-date').value;
     const endDateVal = document.getElementById('csv-end-date').value;
 
     const filteredData = db.filter(tx => { 
         if(tx.wallet !== activeWallet) return false; 
-        
-        let txDate = new Date(tx.date);
-        txDate.setHours(0,0,0,0);
-        
-        // Filter Filter Dropdown Normal
-        if(currentTimeFilter !== 0) { if(Math.floor(Math.abs(today - txDate) / 86400000) > currentTimeFilter) return false; } 
-        
-        // Filter Kalender Custom
+        let txDate = new Date(tx.date); txDate.setHours(0,0,0,0);
+        if(currentTimeFilter !== 0) { const diffDays = Math.ceil(Math.abs(today - txDate) / 86400000); if(currentTimeFilter === 1 && diffDays > 0) return false; if(currentTimeFilter > 1 && diffDays > currentTimeFilter) return false; } 
         if (startDateVal) { let sDate = new Date(startDateVal); sDate.setHours(0,0,0,0); if (txDate < sDate) return false; }
         if (endDateVal) { let eDate = new Date(endDateVal); eDate.setHours(23,59,59,999); if (txDate > eDate) return false; }
-
         return true; 
     });
 
@@ -710,14 +736,14 @@ function toggleTheme() {
 function updateThemeIcon(theme) { const btn = document.getElementById('themeToggleBtn'); if (!btn) return; if (theme === 'light') { btn.innerHTML = iconMoon; btn.style.color = '#cbd5e1'; } else { btn.innerHTML = iconSun; btn.style.color = 'var(--text-muted)'; } }
 
 /* ==========================================
-   MODUL MANAJEMEN SPP SANTRI (DENGAN SEARCH)
+   MODUL MANAJEMEN SPP SANTRI (READ-ONLY SUPPORTED)
 ========================================== */
 function openSPPModal() { document.getElementById('sppModal').classList.add('active'); renderSppTable(); }
 
 function addSppStudent() {
     const input = document.getElementById('newSppName'); const name = properTitleCase(input.value.trim());
     if (!name) { showToast("Nama santri wajib diisi", "error"); return; }
-    sppData.push({ id: Date.now().toString(), name: name, lastMonth: "-" });
+    sppData.push({ id: Date.now().toString(), name: name, lastMonth: "-", status: "belum" });
     setLS('spp_data', JSON.stringify(sppData)); input.value = ''; renderSppTable(); showToast("Santri ditambahkan", "success");
 }
 
@@ -725,26 +751,34 @@ function deleteSppStudent(id) { sppData = sppData.filter(s => s.id !== id); setL
 
 function updateSppMonth(id, selectElement) {
     const idx = sppData.findIndex(s => s.id === id);
-    if (idx > -1) { sppData[idx].lastMonth = selectElement.value; setLS('spp_data', JSON.stringify(sppData)); showToast("SPP diperbarui", "success"); }
+    if (idx > -1) { 
+        sppData[idx].lastMonth = selectElement.value; 
+        sppData[idx].status = selectElement.value === "-" ? "belum" : "lunas";
+        setLS('spp_data', JSON.stringify(sppData)); 
+        renderSppTable(); // Re-render for status text change
+        showToast("SPP diperbarui", "success"); 
+    }
 }
 
 function renderSppTable() {
     const tbody = document.getElementById('sppTableBody');
-    if (sppData.length === 0) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Belum ada data santri terdaftar.</td></tr>`; return; }
+    if (sppData.length === 0) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Belum ada data santri terdaftar.</td></tr>`; return; }
     const months = ["-", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     tbody.innerHTML = sppData.map(s => {
         const options = months.map(m => `<option value="${m}" ${s.lastMonth === m ? 'selected' : ''}>${m}</option>`).join('');
+        const statusHtml = (s.lastMonth === "-") ? `<span style="color:var(--merah); font-weight:900; font-size:10px;">BELUM BAYAR</span>` : `<span style="color:var(--hijau); font-weight:900; font-size:10px;">LUNAS</span>`;
         return `
         <tr style="border-bottom:1px solid var(--border);" class="spp-row">
             <td style="padding:10px; font-size:13px; font-weight:700; white-space:nowrap;" class="text-neutral">${s.name}</td>
+            <td style="padding:10px; text-align:center;">${statusHtml}</td>
             <td style="padding:10px;">
-                <select onchange="updateSppMonth('${s.id}', this)" class="text-neutral" style="background:transparent; border:1px solid var(--border); padding:6px; border-radius:6px; font-size:12px; font-weight:600; outline:none; width:100%;">
+                <select onchange="updateSppMonth('${s.id}', this)" class="text-neutral spp-select" style="background:transparent; border:1px solid var(--border); padding:6px; border-radius:6px; font-size:12px; font-weight:600; outline:none; width:100%;">
                     ${options}
                 </select>
             </td>
-            <td style="padding:10px; text-align:center;">
-                <button onclick="deleteSppStudent('${s.id}')" style="background:rgba(239, 68, 68, 0.15); border:1px solid var(--merah); color:var(--merah); padding:6px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin:auto; transition:0.2s;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/></svg>
+            <td style="padding:10px; text-align:center;" class="spp-action-cell">
+                <button class="btn-spp-del" onclick="deleteSppStudent('${s.id}')" style="background:transparent; border:none; color:var(--merah); padding:6px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin:auto; transition:0.2s;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"/></svg>
                 </button>
             </td>
         </tr>`;
@@ -788,33 +822,25 @@ function enforcePublicReadOnlyMode() {
         const adminSection = document.getElementById('adminToggleIcon')?.closest('.section-header');
         if(adminSection) { adminSection.style.display = 'none'; document.getElementById('adminSection').style.display = 'none'; }
 
-        // Menyembunyikan tombol aksi Tambah/Export, kecuali Export CSV & SPP yang diizinkan untuk Publik
-        const actionButtons = document.querySelectorAll('.btn-quick, .btn-outline-small, .btn-modal:not(.btn-cancel), .search-clear');
-        actionButtons.forEach(btn => { 
-            const text = btn.innerText || '';
-            if(text.includes('Export Laporan') || text.includes('Pantau SPP Santri')) return; 
-            btn.style.display = 'none'; 
-        });
+        // Sembunyikan tombol input di mode publik, KECUALI tombol Export CSV & Pantau SPP
+        const actionButtons = document.querySelectorAll('#quickActionsContainer, #btnAddWishlist, #btnAddDrive, #btnBagikanLaporan, #btnResetDataMode, #btnEditProfileMode');
+        actionButtons.forEach(btn => { if(btn) btn.style.display = 'none'; });
 
-        // Sembunyikan Input Data SPP di Modal
         const sppInputGroup = document.getElementById('sppInputGroup');
         if(sppInputGroup) sppInputGroup.style.display = 'none';
 
-        const iconButtons = document.querySelectorAll('.icon-btn');
-        iconButtons.forEach(btn => btn.style.display = 'none');
-
-        // MEMATIKAN AKSI DI TABEL TRANSAKSI TAPI TETAP BISA DI-KLIK UNTUK MELIHAT RECEIPT
+        // MENGHILANGKAN HAK EDIT/HAPUS TAPI TETAP MEMUNGKINKAN KLIK BARIS (RECEIPT)
         const style = document.createElement('style');
         style.innerHTML = `
-            .col-category + td + td { display: none !important; } 
-            th:nth-child(4) { display: none !important; }
-            /* Mematikan aksi select option SPP */
-            #sppTableBody select { pointer-events: none; -webkit-appearance: none; -moz-appearance: none; appearance: none; border:none !important; }
-            #sppTableBody td:nth-child(3), th#sppActionCol { display: none !important; }
+            .td-aksi { display: none !important; } 
+            th#th-aksi { display: none !important; }
+            .btn-wish-del, .btn-drive-del { display: none !important; }
+            .spp-select { pointer-events: none; -webkit-appearance: none; -moz-appearance: none; appearance: none; border:none !important; background: transparent !important; }
+            .spp-action-cell, .spp-action-col { display: none !important; }
         `;
         document.head.appendChild(style);
 
-        setTimeout(() => { showToast("Mode Baca Saja Aktif", "syncing"); }, 1000);
+        setTimeout(() => { showToast("Mode Publik Aktif (Bebas Edit)", "syncing"); }, 1000);
     }
 }
 
