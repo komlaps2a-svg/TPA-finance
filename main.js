@@ -1,4 +1,4 @@
-const APP_VERSION = '3.3'; 
+const APP_VERSION = '4.0'; 
 const LS_PREFIX = 'tpa_finance_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -36,10 +36,10 @@ let pieChart, barChart, lineChart;
 let isInitialTableRender = true; 
 let realTimeSubscription = null;
 let aiMessages = [];
-let aiCurrentMsgIdx = 0;
-let aiCarouselInterval = null;
 let generatedOTP = "";
 let otpExpiryTime = 0;
+let activeDateInputId = '';
+let currentCalDate = new Date();
 
 const defaultProfile = { 
     name: 'Pengurus', pin: '', 
@@ -108,6 +108,25 @@ async function hashPIN(pin) {
 
 function saveProfileLocal() { setLS('profile_secure_v2', JSON.stringify(profile)); }
 
+/* ==========================================
+   SCROLL LOCK ENGINE (Mencegah scroll saat popup)
+========================================== */
+function lockScroll() { document.body.classList.add('no-scroll'); }
+function unlockScroll() { document.body.classList.remove('no-scroll'); }
+
+function openModalElement(modalId) {
+    const el = document.getElementById(modalId);
+    if(el) { el.classList.add('active'); lockScroll(); }
+}
+function closeModal(id) { 
+    if(id) { const el = document.getElementById(id); if(el) el.classList.remove('active'); } 
+    document.querySelectorAll('.custom-options.open').forEach(e => e.classList.remove('open')); 
+    unlockScroll();
+}
+
+/* ==========================================
+   BOOT & CLOUD SYNC
+========================================== */
 function bootApp() {
     renderShortcuts();
     db = loadLocalDB(); 
@@ -115,26 +134,24 @@ function bootApp() {
     renderWishlist();
     renderDriveLinks();
     updateUI('');
+    
+    // Auto-hit DB Supabase via init (Mencegah Cold Start/Offline)
+    setTimeout(initSupabaseBackground, 200);
 
-    const netStatus = document.getElementById('networkStatus');
-    if (APP_MODE === 'CLOUD') {
-        currentUser = { id: 'offline_user', email: profile.googleEmail || 'Cloud User' }; 
-        if(netStatus) { netStatus.innerText = navigator.onLine ? "Menyambungkan..." : "Offline Mode (Cloud)"; netStatus.className = navigator.onLine ? "status-sync sync-pending" : "status-sync sync-offline"; }
-    } else {
-        currentUser = null;
-        if(netStatus) { netStatus.innerText = "Offline Mode (Guest)"; netStatus.className = "status-sync sync-offline"; }
-    }
-    setTimeout(initSupabaseBackground, 500);
+    // Toast Dukungan Dev
+    setInterval(() => {
+        showDevSupportToast();
+    }, 120000); // Muncul tiap 2 menit
 }
 
-function forceLogoutToGuest() {
-    currentUser = null; APP_MODE = 'GUEST'; setLS('app_mode', 'GUEST');
-    profile = { ...defaultProfile }; saveProfileLocal();
-    removeLS('cloud_db'); removeLS('cloud_db_fallback'); db = loadLocalDB(); 
-    initAppHeader(); renderShortcuts(); updateUI(''); 
-    showToast("Berhasil Logout.", "success"); closeModal('profileViewModal');
-    const netStatus = document.getElementById('networkStatus');
-    if(netStatus) { netStatus.innerText = navigator.onLine ? "Online Mode (Guest)" : "Offline Mode (Guest)"; netStatus.className = navigator.onLine ? "status-sync sync-online" : "status-sync sync-offline"; }
+function showDevSupportToast() {
+    if(document.getElementById('donasiToastBox').innerHTML !== '') return;
+    const t = document.createElement('div'); 
+    t.className = `toast syncing`; 
+    t.innerHTML = `💡 Dukung operasional server aplikasi TPA ini. <br><a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" style="color:var(--kuning); font-weight:900; text-decoration:none;">Klik: Traktir Kopi Developer ☕</a>`; 
+    document.getElementById('donasiToastBox').appendChild(t); 
+    setTimeout(() => t.classList.add('show'), 10); 
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 8000); 
 }
 
 async function initSupabaseBackground() {
@@ -153,14 +170,14 @@ async function initSupabaseBackground() {
                 if(netStatus) { netStatus.innerText = "Online Mode (Cloud)"; netStatus.className = "status-sync sync-online"; }
                 fetchUserTransactions(); setupRealtime();
                 if (pendingSync.length > 0) processPendingSync();
-            } else { forceLogoutToGuest(); }
+            } else { APP_MODE = 'GUEST'; setLS('app_mode', 'GUEST'); }
         } catch(err) { if(netStatus) { netStatus.innerText = "Server Lambat (Mode Lokal)"; netStatus.className = "status-sync sync-offline"; } }
     }
 
     if (!window.supabaseListenerAdded) {
         window.supabaseListenerAdded = true;
         sbClient.auth.onAuthStateChange(async (event, currentSession) => {
-            if (event === 'SIGNED_OUT') { forceLogoutToGuest(); } 
+            if (event === 'SIGNED_OUT') { APP_MODE = 'GUEST'; setLS('app_mode', 'GUEST'); currentUser = null; } 
             else if (event === 'SIGNED_IN' && currentSession) {
                 currentUser = currentSession.user; APP_MODE = 'CLOUD'; setLS('app_mode', 'CLOUD');
                 if(netStatus) { netStatus.innerText = navigator.onLine ? "Online Mode (Cloud)" : "Offline Mode (Cloud)"; netStatus.className = navigator.onLine ? "status-sync sync-online" : "status-sync sync-offline"; }
@@ -224,6 +241,9 @@ window.addEventListener('offline', () => {
     showToast("Koneksi terputus. Mode Offline.", "error"); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
 });
 
+/* ==========================================
+   FORMATTERS & UTILITIES
+========================================== */
 function formatRp(num) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num); }
 function formatRpPendek(num) { let str = formatRp(num); return str.replace(/\.000$/, '...'); }
 function formatDetailDate(iso) { if(!iso) return '-'; const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
@@ -235,10 +255,9 @@ function showToast(msg, type = 'success') {
     const t = document.createElement('div'); t.className = `toast ${type}`; t.innerHTML = msg; box.appendChild(t); 
     setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500); 
 }
-function closeModal(id) { if(id) { const el = document.getElementById(id); if(el) el.classList.remove('active'); } document.querySelectorAll('.custom-options.open').forEach(e => e.classList.remove('open')); }
 
 let confirmAction = null;
-function openCustomConfirm(title, desc, action) { document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmDesc').innerHTML = desc; confirmAction = action; document.getElementById('confirmModal').classList.add('active'); }
+function openCustomConfirm(title, desc, action) { document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmDesc').innerHTML = desc; confirmAction = action; openModalElement('confirmModal'); }
 document.getElementById('btnConfirmYes').addEventListener('click', () => { if(confirmAction) confirmAction(); closeModal('confirmModal'); });
 
 function initAppHeader() { 
@@ -260,26 +279,199 @@ document.getElementById('btnRealGoogleLogin').addEventListener('click', async ()
     const { error } = await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); 
 });
 
-let currentProfileTimeFilter = 0; 
-function applyProfileTimeFilter(days, labelText) { currentProfileTimeFilter = days; document.getElementById('dispProfileTimeFilter').innerText = labelText; closeModal(''); renderProfileStats(); }
-
-function renderProfileStats() {
-    let inUtama = 0, outUtama = 0, inOps = 0, outOps = 0; 
-    const today = new Date(); today.setHours(0,0,0,0);
-    db.forEach(t => { 
-        if(currentProfileTimeFilter !== 0) { 
-            const d = new Date(t.date); d.setHours(0,0,0,0); 
-            const diffDays = Math.ceil(Math.abs(today - d) / 86400000);
-            if(currentProfileTimeFilter === 1 && diffDays > 0) return; // Hari Ini logic
-            if(currentProfileTimeFilter > 1 && diffDays > currentProfileTimeFilter) return; 
-        }
-        if (t.wallet === 'utama') { if (t.type === 'masuk') inUtama += t.amount; else outUtama += t.amount; } 
-        else if (t.wallet === 'operasional') { if (t.type === 'masuk') inOps += t.amount; else outOps += t.amount; }
-    }); 
-    document.getElementById('viewTotalMasuk').innerText = formatRp(inUtama); document.getElementById('viewTotalKeluar').innerText = formatRp(outUtama); 
-    document.getElementById('viewTotalMasukTabungan').innerText = formatRp(inOps); document.getElementById('viewTotalKeluarTabungan').innerText = formatRp(outOps);
+/* ==========================================
+   WALI MURID (PARENT) GATEKEEPER & AUTOCOMPLETE
+========================================== */
+function showParentAutocomplete() {
+    const val = document.getElementById('parentSearchInput').value.toLowerCase();
+    const list = document.getElementById('parentAutocompleteList');
+    list.innerHTML = '';
+    if(!val) { list.classList.remove('open'); return; }
+    
+    const matches = sppData.filter(s => s.name.toLowerCase().includes(val));
+    if(matches.length > 0) {
+        list.innerHTML = matches.map(m => `<div class="custom-option text-neutral" onclick="selectParentChild('${m.name}')">${m.name}</div>`).join('');
+        list.classList.add('open');
+    } else { list.classList.remove('open'); }
 }
 
+function selectParentChild(name) {
+    document.getElementById('parentSearchInput').value = name;
+    document.getElementById('parentAutocompleteList').classList.remove('open');
+}
+
+function verifyParentLogin() {
+    const name = document.getElementById('parentSearchInput').value.trim();
+    const child = sppData.find(s => s.name.toLowerCase() === name.toLowerCase());
+    
+    if(!name) { showToast("Masukkan nama santri", "error"); return; }
+    if(!child) { showToast("Nama santri tidak ditemukan di database TPA", "error"); return; }
+    
+    closeModal('parentLoginModal');
+    showToast(`Selamat datang, Wali dari ${child.name}`, "success");
+    
+    document.getElementById('headName').innerText = "Wali: " + formatSmartName(child.name);
+    sppData = [child]; // Isolasi memori SPP agar publik hanya lihat anak ini
+}
+
+function openShareLinkModal() {
+    const currentDomain = window.location.origin + window.location.pathname;
+    document.getElementById('publicLinkInput').value = `${currentDomain}?view=public`;
+    openModalElement('shareLinkModal');
+}
+
+function copyPublicLink() {
+    const input = document.getElementById('publicLinkInput'); input.select(); input.setSelectionRange(0, 99999); 
+    try { navigator.clipboard.writeText(input.value).then(() => { showToast("Tautan disalin!", "success"); }).catch(err => { document.execCommand("copy"); showToast("Tautan disalin!", "success"); });
+    } catch (err) { document.execCommand("copy"); showToast("Tautan disalin!", "success"); }
+}
+
+function enforcePublicReadOnlyMode() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'public') {
+        // Panggil gerbang login (Tidak bisa di-close sembarangan)
+        document.getElementById('parentLoginModal').classList.add('active');
+        lockScroll();
+
+        document.getElementById('headGender').innerText = "LAPORAN PUBLIK";
+        
+        const healthBadge = document.getElementById('healthBadge');
+        if(healthBadge) healthBadge.style.display = 'none';
+        
+        const adminSection = document.getElementById('adminToggleIcon')?.closest('.section-header');
+        if(adminSection) { adminSection.style.display = 'none'; document.getElementById('adminSection').style.display = 'none'; }
+
+        const actionButtons = document.querySelectorAll('#quickActionsContainer, #btnAddWishlist, #btnAddDrive, #btnBagikanLaporan, #btnResetDataMode, #btnEditProfileMode');
+        actionButtons.forEach(btn => { if(btn) btn.style.display = 'none'; });
+
+        const sppInputGroup = document.getElementById('sppInputGroup');
+        if(sppInputGroup) sppInputGroup.style.display = 'none';
+
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .td-aksi { display: none !important; } 
+            th#th-aksi { display: none !important; }
+            .btn-wish-del, .btn-drive-del { display: none !important; }
+            .spp-select { pointer-events: none; -webkit-appearance: none; -moz-appearance: none; appearance: none; border:none !important; background: transparent !important; }
+            .spp-action-cell, .spp-action-col { display: none !important; }
+            #btnExportCSV { display: flex !important; }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+/* ==========================================
+   CUSTOM CALENDAR ENGINE
+========================================== */
+function openCustomCalendar(inputId) {
+    activeDateInputId = inputId;
+    
+    // Setel default UI ke nilai input saat ini, atau bulan ini
+    let val = document.getElementById(inputId).value;
+    if(val && val.includes('-')) {
+        currentCalDate = new Date(val);
+        document.getElementById('calTimeHour').value = String(currentCalDate.getHours()).padStart(2,'0');
+        document.getElementById('calTimeMin').value = String(currentCalDate.getMinutes()).padStart(2,'0');
+    } else {
+        currentCalDate = new Date();
+    }
+    
+    populateCalSelects();
+    renderCustomCalendar();
+    openModalElement('customCalendarModal');
+}
+
+function populateCalSelects() {
+    const mSelect = document.getElementById('calMonthSelect');
+    const ySelect = document.getElementById('calYearSelect');
+    mSelect.innerHTML = ''; ySelect.innerHTML = '';
+    
+    const months = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+    months.forEach((m, i) => {
+        let opt = document.createElement('option'); opt.value = i; opt.text = m;
+        if(i === currentCalDate.getMonth()) opt.selected = true;
+        mSelect.appendChild(opt);
+    });
+
+    const currYear = new Date().getFullYear();
+    for(let y = currYear - 5; y <= currYear + 5; y++) {
+        let opt = document.createElement('option'); opt.value = y; opt.text = y;
+        if(y === currentCalDate.getFullYear()) opt.selected = true;
+        ySelect.appendChild(opt);
+    }
+}
+
+function changeCalMonth(dir) {
+    currentCalDate.setMonth(currentCalDate.getMonth() + dir);
+    populateCalSelects();
+    renderCustomCalendar();
+}
+
+function renderCustomCalendar() {
+    // Sinkronkan currentCalDate dari select dropdown
+    const mSelect = document.getElementById('calMonthSelect').value;
+    const ySelect = document.getElementById('calYearSelect').value;
+    currentCalDate.setMonth(mSelect);
+    currentCalDate.setFullYear(ySelect);
+
+    const daysContainer = document.getElementById('calendarDays');
+    daysContainer.innerHTML = '';
+
+    const firstDay = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth(), 1).getDay();
+    const daysInMonth = new Date(currentCalDate.getFullYear(), currentCalDate.getMonth() + 1, 0).getDate();
+
+    // Mapping JS day (0=Min, 1=Sen) to Grid logic
+    for (let i = 0; i < firstDay; i++) {
+        let emptyDiv = document.createElement('div');
+        daysContainer.appendChild(emptyDiv);
+    }
+
+    for (let i = 1; i <= daysInMonth; i++) {
+        let dayDiv = document.createElement('div');
+        dayDiv.innerText = i;
+        dayDiv.style.padding = "8px";
+        dayDiv.style.cursor = "pointer";
+        dayDiv.style.borderRadius = "6px";
+        dayDiv.style.color = "var(--teks-netral)";
+        dayDiv.style.transition = "0.2s";
+        dayDiv.style.fontWeight = "600";
+        
+        // Highlight logic
+        if (i === currentCalDate.getDate()) {
+            dayDiv.style.background = "var(--hijau)";
+            dayDiv.style.color = "#000";
+        }
+
+        dayDiv.onclick = function() {
+            currentCalDate.setDate(i);
+            renderCustomCalendar(); // Re-render for highlight
+        };
+        daysContainer.appendChild(dayDiv);
+    }
+}
+
+function setCustomDateValue() {
+    const h = document.getElementById('calTimeHour').value.padStart(2,'0');
+    const m = document.getElementById('calTimeMin').value.padStart(2,'0');
+    currentCalDate.setHours(h);
+    currentCalDate.setMinutes(m);
+
+    // Convert to YYYY-MM-DDTHH:mm format for input
+    const year = currentCalDate.getFullYear();
+    const month = String(currentCalDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentCalDate.getDate()).padStart(2, '0');
+    const formatted = `${year}-${month}-${day}T${h}:${m}`;
+
+    if(activeDateInputId) {
+        document.getElementById(activeDateInputId).value = formatted;
+    }
+    
+    closeModal('customCalendarModal');
+}
+
+/* ==========================================
+   PROFIL & RESET
+========================================== */
 function openProfileView() { 
     currentProfileTimeFilter = 0; document.getElementById('dispProfileTimeFilter').innerText = 'Semua Waktu'; renderProfileStats();
     document.getElementById('viewProfileImg').src = profile.photo; document.getElementById('viewProfileName').innerText = profile.name; document.getElementById('viewJoinDate').innerText = "Bergabung: " + formatDetailDate(profile.joinDate); document.getElementById('viewGender').innerText = profile.gender || '-'; document.getElementById('viewBirth').innerText = profile.birthDate || '-'; 
@@ -290,21 +482,20 @@ function openProfileView() {
         btnText.innerText = "Logout"; btn.style.borderColor = "var(--merah)"; btn.style.color = "var(--merah)"; 
         btn.onclick = () => { openCustomConfirm("Logout Akun", "Logout ke mode Guest? Data Cloud tetap aman di server.", async () => { if(sbClient && navigator.onLine) { await sbClient.auth.signOut(); } else { forceLogoutToGuest(); } }); };
     } else { 
-        stat.innerText = "Tidak Terhubung"; stat.style.color = "var(--text-muted)"; btnText.innerText = "Hubungkan"; btn.style.borderColor = "#4285F4"; btn.style.color = "#4285F4"; btn.onclick = openGoogleAuthModal; 
+        stat.innerText = "Tidak Terhubung"; stat.style.color = "var(--text-muted)"; btnText.innerText = "Hubungkan"; btn.style.borderColor = "#4285F4"; btn.style.color = "#4285F4"; btn.onclick = () => { openModalElement('googleAuthModal'); }; 
     } 
-    document.getElementById('profileViewModal').classList.add('active'); 
+    openModalElement('profileViewModal'); 
 }
 
-function openGoogleAuthModal() { document.getElementById('googleAuthModal').classList.add('active'); }
-function requestProfileEdit() { if(profile.pin && profile.pin !== '') { closeModal('profileViewModal'); document.getElementById('inputAuthPin').value = ''; document.getElementById('pinAuthModal').classList.add('active'); } else { openProfileEdit(); } }
-function initResetSequence() { if (!profile.pin || profile.pin.trim() === '') { showToast("Buat PIN di Edit Profil.", "error"); return; } closeModal('profileViewModal'); document.getElementById('inputResetPin').value = ''; document.getElementById('resetPinModal').classList.add('active'); }
+function requestProfileEdit() { if(profile.pin && profile.pin !== '') { closeModal('profileViewModal'); document.getElementById('inputAuthPin').value = ''; openModalElement('pinAuthModal'); } else { openProfileEdit(); } }
+function initResetSequence() { if (!profile.pin || profile.pin.trim() === '') { showToast("Buat PIN di Edit Profil.", "error"); return; } closeModal('profileViewModal'); document.getElementById('inputResetPin').value = ''; openModalElement('resetPinModal'); }
 
 async function verifyPinAuth(actionType) { 
     const inputVal = document.getElementById(actionType === 'edit' ? 'inputAuthPin' : 'inputResetPin').value; const hashedInput = await hashPIN(inputVal); 
-    if (hashedInput === profile.pin) { if (actionType === 'edit') { closeModal('pinAuthModal'); openProfileEdit(); } else if (actionType === 'reset') { closeModal('resetPinModal'); document.getElementById('resetConfirmModal').classList.add('active'); } } else { showToast("PIN Salah!", "error"); } 
+    if (hashedInput === profile.pin) { if (actionType === 'edit') { closeModal('pinAuthModal'); openProfileEdit(); } else if (actionType === 'reset') { closeModal('resetPinModal'); openModalElement('resetConfirmModal'); } } else { showToast("PIN Salah!", "error"); } 
 }
 
-function openProfileEdit() { document.getElementById('editProfileImg').src = profile.photo; document.getElementById('editName').value = profile.name !== 'Pengurus' ? profile.name : ''; selectGender(profile.gender); document.getElementById('editBirth').value = profile.birthDate; document.getElementById('editPin').value = ''; document.getElementById('profileEditModal').classList.add('active'); }
+function openProfileEdit() { document.getElementById('editProfileImg').src = profile.photo; document.getElementById('editName').value = profile.name !== 'Pengurus' ? profile.name : ''; selectGender(profile.gender); document.getElementById('editBirth').value = profile.birthDate; document.getElementById('editPin').value = ''; openModalElement('profileEditModal'); }
 function selectGender(val) { document.getElementById('editGender').value = val; document.getElementById('dispGenderVal').innerText = val; closeModal(''); }
 
 document.getElementById('profileUploader').addEventListener('change', async function(e) { 
@@ -325,9 +516,9 @@ async function executeFactoryReset() {
     closeModal('resetConfirmModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
 }
 
-// ==========================================
-// WISHLIST & DRIVE LINKS ENGINE
-// ==========================================
+/* ==========================================
+   WISHLIST & DRIVE LINKS ENGINE
+========================================== */
 function renderWishlist() {
     const container = document.getElementById('wishlistContainer');
     if(wishlists.length === 0) {
@@ -348,7 +539,7 @@ function renderWishlist() {
 function openAddWishlistModal() {
     document.getElementById('wishlist-name').value = ''; document.getElementById('wishlist-amount').value = '';
     document.getElementById('wishlist-type').value = 'Bulanan'; document.getElementById('dispWishlistType').innerText = 'Bulanan';
-    document.getElementById('addWishlistModal').classList.add('active');
+    openModalElement('addWishlistModal');
 }
 function selectWishlistType(val) { document.getElementById('wishlist-type').value = val; document.getElementById('dispWishlistType').innerText = val; closeModal(''); }
 function saveWishlist() {
@@ -377,7 +568,7 @@ function renderDriveLinks() {
         </div>
     `).join('');
 }
-function openAddDriveModal() { document.getElementById('drive-name').value = ''; document.getElementById('drive-url').value = ''; document.getElementById('addDriveModal').classList.add('active'); }
+function openAddDriveModal() { document.getElementById('drive-name').value = ''; document.getElementById('drive-url').value = ''; openModalElement('addDriveModal'); }
 function saveDriveLink() {
     const name = properTitleCase(document.getElementById('drive-name').value.trim());
     const url = document.getElementById('drive-url').value.trim();
@@ -390,7 +581,14 @@ function deleteDriveLink(id) { driveLinks = driveLinks.filter(d => d.id !== id);
 /* ==========================================
    UI NAVIGATION & RENDERING
 ========================================== */
-function switchWallet(type) { activeWallet = type; document.getElementById('walletSwitchContainer').setAttribute('data-active', type); document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderShortcuts(); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
+function switchWallet(type) { 
+    activeWallet = type; 
+    document.getElementById('walletSwitchContainer').setAttribute('data-active', type); 
+    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active')); 
+    document.getElementById(`tab-${type}`).classList.add('active'); 
+    renderShortcuts(); 
+    updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
+}
 function toggleCustomSelect(id) { const box = document.getElementById(id); const isOpen = box.classList.contains('open'); document.querySelectorAll('.custom-options.open').forEach(el => el.classList.remove('open')); if(!isOpen) box.classList.add('open'); }
 function applyTimeFilter(days, labelText) { currentTimeFilter = days; document.getElementById('dispTimeFilter').innerText = labelText; closeModal(''); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); }
 function selectCategory(val) { document.getElementById('tx-category').value = val; document.getElementById('dispTxCat').innerText = val; closeModal(''); }
@@ -407,7 +605,7 @@ function renderShortcuts() {
             <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak Santri')">${svgs.uang} <span class="text-neutral">Infak Santri</span></button> 
             <button class="btn-quick svg-biru glass-card" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span class="text-neutral">Donasi Umum</span></button> 
             <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span class="text-neutral">Honor Guru</span></button> 
-            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('masuk', 'Bantuan Pemerintah', 'Dana Bantuan')">${svgs.plus_bold} <span class="text-neutral">Pemasukan Lain</span></button> 
+            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('keluar', 'MANUAL', '')">${svgs.minus_bold} <span class="text-neutral">Pengeluaran (-)</span></button> 
         `;
     } else if(activeWallet === 'wakaf') {
         c.innerHTML = `
@@ -423,6 +621,11 @@ function renderShortcuts() {
             <button class="btn-quick svg-kuning glass-card" onclick="quickInput('keluar', 'ATK', 'Beli ATK & Kebutuhan')">${svgs.book} <span class="text-neutral">Beli ATK</span></button>
             <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span class="text-neutral">Tambah Dana</span></button>
         `;
+    } else if(activeWallet === 'darurat') {
+        c.innerHTML = `
+            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('masuk', 'Lainnya', 'Simpan ke Dana Darurat')">${svgs.uang} <span class="text-neutral">Simpan Darurat</span></button>
+            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Lainnya', 'Cairkan Dana Darurat')">${svgs.minus_bold} <span class="text-neutral">Cairkan</span></button>
+        `;
     }
 }
 
@@ -431,7 +634,7 @@ function renderShortcuts() {
 ========================================== */
 function quickInput(type, cat, desc) { 
     document.getElementById('tx-type').value = type; 
-    document.getElementById('modal-title').innerText = type === 'masuk' ? 'Catat Pemasukan TPA' : 'Catat Pengeluaran TPA'; 
+    document.getElementById('modal-title').innerText = type === 'masuk' ? 'Catat Pemasukan' : 'Catat Pengeluaran'; 
     document.getElementById('tx-desc').value = desc; 
     document.getElementById('tx-pihak-terkait').value = ''; 
     document.getElementById('tx-link-bukti').value = '';
@@ -448,7 +651,7 @@ function quickInput(type, cat, desc) {
         if(!arr.includes(cat)) box.innerHTML += `<div class="custom-option text-neutral" onclick="selectCategory('${cat}')">${cat}</div>`; 
         selectCategory(cat); 
     } 
-    document.getElementById('tx-amount').value = ''; rawAmount = 0; document.getElementById('txModal').classList.add('active'); 
+    document.getElementById('tx-amount').value = ''; rawAmount = 0; openModalElement('txModal'); 
     setTimeout(() => { if(cat === 'MANUAL') document.getElementById('tx-category-manual').focus(); else document.getElementById('tx-amount').focus(); }, 300); 
 }
 
@@ -463,7 +666,11 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
         const type = document.getElementById('tx-type').value; 
         let cF = document.getElementById('tx-category-manual').style.display === 'block' ? document.getElementById('tx-category-manual').value.trim() : document.getElementById('tx-category').value; 
         let dF = document.getElementById('tx-desc').value.trim(); 
-        const pihak = document.getElementById('tx-pihak-terkait').value.trim();
+        
+        const pihakGelar = document.getElementById('tx-pihak-title').value;
+        const pihakNama = document.getElementById('tx-pihak-nama').value.trim();
+        const pihak = (pihakGelar + " " + pihakNama).trim();
+        
         const link = document.getElementById('tx-link-bukti').value.trim();
         
         let txDateInput = document.getElementById('tx-date').value;
@@ -501,7 +708,18 @@ function openEditTxModal(txId) {
     document.getElementById('edit-tx-id').value = txId; 
     document.getElementById('edit-tx-category').value = tx.category; 
     document.getElementById('edit-tx-desc').value = tx.desc; 
-    document.getElementById('edit-tx-pihak-terkait').value = tx.pihak_terkait || ''; 
+    
+    if(tx.pihak_terkait) {
+        let gelar = ""; let nama = tx.pihak_terkait;
+        const gelars = ["Murid", "Wali Murid", "Ustadz", "Pengurus Masjid", "Tokoh Masyarakat"];
+        for(let g of gelars) { if(tx.pihak_terkait.startsWith(g)) { gelar = g; nama = tx.pihak_terkait.replace(g, '').trim(); break; } }
+        document.getElementById('edit-tx-pihak-title').value = gelar;
+        document.getElementById('edit-tx-pihak-nama').value = nama;
+    } else {
+        document.getElementById('edit-tx-pihak-title').value = '';
+        document.getElementById('edit-tx-pihak-nama').value = '';
+    }
+    
     document.getElementById('edit-tx-link-bukti').value = tx.link_bukti || ''; 
     
     if(tx.date) {
@@ -512,13 +730,18 @@ function openEditTxModal(txId) {
 
     editRawAmount = tx.amount; 
     document.getElementById('edit-tx-amount').value = editRawAmount.toLocaleString('id-ID'); 
-    document.getElementById('editTxModal').classList.add('active'); 
+    openModalElement('editTxModal'); 
 }
 
 async function saveEditedTx() {
     const txId = document.getElementById('edit-tx-id').value; const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return;
     const nCat = properTitleCase(document.getElementById('edit-tx-category').value.trim()); const nDesc = properTitleCase(document.getElementById('edit-tx-desc').value.trim());
-    const nPihak = properTitleCase(document.getElementById('edit-tx-pihak-terkait').value.trim()); const nLink = document.getElementById('edit-tx-link-bukti').value.trim();
+    
+    const pihakGelar = document.getElementById('edit-tx-pihak-title').value;
+    const pihakNama = document.getElementById('edit-tx-pihak-nama').value.trim();
+    const nPihak = properTitleCase((pihakGelar + " " + pihakNama).trim());
+    
+    const nLink = document.getElementById('edit-tx-link-bukti').value.trim();
     const nDateInput = document.getElementById('edit-tx-date').value;
 
     if(!nCat || !nDesc || editRawAmount <= 0) { showToast("Data tidak lengkap.", "error"); return; }
@@ -540,7 +763,7 @@ function executeTxDeleteFinal(txId) {
     });
 }
 
-function promptActionPin(action, txId) { closeModal('receiptModal'); if (!profile.pin || profile.pin.trim() === '') { if (action === 'edit') openEditTxModal(txId); else executeTxDeleteFinal(txId); return; } document.getElementById('actionPinType').value = action; document.getElementById('actionPinTxId').value = txId; document.getElementById('inputActionPin').value = ''; document.getElementById('actionPinModal').classList.add('active'); setTimeout(() => document.getElementById('inputActionPin').focus(), 300); }
+function promptActionPin(action, txId) { closeModal('receiptModal'); if (!profile.pin || profile.pin.trim() === '') { if (action === 'edit') openEditTxModal(txId); else executeTxDeleteFinal(txId); return; } document.getElementById('actionPinType').value = action; document.getElementById('actionPinTxId').value = txId; document.getElementById('inputActionPin').value = ''; openModalElement('actionPinModal'); setTimeout(() => document.getElementById('inputActionPin').focus(), 300); }
 function promptActionPinFromTable(e, action, txId) { e.stopPropagation(); promptActionPin(action, txId); }
 
 async function verifyActionPinFinal() { const inputVal = document.getElementById('inputActionPin').value; const hashedInput = await hashPIN(inputVal); if (hashedInput === profile.pin) { closeModal('actionPinModal'); const action = document.getElementById('actionPinType').value; const txId = document.getElementById('actionPinTxId').value; if (action === 'edit') openEditTxModal(txId); else if (action === 'delete') executeTxDeleteFinal(txId); } else { showToast("PIN Salah! Akses Ditolak.", "error"); } }
@@ -553,51 +776,47 @@ function updateHealthEngine(filteredDb) {
 }
 
 function generateAIForecast(data) { 
-    const box = document.getElementById('aiInsightBox'); const textEl = document.getElementById('aiInsightText'); aiMessages = []; 
+    const textElContainer = document.getElementById('aiInsightTextContainer'); aiMessages = []; 
     if (data.length === 0) { 
-        aiMessages.push(`Belum ada riwayat transaksi di dompet ${activeWallet.toUpperCase()}.`);
-        if(APP_MODE === 'GUEST') aiMessages.push("Info: Hubungkan dengan Akun Google agar data TPA aman tersinkronisasi ke Cloud.");
-        box.style.borderLeftColor = 'var(--text-muted)'; box.querySelector('svg').style.color = 'var(--text-muted)'; startAICarousel(textEl); return; 
+        aiMessages.push(`Belum ada riwayat transaksi di dompet ini.`);
+        if(APP_MODE === 'GUEST') aiMessages.push("Info: Hubungkan Akun Google untuk Sync Cloud.");
+        document.getElementById('aiInsightBox').style.borderLeftColor = 'var(--text-muted)'; document.getElementById('aiInsightBox').querySelector('svg').style.color = 'var(--text-muted)'; startAICarousel(textElContainer); return; 
     } 
     
     const today = new Date(); const currentMonthData = data.filter(t => { const d = new Date(t.date); return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear(); }); 
     const masukData = currentMonthData.filter(t => t.type === 'masuk'); const keluarData = currentMonthData.filter(t => t.type === 'keluar'); 
     let mIn = masukData.reduce((sum, t) => sum + t.amount, 0); let mOut = keluarData.reduce((sum, t) => sum + t.amount, 0); 
     
-    let biggestExpenseMsg = "Belum ada pengeluaran bulan ini.";
-    if (keluarData.length > 0) { let catTotals = {}; keluarData.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; }); let biggestCat = Object.keys(catTotals).reduce((a, b) => catTotals[a] > catTotals[b] ? a : b); biggestExpenseMsg = `Pengeluaran operasional terbesar bulan ini: ${properTitleCase(biggestCat)} (${formatRp(catTotals[biggestCat])}).`; }
+    let biggestExpenseMsg = "Belum ada pengeluaran besar.";
+    if (keluarData.length > 0) { let catTotals = {}; keluarData.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; }); let biggestCat = Object.keys(catTotals).reduce((a, b) => catTotals[a] > catTotals[b] ? a : b); biggestExpenseMsg = `Pengeluaran utama: ${properTitleCase(biggestCat)} (${formatRp(catTotals[biggestCat])}).`; }
     
     let statusMsg = "", projectionMsg = "";
-    if (mOut > mIn && mIn > 0) { statusMsg = `⚠️ Peringatan: Pengeluaran dompet ${activeWallet} telah melampaui pemasukan.`; projectionMsg = "Saran AI: Tinjau ulang anggaran operasional TPA untuk menghindari defisit."; box.style.borderLeftColor = 'var(--merah)'; box.querySelector('svg').style.color = 'var(--merah)'; } 
-    else if (mOut > 0) { statusMsg = `Arus kas dompet ${activeWallet} berjalan normal.`; projectionMsg = "Tetap pantau alokasi dana agar sejalan dengan program kegiatan santri."; box.style.borderLeftColor = 'var(--kuning)'; box.querySelector('svg').style.color = 'var(--kuning)'; } 
-    else if (mIn > 0 && mOut === 0) { statusMsg = "Luar biasa! Seluruh dana pemasukan bulan ini masih utuh."; projectionMsg = "Tips: Dana bisa dialokasikan untuk perbaikan fasilitas atau acara santri mendatang."; box.style.borderLeftColor = 'var(--hijau)'; box.querySelector('svg').style.color = 'var(--hijau)'; } 
-    else { statusMsg = "Belum ada pergerakan kas bulan ini."; projectionMsg = "Selalu rutin mencatat donasi/infak yang masuk."; box.style.borderLeftColor = 'var(--biru)'; box.querySelector('svg').style.color = 'var(--biru)';}
+    if (mOut > mIn && mIn > 0) { statusMsg = `⚠️ Defisit: Pengeluaran dompet ini melampaui pemasukan.`; projectionMsg = "Saran: Tinjau ulang anggaran operasional TPA."; document.getElementById('aiInsightBox').style.borderLeftColor = 'var(--merah)'; document.getElementById('aiInsightBox').querySelector('svg').style.color = 'var(--merah)'; } 
+    else if (mOut > 0) { statusMsg = `Arus kas berjalan normal sesuai alokasi.`; projectionMsg = "Tetap pantau dana kegiatan santri."; document.getElementById('aiInsightBox').style.borderLeftColor = 'var(--kuning)'; document.getElementById('aiInsightBox').querySelector('svg').style.color = 'var(--kuning)'; } 
+    else if (mIn > 0 && mOut === 0) { statusMsg = "Luar biasa! Pemasukan bulan ini masih utuh 100%."; projectionMsg = "Tips: Alokasikan sebagian ke Dana Darurat/Wakaf."; document.getElementById('aiInsightBox').style.borderLeftColor = 'var(--hijau)'; document.getElementById('aiInsightBox').querySelector('svg').style.color = 'var(--hijau)'; } 
+    else { statusMsg = "Belum ada pergerakan kas bulan ini."; projectionMsg = "Jangan lupa catat setiap infak/donasi."; document.getElementById('aiInsightBox').style.borderLeftColor = 'var(--biru)'; document.getElementById('aiInsightBox').querySelector('svg').style.color = 'var(--biru)';}
     
     aiMessages.push(statusMsg); aiMessages.push(projectionMsg); aiMessages.push(biggestExpenseMsg);
-    if(activeWallet === 'wakaf') aiMessages.push("Catatan: Pastikan dana Wakaf tidak disalahgunakan untuk operasional harian.");
-    aiMessages = [...new Set(aiMessages)].filter(m => m !== ""); startAICarousel(textEl); 
+    if(activeWallet === 'wakaf') aiMessages.push("Hukum Wakaf: Pastikan dana Wakaf tidak dicampur dengan Operasional.");
+    aiMessages = [...new Set(aiMessages)].filter(m => m !== ""); startAICarousel(textElContainer); 
 }
 
-function startAICarousel(textEl) { 
-    if (aiCarouselInterval) clearInterval(aiCarouselInterval); aiCurrentMsgIdx = 0; textEl.style.minHeight = ''; textEl.style.display = ''; textEl.style.alignItems = ''; textEl.innerText = aiMessages[0]; textEl.classList.remove('fade-out'); 
-    if (aiMessages.length > 1) { aiCarouselInterval = setInterval(() => { textEl.classList.add('fade-out'); setTimeout(() => { aiCurrentMsgIdx = (aiCurrentMsgIdx + 1) % aiMessages.length; textEl.innerText = aiMessages[aiCurrentMsgIdx]; textEl.classList.remove('fade-out'); }, 400); }, 10000); } 
+function startAICarousel(textElContainer) { 
+    textElContainer.innerHTML = aiMessages.map(m => `<div class="insight-item">${m}</div>`).join('');
 }
 
 function updateUI(searchTerm = '') {
     const today = new Date(); today.setHours(0,0,0,0);
     const fd = db.filter(tx => { 
         if(tx.wallet !== activeWallet) return false; 
-        
-        let txDate = new Date(tx.date);
-        txDate.setHours(0,0,0,0);
+        let txDate = new Date(tx.date); txDate.setHours(0,0,0,0);
         
         if(currentTimeFilter !== 0) { 
             const diffTime = Math.abs(today - txDate);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            if(currentTimeFilter === 1 && diffDays > 1) return false; 
+            if(currentTimeFilter === 1 && diffDays > 0) return false; // Hari ini
             if(currentTimeFilter > 1 && diffDays > currentTimeFilter) return false; 
         } 
-        
         if(searchTerm) { return tx.desc.toLowerCase().includes(searchTerm) || tx.category.toLowerCase().includes(searchTerm) || (tx.pihak_terkait && tx.pihak_terkait.toLowerCase().includes(searchTerm)); } 
         return true; 
     });
@@ -684,10 +903,10 @@ function openReceipt(txId) {
             <span class="receipt-val text-neutral" style="font-size: clamp(16px, 5.5vw, 22px); letter-spacing:-1px; white-space: nowrap !important; word-break: keep-all !important; flex-grow: 1; text-align: right;">${formatRp(tx.amount)}</span> 
         </div> 
     `; 
-    document.getElementById('receiptModal').classList.add('active'); 
+    openModalElement('receiptModal'); 
 }
 
-function openCSVModal() { if(db.length === 0) { showToast("Data kosong.", "error"); return; } document.getElementById('csvExportModal').classList.add('active'); }
+function openCSVModal() { if(db.length === 0) { showToast("Data kosong.", "error"); return; } openModalElement('csvExportModal'); }
 function executeCSVExport() { 
     closeModal('csvExportModal'); let csv = "Tanggal,Dompet,Tipe,Kategori,Keterangan,Pihak_Terkait,Link_Drive,Nominal\n"; 
     const today = new Date(); today.setHours(0,0,0,0);
@@ -714,8 +933,8 @@ const searchInput = document.getElementById('searchTxInput'); const searchClear 
 if(searchInput) { searchInput.addEventListener('input', function(e) { let val = e.target.value.toLowerCase(); searchClear.style.display = val.length > 0 ? 'block' : 'none'; updateUI(val); }); }
 function clearSearch() { searchInput.value = ''; searchClear.style.display = 'none'; updateUI(''); }
 
-function startOTPResetProcess() { closeModal('pinAuthModal'); closeModal('resetPinModal'); if(!profile.googleLinked || !profile.googleEmail) { showToast("Belum terhubung Google!", "error"); return; } if(!navigator.onLine) { showToast("Butuh koneksi internet!", "error"); return; } document.getElementById('displayUserEmail').innerText = profile.googleEmail; document.getElementById('otpRequestModal').classList.add('active'); }
-function sendOTPEmail() { if(!navigator.onLine) { showToast("Koneksi terputus!", "error"); return; } const btn = document.getElementById('btnSendOTP'); btn.innerText = "Mengirim..."; btn.disabled = true; generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpExpiryTime = Date.now() + (5 * 60 * 1000); const templateParams = { to_email: profile.googleEmail, to_name: profile.name, otp_code: generatedOTP }; emailjs.send('service_4v89q7h', 'template_w9fgvcf', templateParams).then(function() { showToast("Terkirim ke Email!"); closeModal('otpRequestModal'); document.getElementById('inputOTP').value = ''; document.getElementById('inputNewPinOTP').value = ''; document.getElementById('otpVerifyModal').classList.add('active'); btn.innerText = "Kirim Kode"; btn.disabled = false; }, function(e) { showToast("Error EmailJS", "error"); btn.innerText = "Kirim Kode"; btn.disabled = false; }); }
+function startOTPResetProcess() { closeModal('pinAuthModal'); closeModal('resetPinModal'); if(!profile.googleLinked || !profile.googleEmail) { showToast("Belum terhubung Google!", "error"); return; } if(!navigator.onLine) { showToast("Butuh koneksi internet!", "error"); return; } document.getElementById('displayUserEmail').innerText = profile.googleEmail; openModalElement('otpRequestModal'); }
+function sendOTPEmail() { if(!navigator.onLine) { showToast("Koneksi terputus!", "error"); return; } const btn = document.getElementById('btnSendOTP'); btn.innerText = "Mengirim..."; btn.disabled = true; generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpExpiryTime = Date.now() + (5 * 60 * 1000); const templateParams = { to_email: profile.googleEmail, to_name: profile.name, otp_code: generatedOTP }; emailjs.send('service_4v89q7h', 'template_w9fgvcf', templateParams).then(function() { showToast("Terkirim ke Email!"); closeModal('otpRequestModal'); document.getElementById('inputOTP').value = ''; document.getElementById('inputNewPinOTP').value = ''; openModalElement('otpVerifyModal'); btn.innerText = "Kirim Kode"; btn.disabled = false; }, function(e) { showToast("Error EmailJS", "error"); btn.innerText = "Kirim Kode"; btn.disabled = false; }); }
 async function verifyOTPAndSavePin() { const inputCode = document.getElementById('inputOTP').value; const newPin = document.getElementById('inputNewPinOTP').value; if(Date.now() > otpExpiryTime) { showToast("OTP Kadaluarsa!", "error"); return; } if(inputCode !== generatedOTP) { showToast("OTP Salah!", "error"); return; } if(newPin.length < 4) { showToast("PIN min 4 digit!", "error"); return; } profile.pin = await hashPIN(newPin); saveProfileLocal(); await saveProfileToSupabase(); generatedOTP = ""; closeModal('otpVerifyModal'); showToast("PIN direset!"); }
 
 const iconSun = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
@@ -729,8 +948,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function toggleTheme() {
     const htmlEl = document.documentElement; const currentTheme = htmlEl.getAttribute('data-theme') || 'dark';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark'; htmlEl.setAttribute('data-theme', newTheme); setLS('app_theme', newTheme); updateThemeIcon(newTheme);
-    if(typeof updateUI === 'function') updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark'; 
+    
+    // Theme Ripple Animation
+    const ripple = document.getElementById('themeRipple');
+    ripple.classList.add('active');
+    
+    setTimeout(() => {
+        htmlEl.setAttribute('data-theme', newTheme); setLS('app_theme', newTheme); updateThemeIcon(newTheme);
+        if(typeof updateUI === 'function') updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
+    }, 300); // Sinkron dengan pertengahan animasi ripple
+
+    setTimeout(() => {
+        ripple.classList.remove('active');
+    }, 800);
 }
 
 function updateThemeIcon(theme) { const btn = document.getElementById('themeToggleBtn'); if (!btn) return; if (theme === 'light') { btn.innerHTML = iconMoon; btn.style.color = '#cbd5e1'; } else { btn.innerHTML = iconSun; btn.style.color = 'var(--text-muted)'; } }
@@ -738,7 +969,7 @@ function updateThemeIcon(theme) { const btn = document.getElementById('themeTogg
 /* ==========================================
    MODUL MANAJEMEN SPP SANTRI (READ-ONLY SUPPORTED)
 ========================================== */
-function openSPPModal() { document.getElementById('sppModal').classList.add('active'); renderSppTable(); }
+function openSPPModal() { openModalElement('sppModal'); renderSppTable(); }
 
 function addSppStudent() {
     const input = document.getElementById('newSppName'); const name = properTitleCase(input.value.trim());
@@ -796,12 +1027,48 @@ function filterSppTable() {
 }
 
 /* ==========================================
-   MODUL TRANSPARANSI PUBLIK (READ-ONLY)
+   MODUL TRANSPARANSI PUBLIK (WALI MURID GATEKEEPER)
 ========================================== */
+function showParentAutocomplete() {
+    const val = document.getElementById('parentSearchInput').value.toLowerCase();
+    const list = document.getElementById('parentAutocompleteList');
+    list.innerHTML = '';
+    if(!val) { list.classList.remove('open'); return; }
+    
+    const matches = sppData.filter(s => s.name.toLowerCase().includes(val));
+    if(matches.length > 0) {
+        list.innerHTML = matches.map(m => `<div class="custom-option text-neutral" onclick="selectParentChild('${m.name}')">${m.name}</div>`).join('');
+        list.classList.add('open');
+    } else { list.classList.remove('open'); }
+}
+
+function selectParentChild(name) {
+    document.getElementById('parentSearchInput').value = name;
+    document.getElementById('parentAutocompleteList').classList.remove('open');
+}
+
+function verifyParentLogin() {
+    const name = document.getElementById('parentSearchInput').value.trim();
+    const child = sppData.find(s => s.name.toLowerCase() === name.toLowerCase());
+    
+    if(!name) { showToast("Masukkan nama santri", "error"); return; }
+    if(!child) { showToast("Nama tidak terdaftar di TPA", "error"); return; }
+    
+    closeModal('parentLoginModal');
+    showToast(`Selamat datang, Wali dari ${child.name}`, "success");
+    
+    document.getElementById('headName').innerText = "Wali Santri: " + formatSmartName(child.name);
+    sppData = [child]; 
+    
+    // Perbarui tabel SPP agar hanya menampilkan 1 anak
+    const sppModalBtn = document.querySelector('button[onclick="openSPPModal()"]');
+    if(sppModalBtn) sppModalBtn.style.display = 'flex';
+}
+
 function openShareLinkModal() {
     const currentDomain = window.location.origin + window.location.pathname;
     document.getElementById('publicLinkInput').value = `${currentDomain}?view=public`;
-    document.getElementById('shareLinkModal').classList.add('active');
+    openModalElement('shareLinkModal');
 }
 
 function copyPublicLink() {
@@ -813,8 +1080,11 @@ function copyPublicLink() {
 function enforcePublicReadOnlyMode() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('view') === 'public') {
-        document.getElementById('headName').innerText = "Transparansi TPA";
-        document.getElementById('headGender').innerText = "Laporan Publik";
+        // Panggil gerbang login
+        document.getElementById('parentLoginModal').classList.add('active');
+        lockScroll();
+
+        document.getElementById('headGender').innerText = "LAPORAN PUBLIK";
         
         const healthBadge = document.getElementById('healthBadge');
         if(healthBadge) healthBadge.style.display = 'none';
@@ -822,14 +1092,14 @@ function enforcePublicReadOnlyMode() {
         const adminSection = document.getElementById('adminToggleIcon')?.closest('.section-header');
         if(adminSection) { adminSection.style.display = 'none'; document.getElementById('adminSection').style.display = 'none'; }
 
-        // Sembunyikan tombol input di mode publik, KECUALI tombol Export CSV & Pantau SPP
+        // Sembunyikan tombol input di mode publik, KECUALI Export CSV & Pantau SPP
         const actionButtons = document.querySelectorAll('#quickActionsContainer, #btnAddWishlist, #btnAddDrive, #btnBagikanLaporan, #btnResetDataMode, #btnEditProfileMode');
         actionButtons.forEach(btn => { if(btn) btn.style.display = 'none'; });
 
         const sppInputGroup = document.getElementById('sppInputGroup');
         if(sppInputGroup) sppInputGroup.style.display = 'none';
 
-        // MENGHILANGKAN HAK EDIT/HAPUS TAPI TETAP MEMUNGKINKAN KLIK BARIS (RECEIPT)
+        // CSS Injection for Read-Only Lock
         const style = document.createElement('style');
         style.innerHTML = `
             .td-aksi { display: none !important; } 
@@ -837,10 +1107,11 @@ function enforcePublicReadOnlyMode() {
             .btn-wish-del, .btn-drive-del { display: none !important; }
             .spp-select { pointer-events: none; -webkit-appearance: none; -moz-appearance: none; appearance: none; border:none !important; background: transparent !important; }
             .spp-action-cell, .spp-action-col { display: none !important; }
+            #btnExportCSV { display: flex !important; }
+            /* Menyembunyikan tombol Pantau SPP hingga wali murid berhasil login */
+            button[onclick="openSPPModal()"] { display: none; }
         `;
         document.head.appendChild(style);
-
-        setTimeout(() => { showToast("Mode Publik Aktif (Bebas Edit)", "syncing"); }, 1000);
     }
 }
 
