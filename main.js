@@ -1,5 +1,5 @@
 /* =========================================================
-   TPA FINANCE v4.2 - ENTERPRISE CORE LOGIC
+   TPA FINANCE v4.4 - ENTERPRISE CORE LOGIC
    Strict Mode, Z-Index Engine, Custom UI, Supabase Realtime
 ========================================================= */
 
