@@ -7,42 +7,34 @@
     <meta name="theme-color" content="#064e3b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TPA Finance 4.2">
+    <meta name="apple-mobile-web-app-title" content="TPA Finance 4.3">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>TPA Finance v4.2</title>
+    <title>TPA Finance v4.3</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Dependencies -->
     <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-    <!-- External Assets -->
-    <link rel="stylesheet" href="style.css?v=402">
-    <script defer src="main.js?v=402"></script>
+    <link rel="stylesheet" href="style.css?v=403">
+    <script defer src="main.js?v=403"></script>
 </head>
 <body>
-    <!-- Overlay Tekstur Kertas -->
     <div class="paper-texture"></div>
-
-    <!-- Efek Transisi Animasi Tema -->
     <div id="theme-ripple" class="theme-ripple"></div>
 
-    <!-- Loading Update Screen -->
     <div id="updateScreen" style="display:none;">
         <div class="spinner"></div>
-        <p class="update-text">MENERAPKAN UPDATE VERSI 4.2...</p>
+        <p class="update-text">MENERAPKAN UPDATE VERSI 4.3...</p>
     </div>
 
-    <!-- Sistem Notifikasi Toast (Umum & Kopi) -->
     <div id="toastBox" class="toast-container"></div>
     <div id="coffeeToast" class="coffee-toast"></div>
 
-    <!-- HEADER FLEKSIBEL (Menghilang saat scroll ke bawah) -->
+    <!-- HEADER FLEKSIBEL -->
     <header class="app-header flexible-header" id="mainHeader">
-        <!-- Lapis 1: Profil & Status -->
         <div class="header-layer-1">
             <div class="profile-header" onclick="openProfileView()">
                 <div class="profile-info">
@@ -55,7 +47,6 @@
                         <div id="networkStatus" class="status-sync sync-offline">Offline Mode</div>
                     </div>
                 </div>
-                <!-- Indikator Kesehatan Keuangan & Profil -->
                 <div class="header-right-badges">
                     <div id="healthBadge" class="health-badge health-netral">
                         <span>STATUS</span>
@@ -65,8 +56,7 @@
             </div>
         </div>
 
-        <!-- Lapis 2: Wallet Switcher (+ Dana Darurat) -->
-        <div class="header-layer-2">
+        <div class="header-layer-2" id="walletLayerContainer">
             <div class="controls-header">
                 <div class="wallet-switcher" id="walletSwitchContainer" data-active="utama">
                     <div class="wallet-slider"></div>
@@ -77,37 +67,33 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Lapis 3: Transisi Bayangan -->
         <div class="header-layer-3"></div>
     </header>
 
     <div class="content-wrapper" id="mainContent">
         <!-- FILTER WAKTU & AI INSIGHT -->
         <div class="filter-insight-row">
-            <div class="custom-select-wrapper time-filter-wrapper">
+            <div class="time-filter-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('timeFilterOptions')">
-                    <span id="dispTimeFilter">Semua</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <span id="dispTimeFilter" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Semua Waktu</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="timeFilterOptions">
                     <div class="custom-option text-neutral" onclick="applyTimeFilter(1, 'Hari Ini')">Hari Ini</div>
                     <div class="custom-option text-neutral" onclick="applyTimeFilter(7, '7 Hari')">7 Hari Terakhir</div>
                     <div class="custom-option text-neutral" onclick="applyTimeFilter(30, '30 Hari')">30 Hari Terakhir</div>
-                    <div class="custom-option text-neutral" onclick="applyTimeFilter(90, '3 Bulan')">3 Bulan Terakhir</div>
-                    <div class="custom-option text-neutral" onclick="applyTimeFilter(365, 'Semua')">Semua Waktu</div>
+                    <div class="custom-option text-neutral" onclick="applyTimeFilter(365, 'Semua Waktu')">Semua Waktu</div>
                 </div>
             </div>
             
             <div id="aiInsightBox" class="insight-box glass-card">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                 <div class="ai-marquee-container">
-                    <div id="aiInsightText" class="ai-marquee-text text-neutral">Menganalisis data keuangan dan performa TPA secara real-time...</div>
+                    <div id="aiInsightText" class="ai-marquee-text text-neutral">Menganalisis data...</div>
                 </div>
             </div>
         </div>
 
-        <!-- STATISTIK KARTU -->
         <div class="expand-container" id="statContainer">
             <div class="expand-item glass-card" onclick="toggleExpandStat(this, 'statContainer')">
                 <span class="card-label">Saldo Aktif</span>
@@ -123,11 +109,9 @@
             </div>
         </div>
 
-        <!-- PINTASAN INPUT TRANSAKSI (Dinamis per Wallet) -->
         <div class="quick-actions-wrap" id="quickActionsContainer"></div>
 
-        <!-- MANAJEMEN ADMIN (Ditutup saat mode Publik) -->
-        <div id="adminPanelWrapper">
+        <div id="adminPanelWrapper" class="admin-only-btn">
             <div class="section-divider"></div>
             <div class="section-header" onclick="toggleSection('adminSection', 'adminToggleIcon')">
                 <h2 class="section-title">Manajemen & Transparansi</h2>
@@ -155,7 +139,16 @@
             </div>
         </div>
 
-        <!-- TARGET & WISHLIST DANA -->
+        <!-- CONTAINER WALI SANTRI (READ ONLY SPP & ABSEN) -->
+        <div id="waliSantriPortal" style="display:none; margin-bottom:20px;">
+            <div class="section-divider"></div>
+            <h2 class="section-title mb-10 text-hijau">📊 STATUS SPP ANAK</h2>
+            <div class="glass-card p-15 mb-20" id="waliSppContainer"></div>
+            
+            <h2 class="section-title mb-10 text-biru">📋 RIWAYAT ABSENSI</h2>
+            <div class="glass-card p-15" id="waliAbsenContainer"></div>
+        </div>
+
         <div class="section-divider"></div>
         <div class="section-header">
             <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('wishlistSection', 'wishlistToggleIcon')">
@@ -170,7 +163,6 @@
             <div id="wishlistContainer" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 20px;"></div>
         </div>
 
-        <!-- PINTASAN DRIVE -->
         <div class="section-divider"></div>
         <div class="section-header">
             <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('driveSection', 'driveToggleIcon')">
@@ -185,7 +177,6 @@
             <div class="quick-actions-wrap" id="driveContainer" style="margin-top:0; margin-bottom: 20px;"></div>
         </div>
 
-        <!-- ANALITIK VISUAL -->
         <div class="section-divider"></div>
         <div class="section-header" onclick="toggleSection('chartsSection', 'chartToggleIcon')">
             <h2 class="section-title">Analitik Visual</h2>
@@ -194,25 +185,29 @@
         <div class="collapsible-content" id="chartsSection">
             <div class="expand-container" id="chartContainer">
                 <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
-                    <!-- Tombol X Visual Analitik (Warna Merah Sesuai Permintaan) -->
-                    <button class="btn-close-expand text-red" onclick="closeChart(event, this)">✕</button>
+                    <button class="btn-close-expand text-red" onclick="closeChart(event, this)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                     <span class="card-label">Distribusi</span>
                     <div class="chart-box"><canvas id="pieChart"></canvas></div>
                 </div>
                 <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
-                    <button class="btn-close-expand text-red" onclick="closeChart(event, this)">✕</button>
+                    <button class="btn-close-expand text-red" onclick="closeChart(event, this)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                     <span class="card-label">Timeline</span>
                     <div class="chart-box"><canvas id="barChart"></canvas></div>
                 </div>
                 <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
-                    <button class="btn-close-expand text-red" onclick="closeChart(event, this)">✕</button>
+                    <button class="btn-close-expand text-red" onclick="closeChart(event, this)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                     <span class="card-label">Arus Kas</span>
                     <div class="chart-box"><canvas id="lineChart"></canvas></div>
                 </div>
             </div>
         </div>
 
-        <!-- RIWAYAT TRANSAKSI -->
         <div class="section-divider"></div>
         <div class="section-header">
             <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('historySection', 'historyToggleIcon')">
@@ -226,8 +221,10 @@
         
         <div class="collapsible-content" id="historySection">
             <div class="search-container">
-                <input type="text" id="searchTxInput" class="search-input glass-card text-neutral" placeholder="Cari transaksi, kategori, atau nama..." autocomplete="off">
-                <span class="search-clear" id="searchClearBtn" onclick="clearSearch()">✕</span>
+                <input type="text" id="searchTxInput" class="search-input glass-card text-neutral" placeholder="Cari transaksi..." autocomplete="off">
+                <span class="search-clear" id="searchClearBtn" onclick="clearSearch()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
             </div>
             
             <div class="table-container glass-card">
@@ -236,37 +233,36 @@
                         <tr>
                             <th>Waktu</th>
                             <th>Kategori</th>
-                            <th>Deskripsi / Pihak</th>
-                            <th id="th-aksi" class="th-admin-only" style="text-align: center;">Aksi</th>
-                            <th style="text-align: right;">Nominal</th>
+                            <th>Deskripsi</th>
+                            <th id="th-aksi" class="th-admin-only text-center">Aksi</th>
+                            <th class="text-right">Nominal</th>
                         </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
                 </table>
             </div>
         </div>
-    </div> <!-- End Content Wrapper -->
+    </div>
 
-
-    <!-- ===================================== -->
-    <!-- SEMUA MODAL POP-UP (NO 'X' BUTTON)    -->
-    <!-- ===================================== -->
-
-    <!-- MODAL CUSTOM DATEPICKER (Menggantikan bawaan Browser) -->
+    <!-- MODAL CUSTOM DATEPICKER (DOM VIRTUAL) -->
     <div class="modal-overlay" id="customDatePickerModal">
         <div class="modal-card calendar-card">
-            <h3 class="text-neutral" style="margin-top:0; border-bottom: 1px solid var(--border); padding-bottom: 10px; text-align:center;">Pilih Waktu</h3>
+            <h3 class="text-neutral border-bottom-title text-center">Pilih Waktu</h3>
             <div class="calendar-header">
-                <button type="button" class="btn-cal-nav" onclick="changeCalMonth(-1)">◀</button>
+                <button type="button" class="btn-cal-nav" onclick="changeCalMonth(-1)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
                 <span id="calMonthYear" class="text-neutral font-bold">Bulan Tahun</span>
-                <button type="button" class="btn-cal-nav" onclick="changeCalMonth(1)">▶</button>
+                <button type="button" class="btn-cal-nav" onclick="changeCalMonth(1)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
             </div>
             <div class="calendar-grid-days text-muted">
                 <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
             </div>
             <div class="calendar-grid-dates" id="calDatesGrid"></div>
             
-            <div class="time-picker-row" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; align-items: center;">
+            <div class="d-flex flex-center gap-10 mt-15">
                 <input type="number" id="calHour" class="input-field glass-card text-neutral time-input" placeholder="HH" min="0" max="23">
                 <span class="text-neutral font-bold">:</span>
                 <input type="number" id="calMin" class="input-field glass-card text-neutral time-input" placeholder="MM" min="0" max="59">
@@ -274,7 +270,7 @@
 
             <input type="hidden" id="calTargetInput">
             <div class="modal-actions mt-20">
-                <button class="btn-modal btn-primary" onclick="applyCustomDate()">Pilih Waktu</button>
+                <button class="btn-modal btn-primary" onclick="applyCustomDate()">Terapkan</button>
                 <button class="btn-modal btn-cancel" onclick="closeModal('customDatePickerModal')">Batal</button>
             </div>
         </div>
@@ -283,65 +279,69 @@
     <!-- MODAL PROFIL VIEW -->
     <div class="modal-overlay" id="profileViewModal">
         <div class="modal-card">
-            <div style="text-align: center; margin-bottom: 25px; position: relative;">
-                <button id="themeToggleBtn" onclick="toggleTheme()" class="icon-btn" style="position: absolute; top: 0; left: 0;">
-                    <!-- SVG injected via JS -->
-                </button>
-                <button onclick="requestProfileEdit()" class="icon-btn admin-only-btn" id="btnEditProfileMode" style="position: absolute; top: 0; right: 0;">
+            <div class="text-center position-relative mb-25">
+                <button id="themeToggleBtn" onclick="toggleTheme(event)" class="icon-btn" style="position: absolute; top: 0; left: 0;"></button>
+                <button onclick="requestProfileEdit()" class="icon-btn admin-only-btn" style="position: absolute; top: 0; right: 0;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto; border-color:var(--hijau);">
+                <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto;">
                     <img src="" id="viewProfileImg" class="profile-pic" alt="Profile View">
                 </div>
-                <h2 style="margin:0; font-size: 26px; font-weight:900;" class="text-neutral" id="viewProfileName">Guest</h2>
-                <p style="margin:5px 0 0 0; font-size: 11px; color: var(--text-muted); font-weight:700;" id="viewJoinDate"></p>
-            </div>
-            
-            <div class="admin-only-btn" style="display: flex; justify-content: flex-start; margin-bottom: 15px;">
-                <div class="custom-select-wrapper" style="width: auto; margin-bottom: 0; z-index: 10;">
-                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('profileTimeFilterOptions')" style="padding: 8px 12px; font-size: 11px; height: auto; gap: 8px;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span id="dispProfileTimeFilter">Semua Waktu</span>
-                    </div>
-                    <div class="custom-options profile-roll-down glass-card" id="profileTimeFilterOptions" style="width: max-content; min-width: 100%; top: calc(100% + 5px);">
-                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(0, 'Semua Waktu')">Semua Waktu</div>
-                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(1, 'Hari Ini')">Hari Ini</div>
-                        <div class="custom-option text-neutral" onclick="applyProfileTimeFilter(30, '30 Hari Terakhir')">30 Hari Terakhir</div>
-                    </div>
-                </div>
+                <h2 class="text-neutral m-0 font-bold" id="viewProfileName">Guest</h2>
+                <p class="text-muted text-xs font-bold mt-10" id="viewJoinDate"></p>
             </div>
 
             <div class="prof-detail-grid">
                 <div class="prof-detail-box glass-card"><span class="prof-detail-label">Peran</span><p class="prof-detail-val text-neutral" id="viewRole">-</p></div>
-                <div class="prof-detail-box glass-card"><span class="prof-detail-label">Gender</span><p class="prof-detail-val text-neutral" id="viewGender">-</p></div>
+                <div class="prof-detail-box glass-card admin-only-btn" style="cursor:pointer;" onclick="openPanduanModal()">
+                    <span class="prof-detail-label text-biru">Informasi</span>
+                    <p class="prof-detail-val text-neutral d-flex align-items-center gap-10">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Buku Panduan
+                    </p>
+                </div>
                 
-                <div class="prof-detail-box glass-card admin-only-btn"><span class="prof-detail-label">Masuk Utama</span><p class="prof-detail-val text-neutral" id="viewTotalMasuk">Rp 0</p></div>
-                <div class="prof-detail-box glass-card admin-only-btn"><span class="prof-detail-label">Keluar Utama</span><p class="prof-detail-val text-neutral" id="viewTotalKeluar">Rp 0</p></div>
-                
-                <div class="prof-detail-box glass-card admin-only-btn" style="grid-column: span 2; display:flex; flex-direction: row; justify-content:space-between; align-items:center; gap: 10px; padding: 15px;" id="cloudStatusContainer">
-                    <div style="text-align: left; flex: 1; min-width: 0;">
-                        <span class="prof-detail-label">Status Cloud</span>
-                        <p class="prof-detail-val text-neutral" id="viewGoogleStatus" style="font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">Tidak Terhubung</p>
+                <div class="prof-detail-box glass-card admin-only-btn" id="cloudStatusContainer" style="grid-column: span 2; display:flex; flex-direction: row; justify-content:space-between; align-items:center; gap: 10px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <span class="prof-detail-label">Status Akun Cloud</span>
+                        <p class="prof-detail-val text-neutral" id="viewGoogleStatus">Tidak Terhubung</p>
                     </div>
-                    <button id="btnGoogleLink" class="btn-outline-small" style="border-color:var(--biru); color:var(--biru); gap: 6px;" onclick="openGoogleAuthModal()">
+                    <button id="btnGoogleLink" class="btn-outline-small" style="border-color:var(--biru); color:var(--biru);">
                         <span id="textGoogleLink">Hubungkan</span>
                     </button>
                 </div>
             </div>
 
-            <div style="margin-bottom: 25px;">
-                <span class="prof-detail-label" style="text-align: center; margin-bottom: 10px;">Support Developer</span>
+            <div class="mb-25">
+                <span class="prof-detail-label text-center mb-10">Support Developer (Kopi & Server)</span>
                 <div class="sosmed-container">
-                    <a href="#" target="_blank" class="btn-sosmed ig"><span class="text-neutral">Instagram</span></a>
-                    <a href="#" target="_blank" class="btn-sosmed tt"><span class="text-neutral">TikTok</span></a>
-                    <a href="#" target="_blank" class="btn-sosmed sw"><span class="text-neutral">Traktir</span></a>
+                    <a href="https://www.instagram.com/daengtio_/" target="_blank" class="btn-sosmed ig">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> <span>Instagram</span>
+                    </a>
+                    <a href="https://www.tiktok.com/@daengtio_0" target="_blank" class="btn-sosmed tt">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> <span>TikTok</span>
+                    </a>
+                    <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" class="btn-sosmed sw">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> <span>Traktir</span>
+                    </a>
                 </div>
             </div>
             
-            <button class="btn-modal btn-cancel admin-only-btn" id="btnResetDataMode" onclick="initResetSequence()" style="color: var(--merah); border-color: var(--merah); margin-bottom: 10px;">
-                Reset Semua Data TPA
-            </button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('profileViewModal')">Tutup Profil</button>
+            <button class="btn-modal btn-cancel admin-only-btn mb-10 text-red" style="border-color: var(--merah);" onclick="initResetSequence()">Reset Data Pabrik</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('profileViewModal')">Tutup</button>
+        </div>
+    </div>
+
+    <!-- PANDUAN / RULES MODAL -->
+    <div class="modal-overlay" id="panduanModal">
+        <div class="modal-card text-left" style="max-height: 85vh; overflow-y: auto;">
+            <h2 class="text-neutral border-bottom-title text-center">Buku Panduan & Rules</h2>
+            <div class="text-sm text-neutral line-height-15">
+                <p><b>1. Manajemen SPP:</b> Data tersimpan multi-bulan. Centang bulan yang telah dibayar. Wali santri hanya bisa melihat (Read-Only).</p>
+                <p><b>2. Sistem Absensi Otomatis:</b><br>- Absensi dicatat harian.<br>- <b>Setiap MINGGU</b> pukul 00:00, database absensi akan <b>direset otomatis</b> untuk menghemat kapasitas.<br>- Aplikasi akan mengingatkan admin untuk Export CSV setiap hari <b>Sabtu</b>.</p>
+                <p><b>3. Mode Transparansi:</b> Wali Santri wajib memasukkan nama anak dengan benar untuk masuk. Mereka tidak dapat mengedit/menghapus transaksi apa pun.</p>
+                <p><b>4. Dana Darurat:</b> Hanya gunakan untuk kondisi terdesak di luar Rencana Anggaran (RAB).</p>
+            </div>
+            <button class="btn-modal btn-cancel mt-20" onclick="closeModal('panduanModal')">Saya Mengerti</button>
         </div>
     </div>
 
@@ -349,33 +349,19 @@
     <div class="modal-overlay" id="profileEditModal">
         <div class="modal-card">
             <h2 class="text-neutral border-bottom-title">Edit Profil</h2>
-            <div style="text-align: center; margin-bottom: 20px;">
+            <div class="text-center mb-20">
                 <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto;">
                     <img src="" id="editProfileImg" class="profile-pic" alt="Edit Profile">
                 </div>
-                <button type="button" class="btn-outline-small" onclick="document.getElementById('profileUploader').click()" style="margin: 0 auto;">Pilih Foto</button>
+                <button type="button" class="btn-outline-small m-auto" onclick="document.getElementById('profileUploader').click()">Pilih Foto</button>
                 <input type="file" id="profileUploader" accept="image/*" class="visually-hidden">
             </div>
             <label class="input-label">Nama Lengkap</label>
             <input type="text" id="editName" class="input-field glass-card text-neutral" autocomplete="off">
-            
-            <label class="input-label">Peran (Title)</label>
-            <div class="custom-select-wrapper">
-                <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('roleOptions')">
-                    <span id="dispRoleVal">Pilih Peran</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                </div>
-                <div class="custom-options glass-card" id="roleOptions">
-                    <div class="custom-option text-neutral" onclick="selectRole('Pengurus TPA')">Pengurus TPA</div>
-                    <div class="custom-option text-neutral" onclick="selectRole('Ustadz/Ustadzah')">Ustadz / Ustadzah</div>
-                    <div class="custom-option text-neutral" onclick="selectRole('Wali Santri')">Wali Santri</div>
-                    <div class="custom-option text-neutral" onclick="selectRole('Tokoh Masyarakat')">Tokoh Masyarakat</div>
-                </div>
-            </div>
-            <input type="hidden" id="editRole">
-
-            <label class="input-label">Security PIN (Wajib)</label>
-            <input type="password" id="editPin" class="input-field glass-card text-neutral" placeholder="Ketik PIN untuk kunci profil" inputmode="numeric" maxlength="6">
+            <label class="input-label">Peran</label>
+            <input type="text" id="editRole" class="input-field glass-card text-neutral" autocomplete="off" placeholder="Pengurus / Ustadz">
+            <label class="input-label">Security PIN (4-6 Digit)</label>
+            <input type="password" id="editPin" class="input-field glass-card text-neutral" placeholder="Biarkan kosong jika tidak diganti" inputmode="numeric" maxlength="6">
 
             <div class="modal-actions">
                 <button class="btn-modal btn-primary" onclick="saveProfileData()">Simpan</button>
@@ -384,10 +370,10 @@
         </div>
     </div>
 
-    <!-- MODAL AUTH PIN & RESET (Re-used PIN Template) -->
+    <!-- PIN & CONFIRMATION MODALS -->
     <div class="modal-overlay" id="pinAuthModal">
         <div class="modal-card text-center">
-            <h2 class="text-neutral" style="margin-top:0;">Otorisasi Keamanan</h2>
+            <h2 class="text-neutral mt-0">Otorisasi Keamanan</h2>
             <p class="text-muted text-sm mt-5 mb-20">Masukkan PIN keamanan Anda.</p>
             <input type="password" id="inputAuthPin" class="input-field glass-card text-neutral pin-input" placeholder="****" inputmode="numeric" maxlength="6">
             <input type="hidden" id="authPinTargetAction">
@@ -397,13 +383,9 @@
                 <button class="btn-modal btn-primary" onclick="verifyPinGlobal()">Verifikasi</button>
                 <button class="btn-modal btn-cancel" onclick="closeModal('pinAuthModal')">Batal</button>
             </div>
-            <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
-                <button class="btn-modal btn-cancel border-none text-xs" onclick="startOTPResetProcess()">Lupa PIN? Kirim Kode ke Email</button>
-            </div>
         </div>
     </div>
 
-    <!-- KONFIRMASI GLOBAL (2X CONFIRMATION) -->
     <div class="modal-overlay" id="confirmModal">
         <div class="modal-card text-center">
             <div class="warning-icon-wrapper">
@@ -412,34 +394,33 @@
             <h2 class="text-neutral mt-0" id="confirmTitle">Konfirmasi</h2>
             <p id="confirmDesc" class="text-muted text-sm mb-20 line-height-15">Apakah Anda yakin?</p>
             <div class="modal-actions">
-                <button class="btn-modal btn-primary bg-merah" id="btnConfirmYes">Ya, Eksekusi</button>
+                <button class="btn-modal bg-merah text-white font-bold border-none" id="btnConfirmYes">Eksekusi</button>
                 <button class="btn-modal btn-cancel" onclick="closeModal('confirmModal')">Batal</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL GOOGLE AUTH -->
+    <!-- GOOGLE & PARENT AUTH -->
     <div class="modal-overlay" id="googleAuthModal">
         <div class="modal-card text-center">
             <h2 class="text-neutral border-bottom-title">Sinkronisasi Cloud</h2>
-            <p class="text-muted text-sm mb-20">Login untuk menyimpan data secara real-time dan transparan.</p>
-            <button class="btn-modal bg-white text-dark font-bold d-flex flex-center gap-10" id="btnRealGoogleLogin">
-                Login dengan Google
+            <p class="text-muted text-sm mb-20">Login agar data aman & transparan di Server.</p>
+            <button class="btn-modal bg-white text-dark font-bold d-flex flex-center gap-10" onclick="executeGoogleLogin()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> Login dengan Google
             </button>
             <button class="btn-modal btn-cancel mt-10" onclick="closeModal('googleAuthModal')">Batal</button>
         </div>
     </div>
 
-    <!-- MODAL PARENT AUTH (PUBLIC LINK LOGIN) -->
     <div class="modal-overlay" id="parentAuthModal">
         <div class="modal-card text-center">
             <div class="warning-icon-wrapper text-biru bg-biru-transparan">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </div>
             <h2 class="text-neutral mt-0">Portal Wali Santri</h2>
-            <p class="text-muted text-sm mb-20 line-height-15">Masukkan nama santri yang terdaftar untuk memantau absensi dan SPP secara privat.</p>
+            <p class="text-muted text-sm mb-20 line-height-15">Masukkan nama santri yang terdaftar untuk memantau data secara privat.</p>
             
-            <input type="text" id="parentLoginName" list="studentNameDatalist" class="input-field glass-card text-neutral" placeholder="Ketik nama anak..." autocomplete="off">
+            <input type="text" id="parentLoginName" list="studentNameDatalist" class="input-field glass-card text-neutral text-center font-bold" placeholder="Ketik nama anak..." autocomplete="off">
             <datalist id="studentNameDatalist"></datalist>
 
             <div class="modal-actions">
@@ -448,7 +429,7 @@
         </div>
     </div>
 
-    <!-- MODAL INPUT TRANSAKSI (Ditambahkan Custom Date Trigger) -->
+    <!-- TRANSACTION MODALS -->
     <div class="modal-overlay" id="txModal">
         <div class="modal-card">
             <h2 id="modal-title" class="text-neutral border-bottom-title">Input Data</h2>
@@ -456,32 +437,31 @@
             <input type="hidden" id="tx-is-saving" value="false">
             
             <label class="input-label" id="label-kategori">Kategori</label>
-            <div id="categoryContainer" style="margin-bottom: 15px; position: relative;">
-                <div class="custom-select-wrapper" id="catSelectWrapper" style="margin-bottom: 0;">
+            <div id="categoryContainer" class="mb-15 position-relative">
+                <div class="custom-select-wrapper m-0" id="catSelectWrapper">
                     <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('catOptionsBox')">
                         <span id="dispTxCat">Pilih Kategori</span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options glass-card" id="catOptionsBox"></div>
                 </div>
-                <input type="text" id="tx-category-manual" class="input-field glass-card text-neutral" placeholder="Ketik kategori manual..." style="margin:0; display: none;">
+                <input type="text" id="tx-category-manual" class="input-field glass-card text-neutral m-0" placeholder="Ketik manual..." style="display: none;">
             </div>
             <input type="hidden" id="tx-category">
 
             <label class="input-label">Waktu Transaksi</label>
             <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('tx-date')">
                 <span id="disp-tx-date">Pilih Waktu...</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <input type="hidden" id="tx-date">
 
-            <label class="input-label" id="label-desc">Deskripsi / Keterangan</label>
+            <label class="input-label">Deskripsi / Keterangan</label>
             <input type="text" id="tx-desc" class="input-field glass-card text-neutral" autocomplete="off">
-            
             <label class="input-label">Pihak Terkait (Opsional)</label>
-            <input type="text" id="tx-pihak-terkait" class="input-field glass-card text-neutral" placeholder="Nama..." autocomplete="off">
-
+            <input type="text" id="tx-pihak-terkait" class="input-field glass-card text-neutral" autocomplete="off">
             <label class="input-label">Nominal (Rp)</label>
-            <input type="text" id="tx-amount" class="input-field glass-card text-neutral input-nominal" inputmode="numeric" placeholder="0" autocomplete="off">
+            <input type="text" id="tx-amount" class="input-field glass-card text-neutral input-nominal text-hijau" inputmode="numeric" placeholder="0" autocomplete="off">
             
             <div class="modal-actions">
                 <button type="button" class="btn-modal btn-primary" id="btnExecuteTx">Simpan</button>
@@ -490,16 +470,15 @@
         </div>
     </div>
 
-    <!-- MODAL TRANSFER DANA DARURAT -->
+    <!-- TRANSFER DANA -->
     <div class="modal-overlay" id="transferDanaModal">
         <div class="modal-card">
-            <h2 class="text-neutral border-bottom-title">Pindah ke Dana Darurat</h2>
-            <p class="text-muted text-sm mb-15">Pindahkan saldo dari dompet sumber ke Dana Darurat. Transaksi akan dicatat transparan.</p>
-            
+            <h2 class="text-neutral border-bottom-title">Transfer Dana Darurat</h2>
             <label class="input-label">Dompet Sumber</label>
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('transferSourceOptions')">
                     <span id="dispTransferSource">Kas Utama</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="transferSourceOptions">
                     <div class="custom-option text-neutral" onclick="selectTransferSource('utama')">Kas Utama</div>
@@ -508,36 +487,32 @@
                 </div>
             </div>
             <input type="hidden" id="transfer-source" value="utama">
-
             <label class="input-label">Nominal Transfer (Rp)</label>
-            <input type="text" id="transfer-amount" class="input-field glass-card text-neutral input-nominal" inputmode="numeric" placeholder="0" autocomplete="off">
-            
+            <input type="text" id="transfer-amount" class="input-field glass-card text-neutral input-nominal text-merah" inputmode="numeric" placeholder="0">
             <div class="modal-actions">
-                <button type="button" class="btn-modal btn-primary" onclick="executeTransferDarurat()">Transfer</button>
+                <button type="button" class="btn-modal bg-merah text-white font-bold border-none" onclick="executeTransferDarurat()">Transfer</button>
                 <button type="button" class="btn-modal btn-cancel" onclick="closeModal('transferDanaModal')">Batal</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL EDIT TRANSAKSI -->
+    <!-- EDIT TX -->
     <div class="modal-overlay" id="editTxModal">
         <div class="modal-card">
             <h2 class="text-neutral border-bottom-title">Edit Data Transaksi</h2>
             <input type="hidden" id="edit-tx-id">
-            
             <label class="input-label">Waktu Transaksi</label>
             <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('edit-tx-date')">
                 <span id="disp-edit-tx-date">Pilih Waktu...</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <input type="hidden" id="edit-tx-date">
-            
             <label class="input-label">Kategori</label>
             <input type="text" id="edit-tx-category" class="input-field glass-card text-neutral" autocomplete="off">
             <label class="input-label">Deskripsi</label>
             <input type="text" id="edit-tx-desc" class="input-field glass-card text-neutral" autocomplete="off">
             <label class="input-label">Nominal (Rp)</label>
-            <input type="text" id="edit-tx-amount" class="input-field glass-card text-neutral input-nominal" inputmode="numeric" placeholder="0" autocomplete="off">
-            
+            <input type="text" id="edit-tx-amount" class="input-field glass-card text-neutral input-nominal text-kuning" inputmode="numeric" placeholder="0">
             <div class="modal-actions">
                 <button type="button" class="btn-modal btn-primary" onclick="saveEditedTx()">Update</button>
                 <button type="button" class="btn-modal btn-cancel" onclick="closeModal('editTxModal')">Batal</button>
@@ -545,44 +520,38 @@
         </div>
     </div>
 
-    <!-- MODAL SPP SANTRI (MULTIPLE MONTHS) -->
+    <!-- SPP SANTRI -->
     <div class="modal-overlay" id="sppModal">
         <div class="modal-card spp-modal-card">
             <h2 class="text-neutral border-bottom-title">Manajemen SPP</h2>
-            
-            <div class="admin-only-btn" style="display:flex; gap:10px; margin-bottom: 15px;" id="sppInputGroup">
-                <input type="text" id="newSppName" class="input-field glass-card text-neutral m-0 p-10" placeholder="Nama Santri Baru...">
-                <button class="btn-modal btn-primary m-0 w-auto p-10" onclick="addSppStudent()">Tambah</button>
+            <div class="admin-only-btn d-flex gap-10 mb-15">
+                <input type="text" id="newSppName" class="input-field glass-card text-neutral m-0 p-10 font-bold" placeholder="Nama Santri Baru...">
+                <button class="btn-modal btn-primary m-0 w-auto p-10" onclick="addSppStudent()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
             </div>
-
             <input type="text" id="searchSppInput" class="input-field glass-card text-neutral p-10 mb-10" placeholder="Cari santri..." oninput="filterSppTable()">
-            
             <div class="table-scroll bg-hitam-card">
                 <table class="w-100 text-left">
                     <thead>
                         <tr>
                             <th class="sticky-th">Santri</th>
                             <th class="sticky-th text-center">Bulan Ditumpuk</th>
-                            <th class="sticky-th text-center">Status</th>
-                            <th class="sticky-th text-center th-admin-only spp-action-col">Aksi</th>
+                            <th class="sticky-th text-center th-admin-only">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="sppTableBody"></tbody>
                 </table>
             </div>
-
             <button class="btn-modal btn-cancel mt-15" onclick="closeModal('sppModal')">Tutup</button>
         </div>
     </div>
-
-    <!-- MODAL EDIT BULAN SPP (Khusus Admin menumpuk bulan) -->
+    
     <div class="modal-overlay" id="sppEditMonthModal">
         <div class="modal-card text-center">
             <h3 class="text-neutral border-bottom-title" id="sppEditTitle">Atur SPP</h3>
             <input type="hidden" id="sppEditTargetId">
-            <div class="month-grid" id="monthCheckboxGrid">
-                <!-- Injected via JS -->
-            </div>
+            <div class="month-grid text-left" id="monthCheckboxGrid"></div>
             <div class="modal-actions mt-20">
                 <button class="btn-modal btn-primary" onclick="saveSppMonths()">Simpan Bulan</button>
                 <button class="btn-modal btn-cancel" onclick="closeModal('sppEditMonthModal')">Batal</button>
@@ -590,14 +559,22 @@
         </div>
     </div>
 
-    <!-- MODAL ABSENSI SANTRI -->
+    <!-- ABSENSI SANTRI -->
     <div class="modal-overlay" id="absensiModal">
         <div class="modal-card spp-modal-card">
             <h2 class="text-neutral border-bottom-title">Absensi Harian</h2>
             <div class="custom-date-trigger glass-card text-neutral mb-15" onclick="openCustomDatePicker('absen-date')">
                 <span id="disp-absen-date">Tanggal Absen...</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <input type="hidden" id="absen-date">
+
+            <div class="d-flex mb-10 admin-only-btn gap-10">
+                <input type="text" id="newAbsenName" class="input-field glass-card text-neutral m-0 p-10 font-bold" placeholder="Nama Santri...">
+                <button class="btn-modal btn-primary m-0 w-auto p-10" onclick="addAbsenStudent()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+            </div>
 
             <div class="table-scroll bg-hitam-card">
                 <table class="w-100 text-left">
@@ -605,28 +582,42 @@
                         <tr>
                             <th class="sticky-th">Santri</th>
                             <th class="sticky-th text-center">Status Kehadiran</th>
+                            <th class="sticky-th text-center th-admin-only">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="absensiTableBody"></tbody>
                 </table>
             </div>
-            
             <div class="modal-actions mt-15">
                 <button class="btn-modal btn-primary admin-only-btn" onclick="saveAbsensi()">Simpan Rekap</button>
-                <button class="btn-modal btn-cancel" onclick="closeModal('absensiModal')">Batal / Tutup</button>
+                <button class="btn-modal btn-cancel" onclick="closeModal('absensiModal')">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- READ-ONLY RECEIPT -->
-    <div class="modal-overlay" id="receiptModal">
-        <div class="modal-card">
-            <div class="receipt-card glass-card" id="receiptContent"></div>
-            <button class="btn-modal btn-cancel mt-10" onclick="closeModal('receiptModal')">Tutup Bukti</button>
+    <!-- CUSTOM SELECT ABSEN (NATIVE REPLACEMENT) -->
+    <div class="modal-overlay" id="absensiStatusPickerModal">
+        <div class="modal-card text-center" style="max-width: 280px; padding: 15px;">
+            <h3 class="text-neutral m-0 mb-15">Pilih Status</h3>
+            <input type="hidden" id="absensiStatusTargetId">
+            <div class="d-flex flex-column gap-10">
+                <button class="btn-modal bg-hitam-card text-neutral border-none text-left font-bold" onclick="selectAbsensiStatus('Hadir', 'var(--hijau)')"><span style="color:var(--hijau)">●</span> Hadir</button>
+                <button class="btn-modal bg-hitam-card text-neutral border-none text-left font-bold" onclick="selectAbsensiStatus('Sakit', 'var(--kuning)')"><span style="color:var(--kuning)">●</span> Sakit</button>
+                <button class="btn-modal bg-hitam-card text-neutral border-none text-left font-bold" onclick="selectAbsensiStatus('Izin', 'var(--biru)')"><span style="color:var(--biru)">●</span> Izin</button>
+                <button class="btn-modal bg-hitam-card text-neutral border-none text-left font-bold" onclick="selectAbsensiStatus('Alfa', 'var(--merah)')"><span style="color:var(--merah)">●</span> Alfa</button>
+            </div>
+            <button class="btn-modal btn-cancel mt-15" onclick="closeModal('absensiStatusPickerModal')">Batal</button>
         </div>
     </div>
 
-    <!-- MODAL SHARE LINK -->
+    <!-- OTHER UTILS -->
+    <div class="modal-overlay" id="receiptModal">
+        <div class="modal-card">
+            <div class="receipt-card glass-card" id="receiptContent"></div>
+            <button class="btn-modal btn-cancel mt-20" onclick="closeModal('receiptModal')">Tutup Bukti</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="shareLinkModal">
         <div class="modal-card text-center">
             <div class="warning-icon-wrapper text-biru bg-biru-transparan">
@@ -634,9 +625,7 @@
             </div>
             <h2 class="text-neutral mt-0">Link Transparansi</h2>
             <p class="text-muted text-sm mb-20 line-height-15">Wali santri hanya dapat memantau data privat anak mereka via link ini.</p>
-            
             <div class="link-box text-neutral mb-20" id="publicLinkInput"></div>
-
             <div class="modal-actions">
                 <button class="btn-modal btn-primary" onclick="copyPublicLink()">Salin Tautan</button>
                 <button class="btn-modal btn-cancel" onclick="closeModal('shareLinkModal')">Batal</button>
@@ -644,88 +633,30 @@
         </div>
     </div>
 
-    <!-- MODAL EXPORT CSV -->
     <div class="modal-overlay" id="csvExportModal">
         <div class="modal-card text-center">
             <h2 class="text-neutral border-bottom-title">Ekspor Laporan CSV</h2>
-            
             <div class="d-flex gap-10 mb-20">
                 <div class="flex-1 text-left">
                     <label class="input-label text-xs">Dari</label>
                     <div class="custom-date-trigger glass-card text-neutral p-10" onclick="openCustomDatePicker('csv-start-date')">
-                        <span id="disp-csv-start-date">Pilih...</span>
+                        <span id="disp-csv-start-date" class="text-xs">Pilih...</span>
                     </div>
                     <input type="hidden" id="csv-start-date">
                 </div>
                 <div class="flex-1 text-left">
                     <label class="input-label text-xs">Sampai</label>
                     <div class="custom-date-trigger glass-card text-neutral p-10" onclick="openCustomDatePicker('csv-end-date')">
-                        <span id="disp-csv-end-date">Pilih...</span>
+                        <span id="disp-csv-end-date" class="text-xs">Pilih...</span>
                     </div>
                     <input type="hidden" id="csv-end-date">
                 </div>
             </div>
-
             <div class="modal-actions">
-                <button class="btn-modal btn-primary" onclick="executeCSVExport()">Unduh</button>
+                <button class="btn-modal btn-primary" onclick="executeCSVExport()">Unduh Data</button>
                 <button class="btn-modal btn-cancel" onclick="closeModal('csvExportModal')">Batal</button>
             </div>
         </div>
     </div>
-
-    <!-- MODAL WISHLIST & DRIVE (Simple Forms) -->
-    <div class="modal-overlay" id="addWishlistModal">
-        <div class="modal-card">
-            <h2 class="text-neutral border-bottom-title">Target Dana</h2>
-            <label class="input-label">Nama Target</label>
-            <input type="text" id="wishlist-name" class="input-field glass-card text-neutral" autocomplete="off">
-            <label class="input-label">Estimasi Dana</label>
-            <input type="text" id="wishlist-amount" class="input-field glass-card text-neutral input-nominal" inputmode="numeric" placeholder="0">
-            <div class="modal-actions">
-                <button type="button" class="btn-modal btn-primary" onclick="saveWishlist()">Simpan</button>
-                <button type="button" class="btn-modal btn-cancel" onclick="closeModal('addWishlistModal')">Batal</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="addDriveModal">
-        <div class="modal-card">
-            <h2 class="text-neutral border-bottom-title">Pintasan Drive</h2>
-            <label class="input-label">Nama Folder</label>
-            <input type="text" id="drive-name" class="input-field glass-card text-neutral" autocomplete="off">
-            <label class="input-label">URL Link</label>
-            <input type="url" id="drive-url" class="input-field glass-card text-neutral" placeholder="https://..." autocomplete="off">
-            <div class="modal-actions">
-                <button type="button" class="btn-modal btn-primary" onclick="saveDriveLink()">Simpan</button>
-                <button type="button" class="btn-modal btn-cancel" onclick="closeModal('addDriveModal')">Batal</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- OTP MODALS -->
-    <div class="modal-overlay" id="otpRequestModal">
-        <div class="modal-card text-center">
-            <h2 class="text-neutral mt-0">Reset PIN</h2>
-            <p class="text-muted text-sm mb-15">OTP dikirim ke:</p>
-            <p class="font-bold text-white mb-25" id="displayUserEmail">-</p>
-            <div class="modal-actions">
-                <button class="btn-modal btn-primary" id="btnSendOTP" onclick="sendOTPEmail()">Kirim Kode</button>
-                <button class="btn-modal btn-cancel" onclick="closeModal('otpRequestModal')">Batal</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="otpVerifyModal">
-        <div class="modal-card text-center">
-            <h2 class="text-neutral mt-0">Verifikasi Kode</h2>
-            <input type="number" id="inputOTP" class="input-field glass-card text-neutral text-center pin-input mb-20" placeholder="Kode OTP">
-            <input type="password" id="inputNewPinOTP" class="input-field glass-card text-neutral text-center pin-input mb-20" placeholder="PIN Baru" inputmode="numeric" maxlength="6">
-            <div class="modal-actions">
-                <button class="btn-modal btn-primary" onclick="verifyOTPAndSavePin()">Ubah PIN</button>
-                <button class="btn-modal btn-cancel" onclick="closeModal('otpVerifyModal')">Batal</button>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>
