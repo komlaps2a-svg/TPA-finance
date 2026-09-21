@@ -2,7 +2,7 @@
    TPA FINANCE 4.2 - MAIN LOGIC ENGINE
    ========================================== */
 
-const APP_VERSION = '4.2'; 
+const APP_VERSION = '4.3'; 
 const LS_PREFIX = 'tpa_finance_v4_';
 
 function getLS(key) { return localStorage.getItem(LS_PREFIX + key); }
@@ -48,7 +48,7 @@ let realTimeSubscription = null;
 let aiMessages = [];
 let generatedOTP = "";
 let otpExpiryTime = 0;
-let publicStudentName = ""; // Mode Wali Santri
+let publicStudentName = ""; 
 
 const defaultProfile = { 
     name: 'Pengurus', pin: '', role: 'Pengurus TPA',
@@ -126,7 +126,9 @@ function saveProfileLocal() { setLS('profile_secure_v4', JSON.stringify(profile)
 let lastScrollY = window.scrollY;
 window.addEventListener('scroll', () => {
     const header = document.getElementById('mainHeader');
-    if (!header) return;
+    // Jangan sembunyikan header jika modal sedang terbuka (body terkunci)
+    if (!header || document.body.classList.contains('body-lock')) return;
+    
     if (window.scrollY > lastScrollY && window.scrollY > 120) {
         header.classList.add('header-hidden');
     } else {
@@ -169,16 +171,20 @@ function enforcePublicMode() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('view') === 'public') {
         APP_MODE = 'PUBLIC';
+        
+        // Sembunyikan tombol eksekusi untuk Publik
         document.querySelectorAll('.admin-only-btn, .th-admin-only').forEach(el => {
             if(el) el.style.display = 'none';
         });
         
+        // Populate Datalist Rekomendasi Nama Anak
         const dl = document.getElementById('studentNameDatalist');
         if (dl) {
             dl.innerHTML = sppData.map(s => `<option value="${s.name}">`).join('');
         }
         
-        openModal('parentAuthModal', true); // Force lock
+        // Kunci layar langsung dengan Modal Login
+        openModal('parentAuthModal', true); 
     }
 }
 
@@ -188,16 +194,18 @@ function verifyParentLogin() {
     
     const student = sppData.find(s => s.name.toLowerCase() === val.toLowerCase());
     if(!student) { 
-        showToast("Nama tidak terdaftar. Hubungi Ustadz/Admin.", "error"); 
+        showToast("Nama tidak terdaftar. Hubungi Admin.", "error"); 
         return; 
     }
     
     publicStudentName = student.name;
-    closeModal('parentAuthModal', true); // Bypass force lock
+    closeModal('parentAuthModal', true); // Bypass force lock khusus ini
     
+    // Sesuaikan Header
     document.getElementById('headName').innerText = "Wali dari " + student.name;
     document.getElementById('headRole').innerText = "PORTAL WALI SANTRI";
     
+    // Matikan indikator kesehatan sistem TPA umum
     const healthBadge = document.getElementById('healthBadge');
     if(healthBadge) healthBadge.style.display = 'none';
 
@@ -212,7 +220,7 @@ async function initSupabaseBackground() {
     if (typeof window.supabase === 'undefined') return;
     if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Auto Ping Supabase to wake up Edge Functions
+    // Auto Ping Supabase to wake up Edge Functions / DB supaya tidak offline
     if (navigator.onLine) {
         sbClient.from('transactions').select('id').limit(1).then(() => console.log('Supabase Woke Up'));
     }
@@ -326,7 +334,7 @@ function openModal(id, forceLock = false) {
     const el = document.getElementById(id);
     if(el) {
         el.classList.add('active');
-        document.body.classList.add('body-lock');
+        document.body.classList.add('body-lock'); // Kunci scroll belakang
     }
 }
 function closeModal(id, overrideLock = false) { 
@@ -342,7 +350,7 @@ function closeModal(id, overrideLock = false) {
     
     document.querySelectorAll('.custom-options.open').forEach(e => e.classList.remove('open')); 
     
-    // Check if any modal is still active, if not, unlock body
+    // Unlock body if no modals are active
     if(document.querySelectorAll('.modal-overlay.active').length === 0) {
         document.body.classList.remove('body-lock');
     }
@@ -368,9 +376,8 @@ function toggleTheme(event) {
     let y = 50;
     
     if(event) {
-        // Fallback for click position
-        if (event.clientX) x = event.clientX;
-        if (event.clientY) y = event.clientY;
+        // Fallback koordinat dari mouse / touch
+        if (event.clientX) { x = event.clientX; y = event.clientY; }
         else if (event.touches && event.touches[0]) {
             x = event.touches[0].clientX;
             y = event.touches[0].clientY;
@@ -384,23 +391,23 @@ function toggleTheme(event) {
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     
-    // Set ripple color to the NEW theme background
+    // Set ripple color ke warna background tema baru
     ripple.style.backgroundColor = newTheme === 'light' ? '#f8fafc' : '#05140e';
     
-    // Animate expand
+    // Expand Ripple
     ripple.style.width = '200vw';
     ripple.style.height = '200vw';
     ripple.style.marginLeft = '-100vw';
     ripple.style.marginTop = '-100vw';
     ripple.classList.add('active');
     
-    // Change theme at peak of animation
+    // Tukar tema di puncak animasi
     setTimeout(() => {
         document.documentElement.setAttribute('data-theme', newTheme);
         setLS('app_theme', newTheme);
         updateThemeIcon(newTheme);
         
-        // Reset ripple silently
+        // Reset ripple
         setTimeout(() => {
             ripple.classList.remove('active');
             ripple.style.width = '0';
@@ -469,12 +476,12 @@ function renderCalendarGrid() {
     const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
     const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
     
-    // Blanks
+    // Kosong awal bulan
     for (let i = 0; i < firstDay; i++) {
         grid.innerHTML += `<div></div>`;
     }
     
-    // Dates
+    // Tanggal
     const today = new Date();
     const existingVal = document.getElementById(currentCalTargetId).value;
     const selectedDt = existingVal ? new Date(existingVal) : null;
@@ -485,25 +492,23 @@ function renderCalendarGrid() {
         
         let cls = 'cal-date-btn';
         if (isSelected) cls += ' active';
-        else if (isToday) cls += ' dimmed'; // Just to distinguish today if not selected
+        else if (isToday) cls += ' dimmed'; 
         
         grid.innerHTML += `<button type="button" class="${cls}" onclick="selectCalDate(${i})">${i}</button>`;
     }
 }
 
 function selectCalDate(day) {
-    // Save to temp input structure
-    const hour = document.getElementById('calHour').value || "00";
-    const min = document.getElementById('calMin').value || "00";
+    let hour = document.getElementById('calHour').value || "00";
+    let min = document.getElementById('calMin').value || "00";
+    if (hour === "") hour = "00"; if (min === "") min = "00";
     
-    // Create Date (Local time)
+    // Simpan zona waktu lokal ke format ISO
     const dt = new Date(currentCalYear, currentCalMonth, day, parseInt(hour), parseInt(min), 0);
-    
-    // Set to target
     const targetInput = document.getElementById(currentCalTargetId);
-    targetInput.value = dt.toISOString(); // Save full ISO
+    targetInput.value = dt.toISOString(); 
     
-    // Update Display Trigger
+    // Tampilan label button
     const dispStr = `${String(day).padStart(2,'0')}/${String(currentCalMonth+1).padStart(2,'0')}/${currentCalYear} - ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
     document.getElementById('disp-' + currentCalTargetId).innerText = dispStr;
     
@@ -511,7 +516,7 @@ function selectCalDate(day) {
 }
 
 function applyCustomDate() {
-    // If they just hit apply without clicking a day, select today's equivalent in the view
+    // Tombol fallback jika user tidak klik hari tapi menekan tombol pilih
     const today = new Date();
     selectCalDate(today.getDate());
 }
@@ -521,14 +526,14 @@ function applyCustomDate() {
 // PROFILE, WALLET, & UI
 // ==========================================
 function initAppHeader() { 
-    if(APP_MODE === 'PUBLIC') return; // Handled by verifyParentLogin
+    if(APP_MODE === 'PUBLIC') return; // Bypass untuk Wali Santri
     document.getElementById('headName').innerText = formatSmartName(profile.name); 
     document.getElementById('headRole').innerText = profile.role || 'Pengurus TPA'; 
     document.getElementById('headProfileImg').src = profile.photo; 
 }
 
 function openProfileView() { 
-    if(APP_MODE === 'PUBLIC') return; // Disable profile view for parents
+    if(APP_MODE === 'PUBLIC') return; // Wali Santri dilarang masuk edit profil
     document.getElementById('viewProfileImg').src = profile.photo; 
     document.getElementById('viewProfileName').innerText = profile.name; 
     document.getElementById('viewJoinDate').innerText = "Bergabung: " + formatDetailDate(profile.joinDate); 
@@ -571,7 +576,7 @@ async function saveProfileToSupabase() {
     try { await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile }); } catch(e) {} 
 }
 
-// PIN AUTH GLOBAL
+// PIN AUTH GLOBAL 2X (EDIT / DELETE)
 function promptGlobalPin(action, dataId = '') {
     closeModal(''); // Close everything
     if (!profile.pin || profile.pin.trim() === '') {
@@ -637,7 +642,7 @@ function expandChart(el, id) { if(!el.classList.contains('expanded')) { for(let 
 function closeChart(e, btn) { e.stopPropagation(); for(let i of btn.closest('.expand-container').children) i.className = 'expand-item glass-card'; setTimeout(() => { if(typeof Chart !== 'undefined' && pieChart) pieChart.resize(); if(typeof Chart !== 'undefined' && barChart) barChart.resize(); if(typeof Chart !== 'undefined' && lineChart) lineChart.resize(); }, 300); }
 
 function renderShortcuts() { 
-    if(APP_MODE === 'PUBLIC') return; // Hidden in public
+    if(APP_MODE === 'PUBLIC') return; // Hilangkan Shortcut input dari Wali Santri
     const c = document.getElementById('quickActionsContainer'); 
     c.className = 'quick-actions-wrap grid-mode grid-split-4'; 
     if(activeWallet === 'utama') {
@@ -684,7 +689,6 @@ function updateUI(searchTerm = '') {
         
         if(searchTerm) { return tx.desc.toLowerCase().includes(searchTerm) || tx.category.toLowerCase().includes(searchTerm) || (tx.pihak_terkait && tx.pihak_terkait.toLowerCase().includes(searchTerm)); } 
         
-        // Mode Publik: Filter by pihak_terkait for SPP matching (Optional logic, currently shows TPA general stats for transparency)
         return true; 
     });
 
@@ -867,7 +871,7 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
     if(rawAmount <= 0) { showToast("Nominal 0", "error"); return; } 
     if (document.getElementById('tx-is-saving').value === 'true') return; document.getElementById('tx-is-saving').value = 'true'; 
     
-    openConfirmModal("Eksekusi Transaksi", "Data akan dimasukkan ke dalam pembukuan. Lanjutkan?", async () => {
+    openConfirmModal("Eksekusi Transaksi", "Data akan dimasukkan ke pembukuan. Lanjutkan?", async () => {
         try {
             const type = document.getElementById('tx-type').value; 
             let cF = document.getElementById('tx-category-manual').style.display === 'block' ? document.getElementById('tx-category-manual').value.trim() : document.getElementById('tx-category').value; 
@@ -875,7 +879,7 @@ document.getElementById('btnExecuteTx').addEventListener('click', async () => {
             const pihak = document.getElementById('tx-pihak-terkait').value.trim();
             let finalDate = document.getElementById('tx-date').value || new Date().toISOString();
 
-            if(!cF || !dF) { showToast("Kategori & Deskripsi wajib diisi", "error"); return; } 
+            if(!cF || !dF) { showToast("Kategori & Deskripsi wajib", "error"); return; } 
             cF = properTitleCase(cF); dF = properTitleCase(dF);
             
             let tx = { wallet: activeWallet, type: type, category: cF, desc: dF, pihak_terkait: properTitleCase(pihak), amount: rawAmount, date: finalDate };
@@ -914,7 +918,7 @@ function executeTransferDarurat() {
     const amount = amountVal ? parseInt(amountVal, 10) : 0;
     const source = document.getElementById('transfer-source').value;
     
-    if(amount <= 0) { showToast("Nominal transfer tidak valid", "error"); return; }
+    if(amount <= 0) { showToast("Nominal tidak valid", "error"); return; }
     if(source === 'darurat') { showToast("Sumber tidak bisa dari Dana Darurat", "error"); return; }
     
     openConfirmModal("Transfer Darurat", `Pindahkan ${formatRp(amount)} dari ${properTitleCase(source)} ke Darurat?`, async () => {
@@ -953,7 +957,7 @@ async function saveEditedTx() {
     const nDateInput = document.getElementById('edit-tx-date').value;
 
     if(!nCat || !nDesc || editRawAmount <= 0) { showToast("Data tidak lengkap.", "error"); return; }
-    openConfirmModal("Simpan Perubahan", "Perbarui data transaksi ini?", async () => {
+    openConfirmModal("Simpan Perubahan", "Perbarui transaksi ini?", async () => {
         db[idx].category = nCat; db[idx].desc = nDesc; db[idx].amount = editRawAmount;
         if(nDateInput) db[idx].date = nDateInput;
 
@@ -1061,7 +1065,7 @@ function renderSppTable() {
     const tbody = document.getElementById('sppTableBody');
     let displayData = sppData;
     
-    // Jika Mode Publik, hanya filter anak yang di-login
+    // Jika Mode Publik, filter hanya murid yang dipilih ortu
     if(APP_MODE === 'PUBLIC' && publicStudentName) {
         displayData = sppData.filter(s => s.name === publicStudentName);
     }
@@ -1127,7 +1131,7 @@ function filterSppTable() {
 
 // ABSENSI ENGINE
 function openAbsensiModal() {
-    // Default today
+    // Default hari ini
     const dt = new Date();
     document.getElementById('absen-date').value = dt.toISOString();
     document.getElementById('disp-absen-date').innerText = formatDetailDate(dt.toISOString()).split(' - ')[0];
@@ -1178,7 +1182,7 @@ function renderAbsensiTable() {
     }).join('');
 }
 
-// Re-render absensi if date changed from custom picker
+// Re-render absensi jika tanggal diganti dari Custom DatePicker
 document.getElementById('disp-absen-date').addEventListener('DOMSubtreeModified', renderAbsensiTable);
 
 function saveAbsensi() {
