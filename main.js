@@ -1,5 +1,5 @@
 /* ==========================================
-   TPA FINANCE 4.2 - MAIN LOGIC ENGINE
+   TPA FINANCE 4.3 - MAIN LOGIC ENGINE
    ========================================== */
 
 const APP_VERSION = '4.3'; 
