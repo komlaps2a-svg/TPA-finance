@@ -1,11 +1,11 @@
 {
-  "name": "TPA Finance 4.3",
+  "name": "TPA Finance System",
   "short_name": "TPA Finance",
-  "description": "Sistem Manajemen Keuangan, SPP & Absensi TPA",
-  "start_url": "./",
+  "description": "Aplikasi Manajemen Keuangan & Absensi TPA Enterprise Edition",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#05140e",
-  "theme_color": "#064e3b",
+  "background_color": "#05120a",
+  "theme_color": "#031a0f",
   "orientation": "portrait-primary",
   "icons": [
     {
