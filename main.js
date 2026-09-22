@@ -5,8 +5,8 @@
 
 "use strict";
 
-const APP_VERSION = '4.7'; 
-const LS_PREFIX = 'tpa_finance_v47_';
+const APP_VERSION = '4.8'; 
+const LS_PREFIX = 'tpa_finance_v48_';
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kc3l5YXhtaXdza3Jra2xzZWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDU4NjIsImV4cCI6MjEwMDcyMTg2Mn0.uXgAIhUjjkNpe9s6N6LGvRXZLUDQUZJrSfUFf1BDmKU';
