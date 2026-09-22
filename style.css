@@ -1,41 +1,40 @@
 :root {
-    /* DARK MODE (Default - Hijau Gelap Kehitaman) */
-    --bg-color: #05120a;
-    --hitam-card: #091a10;
-    --hitam-btn: #0c2215;
+    /* DARK MODE (Hijau Gelap Kehitaman - Bukan Hitam Murni) */
+    --bg-color: #041009;
+    --hitam-card: #071a0e;
+    --hitam-btn: #0a2113;
     --putih: #f8fafc;
-    --text-muted: #8ba396; 
-    --border: #133322;
+    --text-muted: #7ca38d; 
+    --border: #113620;
     
-    /* Aksen */
+    /* Aksen Sistem */
     --hijau: #10b981; 
     --merah: #ef4444; 
     --biru: #3b82f6; 
     --kuning: #f59e0b;
-    --teks-netral: #f1f5f9; 
+    --teks-netral: #e2e8f0; 
     
     /* Lapis Header */
-    --header-l1: #031a0f;
-    --header-l2: #052615;
+    --header-l1: #03140a;
+    --header-l2: #052110;
 
-    /* Tekstur Kertas (Base64 Encoded - Aman dari Error GitHub/Jekyll) */
-    --paper-noise: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNub2lzZUZpbHRlciknIG9wYWNpdHk9JzAuMDQnLz48L3N2Zz4=");
+    /* Tekstur Kertas (Base64 Encoded - Mencegah render error) */
+    --paper-noise: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNub2lzZUZpbHRlciknIG9wYWNpdHk9JzAuMDMnLz48L3N2Zz4=");
 }
 
-/* TEMA TERANG (Light Mode Kertas) */
 [data-theme="light"] { 
-    --bg-color: #fdfbf7; 
+    /* LIGHT MODE (Tekstur Kertas Terang) */
+    --bg-color: #fcfaf5; 
     --hitam-card: #ffffff;
     --hitam-btn: #f1f5f9;
     --putih: #022c22;
-    --text-muted: #475569;  
-    --border: #d1fae5;
+    --text-muted: #526b5e;  
+    --border: #a7f3d0;
     --teks-netral: #064e3b; 
     
     --header-l1: #059669;
     --header-l2: #10b981;
 
-    /* Tekstur Kertas Terang (Base64 Encoded) */
     --paper-noise: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNub2lzZUZpbHRlciknIG9wYWNpdHk9JzAuMDgnLz48L3N2Zz4=");
 }
 
@@ -58,7 +57,6 @@ body {
     transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* Cegah Layar Belakang Scroll Saat Modal Terbuka */
 body.modal-open {
     overflow: hidden;
     touch-action: none;
@@ -67,7 +65,7 @@ body.modal-open {
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 
 /* ==========================================
-   ANIMASI TRANSISI TEMA (RIPPLE EFFECT)
+   ANIMASI TRANSISI TEMA (RIPPLE EFFECT SMOOTH)
 ========================================== */
 #themeTransitionLayer {
     position: fixed;
@@ -78,7 +76,7 @@ body.modal-open {
     background-color: var(--bg-color);
     border-radius: 50%;
     transform: translate(-50%, -50%) scale(0);
-    z-index: 999999; /* Selalu Paling Atas Saat Animasi */
+    z-index: 999999;
     pointer-events: none;
 }
 
@@ -93,10 +91,10 @@ body.modal-open {
 }
 
 /* ==========================================
-   UTILITIES (Glassmorphism, Outline, Text)
+   UTILITIES & GLASSMORPHISM
 ========================================== */
 .glass-card { 
-    background: rgba(var(--hitam-card), 0.9); 
+    background: rgba(var(--hitam-card), 0.95); 
     backdrop-filter: blur(16px); 
     -webkit-backdrop-filter: blur(16px); 
     border: 1px solid var(--border); 
@@ -104,13 +102,13 @@ body.modal-open {
     border-radius: 16px; 
 }
 [data-theme="light"] .glass-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     box-shadow: 0 8px 32px rgba(6, 78, 59, 0.08);
 }
 
 .text-neutral { color: var(--teks-netral) !important; }
 
-/* Status Text dengan Outline Kontras */
+/* Outline Teks Status (Sehat/Netral/Offline/Online) */
 .text-outline {
     color: #ffffff !important; 
     font-weight: 900 !important;
@@ -132,20 +130,19 @@ body.modal-open {
 
 /* Tombol Dasar */
 .btn-primary { background: var(--hijau) !important; color: #022c22 !important; border: none !important; font-weight: 900 !important; text-transform: uppercase; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);}
-.btn-cancel { background: transparent !important; border: 1px solid var(--merah) !important; color: var(--merah) !important; font-weight: 800 !important; text-transform: uppercase; }
+.btn-cancel { background: transparent !important; border: 1px solid var(--merah) !important; color: var(--merah) !important; font-weight: 900 !important; text-transform: uppercase; }
 .btn-modal { width: 100%; padding: 16px; border-radius: 12px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-top: 10px;}
 .btn-modal:active { transform: scale(0.97); }
 
 .btn-outline-small { background: var(--hitam-btn); border: 1px solid var(--border); color: var(--text-muted); padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; text-transform: uppercase; transition: all 0.2s; }
 .btn-outline-small:active { transform: scale(0.95); }
 
-/* Loading & Toasts */
+/* Loading & Toasts (Posisi Notifikasi Dinaikkan) */
 #updateScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
 .update-text { font-size: 12px; font-weight: 800; color: var(--teks-netral); margin-top: 20px; letter-spacing: 1px; }
 .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--hijau); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Toast Notification (Dinaikkan agar tidak tertutup header jika scroll) */
 .toast-container { position: fixed; top: 25px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 400px; }
 .toast { background: var(--hitam-btn); border: 1px solid var(--border); border-left: 5px solid var(--hijau); color: var(--teks-netral); padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); transform: translateY(-150%); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: left; }
 .toast.error { border-left-color: var(--merah); }
@@ -155,7 +152,7 @@ body.modal-open {
 [data-theme="light"] .toast { background: #ffffff; box-shadow: 0 10px 30px rgba(6, 78, 59, 0.15); }
 
 /* ==========================================
-   HEADER FLEKSIBEL (Ikut Scroll, Tidak Sticky)
+   HEADER FLEKSIBEL (Ikut Terscroll)
 ========================================== */
 .app-header-flexible {
     position: relative; 
@@ -176,7 +173,7 @@ body.modal-open {
 .profile-title { font-size: 11px; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; display: block; }
 .profile-name { font-size: clamp(16px, 5vw, 22px); font-weight: 900; margin: 0; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: #ffffff; }
 
-/* Kotak Status Netral/Sehat (Di samping profil) */
+/* Status Kesehatan Finansial */
 .health-badge {
     padding: 8px 12px;
     border-radius: 12px;
@@ -200,7 +197,7 @@ body.modal-open {
 .health-kritis { border-color: var(--merah); color: var(--merah); background: rgba(239, 68, 68, 0.1); }
 .health-defisit { border-color: var(--merah); color: #ffffff; background: var(--merah); }
 
-/* Wallet Switcher (Tabs) */
+/* Wallet Switcher */
 .controls-header { display: flex; flex-direction: column; width: 100%; }
 .wallet-switcher { position: relative; display: flex; width: 100%; padding: 6px; border-radius: 14px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); }
 .wallet-slider { position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc(25% - 6px); background: var(--hijau); border-radius: 10px; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
@@ -213,7 +210,7 @@ body.modal-open {
 .btn-tab.active { color: #ffffff; font-size: clamp(10px, 2.5vw, 12px); font-weight: 900; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
 
 /* ==========================================
-   KONTEN: FILTER & AI INSIGHT (Box Panjang)
+   FILTER WAKTU (Kecil) & AI INSIGHT (Panjang)
 ========================================== */
 .content-wrapper { padding: 0 20px 30px 20px; }
 .section-divider { height: 1px; background: var(--border); margin: 30px 0 20px 0; width: 100%; border-radius: 50%; }
@@ -222,13 +219,13 @@ body.modal-open {
 .time-filter-wrapper { width: 110px; flex-shrink: 0; position: relative; height: 100%; margin-bottom: 0; }
 .time-filter-wrapper .custom-select-trigger { padding: 0 12px; font-size: 11px; font-weight: 800; height: 100%; text-align: left; border-radius: 14px; }
 
-/* AI Insight Box with internal scroll */
+/* AI Insight Box (Marquee/Auto-Scroll) */
 .insight-box { 
     border-left: 4px solid var(--text-muted); 
     padding: 12px 15px; 
     flex: 1; 
     display: flex; 
-    align-items: flex-start; /* Tetap ke atas */
+    align-items: flex-start; 
     gap: 12px; 
     border-radius: 14px;
     height: 100%;
@@ -237,13 +234,12 @@ body.modal-open {
 .marquee-container {
     flex: 1;
     height: 100%;
-    overflow-y: auto; /* Bisa discroll jika teks panjang */
+    overflow-y: auto; 
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding-right: 5px; /* space for scrollbar */
+    padding-right: 5px; 
 }
-/* Scrollbar khusus untuk text box AI */
 .marquee-container::-webkit-scrollbar { width: 4px; }
 .marquee-container::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
 
@@ -251,7 +247,7 @@ body.modal-open {
 .fade-out { opacity: 0; }
 
 /* ==========================================
-   STATISTIK SALDO (Expandable)
+   STATISTIK SALDO
 ========================================== */
 .expand-container { display: flex; gap: 12px; width: 100%; margin-bottom: 20px; transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
 .expand-container:has(.expanded) { gap: 0; }
@@ -265,12 +261,12 @@ body.modal-open {
 .expand-item.expanded .card-value::after { content: attr(data-full); }
 .expand-item.collapsed { flex: 0 0 0%; border: none; padding: 0; margin: 0; opacity: 0; pointer-events: none; }
 
-/* Tombol X (MERAH KHUSUS ANALITIK) */
+/* Tombol Tutup Khusus Chart (Warna Merah Absolut) */
 .chart-close-red {
     position: absolute; 
     top: 15px; 
     right: 15px; 
-    background: var(--merah) !important; /* Warna Merah Solid */
+    background: var(--merah) !important; 
     border: none !important;
     color: #ffffff !important; 
     width: 36px; 
@@ -301,7 +297,6 @@ body.modal-open {
 .collapsible-content { max-height: 2500px; opacity: 1; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease; }
 .collapsible-content.hidden { max-height: 0; opacity: 0; pointer-events: none; margin: 0; }
 
-/* Quick Actions Button Wrap */
 .quick-actions-wrap { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; -ms-overflow-style: none; scrollbar-width: none; margin-top: 15px; }
 .quick-actions-wrap::-webkit-scrollbar { display: none; }
 .quick-actions-wrap.grid-mode { display: grid; gap: 12px; }
@@ -353,7 +348,7 @@ tr:last-child td { border-bottom: none; }
 .amt-cell { font-family: 'Courier New', Courier, monospace; font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 900; letter-spacing: -0.5px; }
 
 /* ==========================================
-   MODALS & OVERLAYS (FLAT SIBLINGS)
+   MODALS & OVERLAYS (FLAT SIBLINGS Z-INDEX)
 ========================================== */
 .modal-overlay { 
     position: fixed; 
@@ -363,7 +358,7 @@ tr:last-child td { border-bottom: none; }
     backdrop-filter: blur(12px); 
     -webkit-backdrop-filter: blur(12px); 
     display: flex; justify-content: center; align-items: flex-start; 
-    z-index: -1; /* Tersembunyi by default */
+    z-index: -1; 
     opacity: 0; visibility: hidden; 
     transition: opacity 0.3s ease, visibility 0.3s; 
     overflow-y: auto; 
@@ -372,7 +367,6 @@ tr:last-child td { border-bottom: none; }
 }
 .modal-overlay.active { 
     opacity: 1; visibility: visible; 
-    /* Z-index diset dinamis via JS, tapi base class punya fallback tinggi */
     z-index: 10000; 
 }
 
@@ -435,10 +429,6 @@ tr:last-child td { border-bottom: none; }
 .cal-day-btn.selected { background: var(--hijau); color: #022c22; border-color: var(--hijau); font-weight: 900; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4); }
 .cal-day-btn.today { border: 2px solid var(--biru); color: var(--biru); }
 
-/* Input Time dalam Kalender Kustom */
-input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(1) hue-rotate(90deg) saturate(3); cursor: pointer; }
-[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.3) sepia(1) hue-rotate(90deg) saturate(3); }
-
 /* ==========================================
    MULTI-MONTH SPP CHECKBOX GRID
 ========================================== */
@@ -454,6 +444,6 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepi
 .public-status-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); }
 .public-status-row:last-child { border-bottom: none; }
 
-/* SPP Table Status Buttons in Admin */
-.btn-spp-del { background: transparent; border: none; color: var(--merah); padding: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+/* SPP Table Status Buttons in Admin (Hapus menggunakan merah bukan X native) */
+.btn-spp-del { background: transparent; border: none; color: var(--merah); padding: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;}
 .btn-spp-del:active { background: rgba(239, 68, 68, 0.1); transform: scale(0.9); }
