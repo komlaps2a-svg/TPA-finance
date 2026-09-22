@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#064e3b" id="metaThemeColor">
+    <meta name="theme-color" content="#031a0f" id="metaThemeColor">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TPA Finance">
     <link rel="apple-touch-icon" href="icon-192x192.png">
 
-    <title>TPA Finance v4.4 - Enterprise Edition</title>
+    <title>TPA Finance v4.5 - Enterprise Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- External Libraries -->
@@ -20,8 +20,8 @@
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <!-- Hard Cache Busting -->
-    <link rel="stylesheet" href="style.css?v=420">
-    <script defer src="main.js?v=420"></script>
+    <link rel="stylesheet" href="style.css?v=450">
+    <script defer src="main.js?v=450"></script>
 </head>
 <body>
     <!-- Layer Transisi Tema Smooth -->
@@ -30,10 +30,10 @@
     <!-- Update Screen -->
     <div id="updateScreen" style="display:none;">
         <div class="spinner"></div>
-        <p class="update-text">MENERAPKAN UPDATE VERSI BARU v4.2...</p>
+        <p class="update-text">MENERAPKAN UPDATE VERSI BARU v4.5...</p>
     </div>
 
-    <!-- Toast Notification (Dipindah ke atas nanti di CSS) -->
+    <!-- Toast Notification -->
     <div id="toastBox" class="toast-container"></div>
 
     <!-- STICKY/FLEXIBLE HEADER -->
@@ -47,7 +47,7 @@
                     <div class="profile-name-wrap">
                         <span class="profile-title" id="headGender">PENGURUS TPA</span>
                         <h1 class="profile-name" id="headName">Guest</h1>
-                        <!-- Status Teks dengan Outline (Diatur di CSS) -->
+                        <!-- Status Teks dengan Outline Hijau/Merah -->
                         <div id="networkStatus" class="status-sync sync-offline text-outline">Offline Mode</div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
         <div class="header-layer-3"></div>
     </header>
 
-    <!-- KONTEN UTAMA -->
+    <!-- KONTEN UTAMA ADMIN -->
     <div class="content-wrapper" id="mainContentWrapper">
         
         <!-- ROW: Filter Waktu (Kecil) & AI Insight (Panjang/Auto-scroll) -->
@@ -81,7 +81,7 @@
             <div class="custom-select-wrapper time-filter-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('timeFilterOptions')">
                     <span id="dispTimeFilter">Semua</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="timeFilterOptions">
                     <div class="custom-option text-neutral" onclick="applyTimeFilter(365, 'Semua')">Semua Waktu</div>
@@ -92,7 +92,7 @@
                 </div>
             </div>
 
-            <!-- AI Insight Box - Scrollable Teks Panjang -->
+            <!-- AI Insight Box - Scrollable Teks Panjang vertical -->
             <div id="aiInsightBox" class="insight-box glass-card">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 <div class="marquee-container">
@@ -124,7 +124,7 @@
         <div class="section-divider" id="div-admin"></div>
         <div class="section-header" id="head-admin" onclick="toggleSection('adminSection', 'adminToggleIcon')">
             <h2 class="section-title">Manajemen Santri & Laporan</h2>
-            <svg id="adminToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            <svg id="adminToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <div class="collapsible-content" id="adminSection">
             <div class="quick-actions-wrap grid-mode grid-split-2" style="margin-top:0; margin-bottom:20px;">
@@ -134,7 +134,7 @@
                 </button>
                 <button class="btn-quick glass-card svg-biru" id="btnBagikanLaporan" onclick="openShareLinkModal()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    <span class="text-neutral">Link Transparansi Publik</span>
+                    <span class="text-neutral">Link Transparansi</span>
                 </button>
             </div>
         </div>
@@ -144,10 +144,10 @@
         <div class="section-header">
             <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('wishlistSection', 'wishlistToggleIcon')">
                 <h2 class="section-title">Target Dana</h2>
-                <svg id="wishlistToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                <svg id="wishlistToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
             </div>
             <button onclick="openAddWishlistModal()" class="btn-outline-small glass-card" id="btnAddWishlist">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Tambah
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Tambah
             </button>
         </div>
         <div class="collapsible-content" id="wishlistSection">
@@ -159,36 +159,42 @@
         <div class="section-header">
             <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('driveSection', 'driveToggleIcon')">
                 <h2 class="section-title">Arsip Drive</h2>
-                <svg id="driveToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                <svg id="driveToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
             </div>
             <button onclick="openAddDriveModal()" class="btn-outline-small glass-card" id="btnAddDrive">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Link Baru
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Baru
             </button>
         </div>
         <div class="collapsible-content" id="driveSection">
             <div class="quick-actions-wrap" id="driveContainer" style="margin-top:0; margin-bottom: 20px;"></div>
         </div>
 
-        <!-- ANALITIK VISUAL (Tombol X merah tetap dipertahankan di JS/CSS untuk ini) -->
+        <!-- ANALITIK VISUAL -->
         <div class="section-divider"></div>
         <div class="section-header" onclick="toggleSection('chartsSection', 'chartToggleIcon')">
             <h2 class="section-title">Analitik Visual</h2>
-            <svg id="chartToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            <svg id="chartToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
         </div>
         <div class="collapsible-content" id="chartsSection">
             <div class="expand-container" id="chartContainer">
                 <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
-                    <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)">✕</button>
+                    <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                     <span class="card-label">Distribusi</span>
                     <div class="chart-box"><canvas id="pieChart"></canvas></div>
                 </div>
                 <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
-                    <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)">✕</button>
+                    <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                     <span class="card-label">Timeline</span>
                     <div class="chart-box"><canvas id="barChart"></canvas></div>
                 </div>
                 <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
-                    <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)">✕</button>
+                    <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                     <span class="card-label">Arus Kas</span>
                     <div class="chart-box"><canvas id="lineChart"></canvas></div>
                 </div>
@@ -200,7 +206,7 @@
         <div class="section-header">
             <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('historySection', 'historyToggleIcon')">
                 <h2 class="section-title">Riwayat Transaksi</h2>
-                <svg id="historyToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                <svg id="historyToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
             </div>
             <button onclick="openCSVModal()" class="btn-outline-small glass-card" id="btnExportCSV" style="border-color:var(--hijau); color:var(--hijau);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export
@@ -210,7 +216,9 @@
         <div class="collapsible-content" id="historySection">
             <div class="search-container">
                 <input type="text" id="searchTxInput" class="search-input glass-card text-neutral" placeholder="Cari transaksi, kategori, atau nama..." autocomplete="off">
-                <span class="search-clear" id="searchClearBtn" onclick="clearSearch()">✕</span>
+                <span class="search-clear" id="searchClearBtn" onclick="clearSearch()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </span>
             </div>
 
             <div class="table-container glass-card">
@@ -228,18 +236,93 @@
                 </table>
             </div>
         </div>
-    </div> <!-- End Content Wrapper -->
+    </div> <!-- End Content Wrapper Admin -->
+
+
+    <!-- =========================================================
+         PUBLIC PORTAL OVERLAY (Hanya untuk Wali Santri)
+    ========================================================= -->
+    <div id="publicLoginOverlay" class="public-portal-overlay">
+        <!-- Halaman Login Public -->
+        <div id="publicLoginBox" class="glass-card public-login-box">
+            <svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="var(--hijau)" stroke-width="2" style="margin-bottom:15px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <h2 class="text-neutral" style="margin:0 0 5px 0;">Portal Transparansi</h2>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:30px; line-height:1.5;">Masukkan nama Anak/Murid Anda untuk melihat status SPP, Kehadiran, serta Arus Kas TPA secara Real-Time.</p>
+            
+            <div style="position:relative; text-align:left;">
+                <input type="text" id="publicStudentInput" class="input-field glass-card text-neutral" placeholder="Ketik nama murid..." oninput="handlePublicAutocomplete()" autocomplete="off" style="margin-bottom:10px;">
+                <div id="publicAutocompleteList" class="glass-card hidden public-autocomplete"></div>
+            </div>
+
+            <button class="btn-modal btn-primary" onclick="validatePublicLogin()">Akses Data Live</button>
+        </div>
+
+        <!-- Halaman Dashboard Public (Disembunyikan di awal) -->
+        <div id="publicDashboard" class="public-dashboard hidden">
+            <!-- Header Public -->
+            <div class="public-header glass-card">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <div class="profile-pic-container" style="width: 45px; height:45px; border-width:2px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--hijau)" stroke-width="2" style="width:100%; height:100%; padding:5px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </div>
+                    <div>
+                        <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Data Murid</span>
+                        <h2 class="text-neutral" id="pubStudentName" style="margin:0; font-size:16px;">Nama Murid</h2>
+                    </div>
+                </div>
+                <button onclick="logoutPublic()" class="btn-outline-small glass-card" style="border-color:var(--merah); color:var(--merah);">Keluar</button>
+            </div>
+
+            <!-- Konten Status SPP & Absen -->
+            <div class="public-status-grid">
+                <div class="glass-card public-stat-box">
+                    <span class="prof-detail-label">Status Absen Terakhir</span>
+                    <div id="pubAbsenStatus" style="margin-top:10px;"></div>
+                    <div id="pubAbsenDetail" style="font-size:11px; color:var(--text-muted); margin-top:8px; font-weight:600;">-</div>
+                </div>
+                <div class="glass-card public-stat-box">
+                    <span class="prof-detail-label">Bulan SPP Lunas</span>
+                    <div id="pubSppStatus" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;"></div>
+                </div>
+            </div>
+
+            <!-- Ringkasan Saldo Global TPA -->
+            <h3 class="text-neutral" style="font-size:14px; margin:25px 0 10px 0; border-bottom:1px solid var(--border); padding-bottom:8px;">Transparansi Keuangan TPA</h3>
+            <div class="expand-container">
+                <div class="expand-item glass-card expanded">
+                    <span class="card-label">Total Saldo Kas TPA</span>
+                    <p class="card-value text-neutral" id="pubSaldoTpa" style="font-size:24px;">Rp 0</p>
+                </div>
+            </div>
+
+            <!-- Riwayat Transaksi Read Only -->
+            <div class="table-container glass-card" style="margin-top:15px;">
+                <table style="min-width: 500px;">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Kategori</th>
+                            <th>Keterangan</th>
+                            <th style="text-align: right;">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pubTableBody"></tbody>
+                </table>
+            </div>
+            
+            <div style="text-align:center; margin-top:30px; font-size:11px; color:var(--text-muted); font-weight:600;">TPA Finance System v4.5 Enterprise - Read Only</div>
+        </div>
+    </div>
 
 
     <!-- =========================================================
          SEMUA MODAL DILETAKKAN FLAT DI BAWAH (SIBLINGS)
-         Tombol 'X' dihapus, diganti 'Batal' di Footer Modal
+         Z-INDEX ENGINE MENANGANI OVERLAP & SCROLL LOCK
     ========================================================= -->
 
     <!-- MODAL PROFIL & RULES -->
     <div class="modal-overlay" id="profileViewModal">
         <div class="modal-card">
-            <!-- Theme Toggle & Edit Button (Tetap di atas tapi bukan tombol close) -->
             <div style="position: absolute; top: 15px; left: 15px;">
                 <button id="themeToggleBtn" onclick="toggleTheme()" class="icon-btn">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"></svg>
@@ -277,15 +360,15 @@
             <!-- Rules & Panduan Aplikasi (Expandable) -->
             <div style="margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding: 10px;" class="glass-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleSection('rulesContent', 'rulesIcon')">
-                    <span style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">📖 Panduan & Rules Aplikasi</span>
-                    <svg id="rulesIcon" class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <span style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">📖 Panduan & Rules (Penting)</span>
+                    <svg id="rulesIcon" class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
-                <div id="rulesContent" class="collapsible-content hidden" style="margin-top: 10px; font-size: 12px; color: var(--teks-netral); line-height: 1.6;">
+                <div id="rulesContent" class="collapsible-content hidden" style="margin-top: 10px; font-size: 11px; color: var(--teks-netral); line-height: 1.6; font-weight:600;">
                     <ul style="padding-left: 15px; margin:0;">
-                        <li><b>Absensi Otomatis:</b> Data absen direstart otomatis tiap Minggu jam 00:00. Download rekap (CSV) tiap hari Sabtu.</li>
-                        <li><b>Link Publik:</b> Orang tua harus memasukkan Nama Anak terdaftar untuk melihat data SPP & Absen (Privasi).</li>
-                        <li><b>Offline-First:</b> Saat koneksi putus, data tersimpan di Lokal. Saat online, data otomatis sinkron ke Cloud Supabase.</li>
-                        <li><b>Keamanan:</b> Gunakan PIN untuk mencegah modifikasi data tanpa izin.</li>
+                        <li><b style="color:var(--merah);">Auto-Reset Absensi:</b> Data kehadiran murid akan di-reset otomatis setiap hari <b class="text-neutral">Minggu Jam 00:00</b> untuk menghemat database lokal.</li>
+                        <li><b style="color:var(--kuning);">Pengingat Laporan:</b> Setiap hari <b class="text-neutral">Sabtu</b> sistem akan mengingatkan admin untuk mengunduh rekap CSV mingguan sebelum tereset.</li>
+                        <li><b style="color:var(--hijau);">Link Publik Transparan:</b> Wali santri harus memasukkan nama anak dengan benar untuk melihat SPP & Absen (demi privasi data). Wali santri tidak bisa mengedit apapun.</li>
+                        <li><b style="color:var(--biru);">Keamanan PIN:</b> Segala aksi hapus/edit transaksi wajib menggunakan PIN.</li>
                     </ul>
                 </div>
             </div>
@@ -293,14 +376,14 @@
             <!-- Sosial Media Developer -->
             <span class="prof-detail-label" style="text-align: center; margin-bottom: 10px;">Support Developer</span>
             <div class="sosmed-container" style="margin-bottom: 20px;">
-                <a href="https://www.instagram.com/daengtio_?igsh=MXY4dTVhMGEzNDJxZA==" target="_blank" class="btn-sosmed ig">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> IG
+                <a href="https://www.instagram.com/daengtio_?igsh=MXY4dTVhMGEzNDJxZA==" target="_blank" rel="noopener noreferrer" class="btn-sosmed ig">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> IG
                 </a>
-                <a href="https://www.tiktok.com/@daengtio_0?_r=1&_t=ZS-94Cu2soiSXJ" target="_blank" class="btn-sosmed tt">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> TikTok
+                <a href="https://www.tiktok.com/@daengtio_0?_r=1&_t=ZS-94Cu2soiSXJ" target="_blank" rel="noopener noreferrer" class="btn-sosmed tt">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> TikTok
                 </a>
-                <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" class="btn-sosmed sw">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Kopi
+                <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" rel="noopener noreferrer" class="btn-sosmed sw">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Kopi
                 </a>
             </div>
 
@@ -330,6 +413,7 @@
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('genderOptions')">
                     <span id="dispGenderVal">Pilih Gender</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="genderOptions">
                     <div class="custom-option text-neutral" onclick="selectGender('Laki-Laki')">Laki-Laki</div>
@@ -359,7 +443,7 @@
                 <div class="custom-select-wrapper" id="catSelectWrapper" style="margin-bottom: 0;">
                     <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('catOptionsBox')">
                         <span id="dispTxCat">Pilih Kategori</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options glass-card" id="catOptionsBox"></div>
                 </div>
@@ -367,11 +451,10 @@
             </div>
             <input type="hidden" id="tx-category">
 
-            <!-- Pemicu Custom Datepicker (Bukan input type="date") -->
             <label class="input-label">Waktu Transaksi</label>
-            <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('tx-date-hidden', 'disp-tx-date')" style="padding: 16px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; cursor: pointer; display:flex; justify-content:space-between;">
+            <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('tx-date-hidden', 'disp-tx-date')" style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; cursor: pointer; display:flex; justify-content:space-between; font-weight:700; font-size:14px;">
                 <span id="disp-tx-date">Gunakan Waktu Saat Ini</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             </div>
             <input type="hidden" id="tx-date-hidden">
 
@@ -380,37 +463,51 @@
 
             <label class="input-label">Gelar & Pihak Terkait</label>
             <div style="display:flex; gap:10px; margin-bottom: 20px;">
-                <div class="custom-select-wrapper" style="width: 35%; margin-bottom:0;">
-                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('titleOptionsBox')" style="padding:16px 10px;">
+                <div class="custom-select-wrapper" style="width: 40%; margin-bottom:0;">
+                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('titleOptionsBox')" style="padding:16px 10px; font-size:12px;">
                         <span id="dispTxTitle">Bapak/Ibu</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options glass-card" id="titleOptionsBox">
                         <div class="custom-option text-neutral" onclick="selectTitle('Murid')">Murid</div>
                         <div class="custom-option text-neutral" onclick="selectTitle('Ustadz/ah')">Ustadz/ah</div>
-                        <div class="custom-option text-neutral" onclick="selectTitle('Pengurus')">Pengurus</div>
+                        <div class="custom-option text-neutral" onclick="selectTitle('Pengurus Masjid')">Pengurus Masjid</div>
+                        <div class="custom-option text-neutral" onclick="selectTitle('Tokoh Masyarakat')">Tokoh Masyarakat</div>
                         <div class="custom-option text-neutral" onclick="selectTitle('Bapak/Ibu')">Bapak/Ibu</div>
                     </div>
                 </div>
                 <input type="hidden" id="tx-title-val" value="Bapak/Ibu">
-                <input type="text" id="tx-pihak-terkait" class="input-field glass-card text-neutral" placeholder="Nama Pihak..." autocomplete="off" style="width: 65%; margin-bottom:0;">
+                <input type="text" id="tx-pihak-terkait" class="input-field glass-card text-neutral" placeholder="Nama Pihak..." autocomplete="off" style="width: 60%; margin-bottom:0;">
             </div>
 
             <label class="input-label">Nominal (Rp)</label>
-            <input type="text" id="tx-amount" class="input-field glass-card text-neutral" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right;">
+            <input type="text" id="tx-amount" class="input-field glass-card text-neutral" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 26px; font-weight: 900; text-align: right; color:var(--hijau);">
 
             <button type="button" class="btn-modal btn-primary" id="btnExecuteTx">Proses Transaksi</button>
             <button type="button" class="btn-modal btn-cancel" onclick="closeModal('txModal')">Batalkan</button>
         </div>
     </div>
 
-    <!-- MODAL CUSTOM DATEPICKER UI (Pengganti Native Browser) -->
+    <!-- MODAL CUSTOM DATEPICKER UI (Sepenuhnya Custom, Tanpa Native Browser) -->
     <div class="modal-overlay" id="customCalendarModal">
-        <div class="modal-card" style="padding: 20px;">
-            <h2 class="text-neutral modal-header-title" style="text-align:center; font-size:16px;">Pilih Waktu</h2>
+        <div class="modal-card" style="padding: 25px;">
+            <h2 class="text-neutral modal-header-title" style="text-align:center; font-size:16px;">Tentukan Waktu Mutasi</h2>
             
-            <div style="display:flex; gap:10px; margin-bottom: 15px;">
-                <select id="custCalMonth" class="input-field glass-card text-neutral" style="padding: 10px; margin:0;" onchange="renderCustomCalendar()"></select>
-                <select id="custCalYear" class="input-field glass-card text-neutral" style="padding: 10px; margin:0;" onchange="renderCustomCalendar()"></select>
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                <div class="custom-select-wrapper" style="flex:1; margin-bottom:0;">
+                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('custMonthOptions')" style="padding:12px; font-size:13px;">
+                        <span id="dispCustMonth">Bulan</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                    <div class="custom-options glass-card" id="custMonthOptions"></div>
+                </div>
+                <div class="custom-select-wrapper" style="width:35%; margin-bottom:0;">
+                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('custYearOptions')" style="padding:12px; font-size:13px;">
+                        <span id="dispCustYear">Tahun</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                    <div class="custom-options glass-card" id="custYearOptions"></div>
+                </div>
             </div>
             
             <div class="calendar-grid-header">
@@ -418,39 +515,54 @@
             </div>
             <div id="calendarDaysGrid" class="calendar-grid-days"></div>
 
-            <div style="margin-top:15px; display:flex; gap:10px; align-items:center;">
-                <input type="time" id="custCalTime" class="input-field glass-card text-neutral" style="padding:10px; margin:0; flex:1;">
+            <label class="input-label" style="margin-top:20px;">Atur Jam (WIB)</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <div class="custom-select-wrapper" style="flex:1; margin-bottom:0;">
+                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('custHourOptions')" style="padding:12px; justify-content:center;">
+                        <span id="dispCustHour" style="font-size:18px; font-weight:900;">00</span>
+                    </div>
+                    <div class="custom-options glass-card" id="custHourOptions" style="max-height:150px;"></div>
+                </div>
+                <span class="text-neutral" style="font-weight:900; font-size:20px;">:</span>
+                <div class="custom-select-wrapper" style="flex:1; margin-bottom:0;">
+                    <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('custMinuteOptions')" style="padding:12px; justify-content:center;">
+                        <span id="dispCustMinute" style="font-size:18px; font-weight:900;">00</span>
+                    </div>
+                    <div class="custom-options glass-card" id="custMinuteOptions" style="max-height:150px;"></div>
+                </div>
             </div>
 
             <input type="hidden" id="custCalTargetHidden">
             <input type="hidden" id="custCalTargetDisp">
             
-            <button class="btn-modal btn-primary" style="margin-top: 20px;" onclick="applyCustomDate()">Terapkan Tanggal</button>
+            <button class="btn-modal btn-primary" style="margin-top: 25px;" onclick="applyCustomDate()">Terapkan Waktu</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('customCalendarModal')">Batal</button>
         </div>
     </div>
 
     <!-- MODAL SPP & ABSENSI (ADMIN) -->
     <div class="modal-overlay" id="sppAbsenModal">
-        <div class="modal-card" style="max-width: 500px; padding: 20px;">
-            <h2 class="text-neutral modal-header-title">Monitor SPP & Absensi Santri</h2>
-            <p style="font-size:11px; color:var(--text-muted); margin-bottom: 15px;">Data ini akan direfleksikan ke Link Transparansi Wali Santri.</p>
+        <div class="modal-card" style="max-width: 550px; padding: 25px;">
+            <h2 class="text-neutral modal-header-title">Monitor Kehadiran & SPP</h2>
+            <p style="font-size:11px; color:var(--text-muted); margin-bottom: 15px; font-weight:600;">Semua perubahan disini akan direfleksikan otomatis ke link Transparansi Wali Santri.</p>
 
             <div style="display:flex; gap:10px; margin-bottom: 15px;">
-                <input type="text" id="newStudentName" class="input-field glass-card text-neutral" placeholder="Daftarkan Nama Santri..." style="margin:0; padding:12px;">
+                <input type="text" id="newStudentName" class="input-field glass-card text-neutral" placeholder="Daftarkan Nama Murid Baru..." style="margin:0; padding:12px;">
                 <button class="btn-modal btn-primary" style="margin:0; width:auto; padding:0 20px;" onclick="registerStudent()">Tambah</button>
             </div>
 
-            <input type="text" id="searchStudentAdmin" class="input-field glass-card text-neutral" placeholder="Cari santri..." oninput="filterAdminStudentTable()" style="margin-bottom: 10px; padding: 10px; font-size: 12px;">
+            <div class="search-container" style="margin-bottom:15px;">
+                <input type="text" id="searchStudentAdmin" class="search-input glass-card text-neutral" placeholder="Cari nama murid..." oninput="filterAdminStudentTable()" style="padding: 12px 40px 12px 12px; font-size: 13px;">
+            </div>
 
-            <div style="background:var(--hitam-card); border-radius:10px; border:1px solid var(--border); max-height:350px; overflow-y:auto;">
+            <div style="background:var(--hitam-card); border-radius:12px; border:1px solid var(--border); max-height:400px; overflow-y:auto;">
                 <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12px;">
-                    <thead style="position:sticky; top:0; background:var(--border); z-index:2;">
+                    <thead style="position:sticky; top:0; background:var(--header-l2); z-index:2;">
                         <tr>
-                            <th style="padding:10px;">Nama Santri</th>
-                            <th style="padding:10px; text-align:center;">Bulan Lunas</th>
-                            <th style="padding:10px; text-align:center;">Hadir?</th>
-                            <th style="padding:10px; text-align:center;">Aksi</th>
+                            <th style="padding:12px; color:#fff;">Nama Murid</th>
+                            <th style="padding:12px; text-align:center; color:#fff;">Bulan Lunas</th>
+                            <th style="padding:12px; text-align:center; color:#fff;">Hadir?</th>
+                            <th style="padding:12px; text-align:center; color:#fff;">Hapus</th>
                         </tr>
                     </thead>
                     <tbody id="adminStudentTableBody"></tbody>
@@ -463,12 +575,13 @@
 
     <!-- MODAL SELECT MULTIPLE BULAN SPP -->
     <div class="modal-overlay" id="multiMonthSelectModal">
-        <div class="modal-card" style="padding: 20px;">
-            <h2 class="text-neutral modal-header-title">Atur Bulan Lunas</h2>
-            <p id="multiMonthStudentName" style="color:var(--hijau); font-weight:800; font-size:14px; text-align:center; margin-bottom:15px;"></p>
+        <div class="modal-card" style="padding: 25px;">
+            <h2 class="text-neutral modal-header-title">Manajemen SPP Murid</h2>
+            <p id="multiMonthStudentName" style="color:var(--hijau); font-weight:900; font-size:16px; text-align:center; margin-bottom:20px;"></p>
             <input type="hidden" id="multiMonthTargetId">
             
-            <div id="multiMonthGrid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;">
+            <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px; text-align:center; font-weight:600;">Tandai bulan yang sudah dilunasi (bisa ditumpuk).</p>
+            <div id="multiMonthGrid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:25px;">
                 <!-- Dibuat via JS -->
             </div>
 
@@ -481,20 +594,20 @@
     <div class="modal-overlay" id="csvExportModal">
         <div class="modal-card">
             <h2 class="text-neutral modal-header-title">Ekspor Laporan (CSV)</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Kosongkan tanggal jika ingin mengunduh semua history dompet.</p>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px; font-weight:600;">Kosongkan pilihan tanggal jika ingin mengunduh semua histori secara utuh.</p>
 
-            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+            <div style="display:flex; gap:10px; margin-bottom: 25px;">
                 <div style="flex:1;">
-                    <label class="input-label" style="font-size:10px;">Dari</label>
-                    <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('csv-start-hidden', 'disp-csv-start')" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size:11px; cursor:pointer;">
-                        <span id="disp-csv-start">Pilih...</span>
+                    <label class="input-label">Mulai Dari</label>
+                    <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('csv-start-hidden', 'disp-csv-start')" style="padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-size:12px; cursor:pointer; font-weight:700;">
+                        <span id="disp-csv-start">Pilih Waktu...</span>
                     </div>
                     <input type="hidden" id="csv-start-hidden">
                 </div>
                 <div style="flex:1;">
-                    <label class="input-label" style="font-size:10px;">Sampai</label>
-                    <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('csv-end-hidden', 'disp-csv-end')" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size:11px; cursor:pointer;">
-                        <span id="disp-csv-end">Pilih...</span>
+                    <label class="input-label">Sampai</label>
+                    <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('csv-end-hidden', 'disp-csv-end')" style="padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-size:12px; cursor:pointer; font-weight:700;">
+                        <span id="disp-csv-end">Pilih Waktu...</span>
                     </div>
                     <input type="hidden" id="csv-end-hidden">
                 </div>
@@ -505,71 +618,64 @@
         </div>
     </div>
 
-    <!-- OVERLAY KHUSUS WALI SANTRI (PUBLIC LOGIN) -->
-    <div id="publicLoginOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--navy); z-index:99999; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
-        <div class="glass-card" style="padding:40px 20px; width:100%; max-width:400px; text-align:center; border:1px solid var(--hijau);">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--hijau)" stroke-width="2" style="margin-bottom:15px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <h2 class="text-neutral" style="margin:0 0 5px 0;">Portal Wali Santri</h2>
-            <p style="font-size:12px; color:var(--text-muted); margin-bottom:30px;">Masukkan nama anak Anda yang terdaftar untuk mengecek status SPP & Absensi.</p>
-            
-            <div style="position:relative; text-align:left;">
-                <input type="text" id="publicStudentInput" class="input-field glass-card text-neutral" placeholder="Ketik nama anak..." oninput="handlePublicAutocomplete()" autocomplete="off" style="margin-bottom:10px;">
-                <div id="publicAutocompleteList" class="glass-card hidden" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; z-index:10; border:1px solid var(--border);"></div>
-            </div>
-
-            <button class="btn-modal btn-primary" onclick="validatePublicLogin()">Akses Data Anak</button>
-        </div>
-    </div>
-
     <!-- SYSTEM PIN AUTH MODAL -->
     <div class="modal-overlay" id="actionPinModal">
         <div class="modal-card" style="text-align: center;">
-            <h2 class="text-neutral modal-header-title">Otorisasi Keamanan</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px;">Masukkan PIN Profil Utama untuk melanjutkan tindakan kritis.</p>
-            <input type="password" id="inputActionPin" class="input-field glass-card text-neutral" placeholder="* * * *" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 12px; margin-bottom: 10px;" autocomplete="off">
+            <div style="background: rgba(239, 68, 68, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--merah);">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+            </div>
+            <h2 class="text-neutral modal-header-title" style="border:none; padding:0; margin-bottom:10px;">Otorisasi Keamanan</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px; font-weight:600;">Masukkan PIN Profil Utama untuk melanjutkan tindakan kritis (Hapus/Edit/Reset).</p>
+            
+            <input type="password" id="inputActionPin" class="input-field glass-card text-neutral" placeholder="* * * *" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 26px; letter-spacing: 12px; margin-bottom: 20px; font-weight:900;" autocomplete="off">
             <input type="hidden" id="actionPinType">
             <input type="hidden" id="actionPinPayload">
             
-            <button class="btn-modal btn-primary" onclick="verifyActionPinFinal()">Verifikasi PIN</button>
+            <button class="btn-modal btn-primary" onclick="verifyActionPinFinal()">Verifikasi Kredensial</button>
             <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
-                <button class="btn-modal btn-cancel" style="font-size: 11px; padding: 10px; border: none;" onclick="startOTPResetProcess()">Lupa PIN? Reset via Email</button>
+                <button class="btn-modal btn-cancel" style="font-size: 11px; padding: 10px; border: none; font-weight:700;" onclick="startOTPResetProcess()">Lupa PIN? Reset via Email</button>
             </div>
             <button class="btn-modal btn-cancel" style="margin-top:10px;" onclick="closeModal('actionPinModal')">Batalkan Tindakan</button>
         </div>
     </div>
 
-    <!-- DOUBLE CONFIRMATION MODAL -->
+    <!-- DOUBLE CONFIRMATION MODAL (Tanpa Native Browser Alert) -->
     <div class="modal-overlay" id="confirmModal">
         <div class="modal-card" style="text-align:center;">
-            <div style="background: rgba(239, 68, 68, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--merah);">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <div style="background: rgba(239, 68, 68, 0.15); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: var(--merah); border: 2px solid rgba(239, 68, 68, 0.3);">
+                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             </div>
-            <h2 class="text-neutral" style="margin-top:0;" id="confirmTitle">Konfirmasi Final</h2>
-            <p id="confirmDesc" style="color:var(--text-muted); font-size:13px; line-height: 1.5; margin-bottom: 25px;">Data yang dihapus tidak dapat dikembalikan. Yakin?</p>
-            <button class="btn-modal" style="background:var(--merah); color:#fff; border:none;" id="btnConfirmYes">Ya, Eksekusi</button>
-            <button class="btn-modal btn-cancel" onclick="closeModal('confirmModal')">Batal</button>
+            <h2 class="text-neutral" style="margin-top:0; font-size:20px; font-weight:900;" id="confirmTitle">Konfirmasi Final</h2>
+            <p id="confirmDesc" style="color:var(--text-muted); font-size:13px; line-height: 1.6; margin-bottom: 25px; font-weight:600;">Tindakan ini permanen dan data yang dihapus tidak dapat dikembalikan. Yakin?</p>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn-modal btn-cancel" style="margin-top:0; flex:1;" onclick="closeModal('confirmModal')">Batalkan</button>
+                <button class="btn-modal" style="margin-top:0; flex:1; background:var(--merah); color:#fff; border:none; font-weight:900;" id="btnConfirmYes">Ya, Eksekusi</button>
+            </div>
         </div>
     </div>
 
     <!-- RECEIPT MODAL -->
     <div class="modal-overlay" id="receiptModal">
-        <div class="modal-card" style="padding: 20px;">
+        <div class="modal-card" style="padding: 25px;">
             <div class="receipt-card glass-card" id="receiptContent"></div>
-            <button class="btn-modal btn-cancel" onclick="closeModal('receiptModal')">Tutup Struk</button>
+            <button class="btn-modal btn-cancel" onclick="closeModal('receiptModal')">Tutup Bukti Mutasi</button>
         </div>
     </div>
     
     <!-- SHARE LINK MODAL -->
     <div class="modal-overlay" id="shareLinkModal">
         <div class="modal-card" style="text-align: center;">
-            <div style="background: rgba(59, 130, 246, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--biru);">
+            <div style="background: rgba(59, 130, 246, 0.15); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--biru); border:2px solid rgba(59,130,246,0.3);">
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
             </div>
-            <h2 class="text-neutral" style="margin-top:0;">Transparansi Publik</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px;">Wali Santri dapat memantau keuangan, SPP, dan Absensi secara Live melalui link ini.</p>
-            <div style="display:flex; align-items:center; background:var(--hitam-card); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:20px;">
-                <input type="text" id="publicLinkInput" class="text-neutral" readonly value="https://omlaps2a-svg.github.io/?view=public" style="background:transparent; border:none; width:100%; outline:none; font-size:11px; font-family:monospace;">
+            <h2 class="text-neutral modal-header-title" style="border:none; padding:0; margin-bottom:10px;">Akses Wali Santri</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px; font-weight:600; line-height:1.5;">Bagikan tautan ini ke Grup WhatsApp Wali Santri agar mereka dapat memantau keuangan, absensi, dan SPP secara Live <i>(Read Only)</i>.</p>
+            
+            <div style="display:flex; align-items:center; background:var(--hitam-card); border:1px solid var(--border); border-radius:12px; padding:15px; margin-bottom:20px;">
+                <input type="text" id="publicLinkInput" class="text-neutral" readonly value="https://omlaps2a-svg.github.io/?view=public" style="background:transparent; border:none; width:100%; outline:none; font-size:12px; font-family:monospace; font-weight:700;">
             </div>
+            
             <button class="btn-modal btn-primary" onclick="copyPublicLink()">Salin Tautan Akses</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('shareLinkModal')">Tutup</button>
         </div>
@@ -582,7 +688,8 @@
             <label class="input-label">Nama Target (Misal: Perbaikan AC)</label>
             <input type="text" id="wishlist-name" class="input-field glass-card text-neutral" autocomplete="off">
             <label class="input-label">Estimasi Kebutuhan (Rp)</label>
-            <input type="text" id="wishlist-amount" class="input-field glass-card text-neutral" inputmode="numeric" placeholder="0" autocomplete="off">
+            <input type="text" id="wishlist-amount" class="input-field glass-card text-neutral" inputmode="numeric" placeholder="0" autocomplete="off" style="font-size: 24px; font-weight:900; color:var(--hijau);">
+            
             <button class="btn-modal btn-primary" onclick="saveWishlist()">Simpan Target</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('addWishlistModal')">Batal</button>
         </div>
@@ -596,6 +703,7 @@
             <input type="text" id="drive-name" class="input-field glass-card text-neutral" placeholder="Cth: Laporan Jan 2026..." autocomplete="off">
             <label class="input-label">URL / Tautan Drive</label>
             <input type="url" id="drive-url" class="input-field glass-card text-neutral" placeholder="https://drive.google.com/..." autocomplete="off">
+            
             <button class="btn-modal btn-primary" onclick="saveDriveLink()">Simpan Pintasan</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('addDriveModal')">Batal</button>
         </div>
@@ -604,32 +712,46 @@
     <!-- GOOGLE LOGIN MODAL -->
     <div class="modal-overlay" id="googleAuthModal">
         <div class="modal-card" style="text-align: center;">
-            <h2 class="text-neutral modal-header-title">Database Cloud (Supabase)</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px;">Gunakan Google OAuth untuk menyimpan dan mengamankan database TPA secara Real-Time.</p>
-            <button class="btn-modal" id="btnRealGoogleLogin" style="background:#fff; color:#0f172a; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800; border:none;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> 
-                <span>Login dengan Google</span>
+            <div style="background: rgba(255, 255, 255, 0.1); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                <svg width="35" height="35" viewBox="0 0 24 24" fill="#ffffff"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
+            </div>
+            <h2 class="text-neutral modal-header-title" style="border:none; padding:0; margin-bottom:10px;">Database Cloud</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px; font-weight:600; line-height:1.5;">Gunakan Google OAuth (Supabase) untuk menyimpan, mengamankan, dan menyinkronkan database TPA secara Real-Time tanpa batas.</p>
+            
+            <button class="btn-modal" id="btnRealGoogleLogin" style="background:#ffffff; color:#0f172a; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:900; border:none; box-shadow:0 4px 15px rgba(255,255,255,0.2);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg> 
+                <span>Login via Akun Google</span>
             </button>
             <button class="btn-modal btn-cancel" onclick="closeModal('googleAuthModal')" style="margin-top:15px;">Batal</button>
         </div>
     </div>
 
-    <!-- OTP MODALS -->
+    <!-- OTP REQUEST MODAL -->
     <div class="modal-overlay" id="otpRequestModal">
         <div class="modal-card" style="text-align: center;">
-            <h2 class="text-neutral modal-header-title">Pemulihan PIN Darurat</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Kode OTP 6 Digit akan dikirimkan ke:</p>
-            <p style="font-size: 14px; font-weight: 900; color: var(--hijau); margin-bottom: 25px;" id="displayUserEmail">-</p>
+            <div style="background: rgba(16, 185, 129, 0.15); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--hijau);">
+                <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            </div>
+            <h2 class="text-neutral modal-header-title" style="border:none; padding:0; margin-bottom:10px;">Pemulihan PIN</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight:600;">Kode OTP (6 Digit) akan dikirimkan dengan aman ke Email pemulihan berikut:</p>
+            <p style="font-size: 15px; font-weight: 900; color: var(--hijau); margin-bottom: 25px; padding:10px; border:1px dashed var(--hijau); border-radius:8px;" id="displayUserEmail">-</p>
+            
             <button class="btn-modal btn-primary" id="btnSendOTP" onclick="sendOTPEmail()">Kirim Kode OTP</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('otpRequestModal')">Batal</button>
         </div>
     </div>
 
+    <!-- OTP VERIFY MODAL -->
     <div class="modal-overlay" id="otpVerifyModal">
         <div class="modal-card" style="text-align: center;">
             <h2 class="text-neutral modal-header-title">Verifikasi Identitas</h2>
-            <input type="number" id="inputOTP" class="input-field glass-card text-neutral" placeholder="Kode OTP (Email)" style="text-align: center; font-size: 20px; letter-spacing: 5px;">
-            <input type="password" id="inputNewPinOTP" class="input-field glass-card text-neutral" placeholder="Buat PIN Baru (Min 4 Angka)" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 16px; letter-spacing: 5px; margin-bottom: 25px;">
+            
+            <label class="input-label" style="text-align:left;">Masukkan Kode OTP Email</label>
+            <input type="number" id="inputOTP" class="input-field glass-card text-neutral" placeholder="* * * * * *" style="text-align: center; font-size: 24px; font-weight:900; letter-spacing: 10px; color:var(--biru);">
+            
+            <label class="input-label" style="text-align:left;">Buat PIN Keamanan Baru</label>
+            <input type="password" id="inputNewPinOTP" class="input-field glass-card text-neutral" placeholder="Minimal 4 Angka" inputmode="numeric" maxlength="6" style="text-align: center; font-size: 24px; font-weight:900; letter-spacing: 10px; margin-bottom: 25px;">
+            
             <button class="btn-modal btn-primary" onclick="verifyOTPAndSavePin()">Simpan & Ganti PIN</button>
             <button class="btn-modal btn-cancel" onclick="closeModal('otpVerifyModal')">Batal</button>
         </div>
