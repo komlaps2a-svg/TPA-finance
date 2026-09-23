@@ -17,7 +17,7 @@ self.addEventListener('install', (event) => {
     self.skipWaiting(); // Memaksa SW baru segera mengambil alih
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[Service Worker] Caching App Shell v4.8');
+            console.log('[Service Worker] Caching App Shell v4.9');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
