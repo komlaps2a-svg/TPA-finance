@@ -1,31 +1,30 @@
 /* =========================================================
-   TPA FINANCE v4.9 - ENTERPRISE CORE LOGIC (PART 1)
+   TPA FINANCE v5.0 - ENTERPRISE CORE LOGIC (PART 1)
    Strict Mode, Z-Index Engine, Custom UI, Supabase Realtime, GPS Prayer
 ========================================================= */
 
 "use strict";
 
-const APP_VERSION = '4.9'; 
-const LS_PREFIX = 'tpa_finance_v49_';
+const APP_VERSION = '5.0'; 
+const LS_PREFIX = 'tpa_finance_v50_';
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kc3l5YXhtaXdza3Jra2xzZWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDU4NjIsImV4cCI6MjEwMDcyMTg2Mn0.uXgAIhUjjkNpe9s6N6LGvRXZLUDQUZJrSfUFf1BDmKU';
 const SECRET_KEY = "TPA_Finance_Secure_K3y_v48";
 const EMAILJS_PUBLIC_KEY = "u7HQ-8xrDo99w3wmh"; 
-
 // ==========================================
-// STATE MANAGEMENT & VARIABLES
+// STATE MANAGEMENT & VARIABLES (ANTI-CRASH)
 // ==========================================
 let sbClient = null;
 let db = []; 
-let pendingSync = JSON.parse(getLS('pending_sync')) || []; 
-let wishlists = JSON.parse(getLS('wishlists')) || [];
-let driveLinks = JSON.parse(getLS('drivelinks')) || [];
-let sppData = JSON.parse(getLS('spp_data_v48')) || [];
-let attendanceData = JSON.parse(getLS('attendance_data_v48')) || { lastReset: new Date().toISOString(), records: {} };
+let pendingSync = []; 
+let wishlists = [];
+let driveLinks = [];
+let sppData = [];
+let attendanceData = { lastReset: new Date().toISOString(), records: {} };
 let currentUser = null; 
 
-let APP_MODE = getLS('app_mode') || 'GUEST';
+let APP_MODE = 'GUEST';
 let activeWallet = 'utama'; 
 let currentTimeFilter = 365; 
 let rawAmount = 0, editRawAmount = 0;
@@ -35,13 +34,34 @@ let aiMessages = [], aiCurrentMsgIdx = 0, aiCarouselInterval = null;
 let generatedOTP = "", otpExpiryTime = 0;
 let isPublicMode = false;
 
+// Mesin Isolasi Error untuk LocalStorage
+function safeParseJSON(key, fallback) {
+    try {
+        const val = getLS(key);
+        return val ? JSON.parse(val) : fallback;
+    } catch (e) { return fallback; }
+}
+
+try {
+    APP_MODE = getLS('app_mode') || 'GUEST';
+    pendingSync = safeParseJSON('pending_sync', []);
+    wishlists = safeParseJSON('wishlists', []);
+    driveLinks = safeParseJSON('drivelinks', []);
+    sppData = safeParseJSON('spp_data_v48', []);
+    attendanceData = safeParseJSON('attendance_data_v48', { lastReset: new Date().toISOString(), records: {} });
+} catch(e) {}
+
 const defaultProfile = { 
     name: 'Pengurus Baru', pin: '', 
     photo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzIyYzU1ZSI+PHBhdGggZD0iTTEyIDJhNSA1IDAgMSAwIDUgNSBNMTIgMTRhNyA3IDAgMCAwLTcgN3YxSDE5di0xYTcgNyAwIDAgMC03LTdaIi8+PC9zdmc+', 
     joinDate: new Date().toISOString(), birthDate: '', gender: 'Rahasia', googleLinked: false, googleEmail: ''
 };
-let profile = JSON.parse(getLS('profile_secure_v48'));
-if (!profile) { profile = { ...defaultProfile }; setLS('profile_secure_v48', JSON.stringify(profile)); }
+
+let profile = safeParseJSON('profile_secure_v48', null);
+if (!profile || !profile.name) { 
+    profile = { ...defaultProfile }; 
+    setLS('profile_secure_v48', JSON.stringify(profile)); 
+}
 
 const categories = { 
     masuk: ['Infak Santri', 'Infak Jumat', 'Donasi Masyarakat', 'Wakaf', 'Bantuan Pemerintah', 'Bantuan Masjid', 'Hibah', 'Donatur Tetap', 'Lainnya'], 
@@ -274,6 +294,11 @@ function checkAppVersion() {
 
 function bootApp() {
     checkAppVersion();
+    
+    // Inisialisasi EmailJS Terisolasi (Aman dari Crash)
+    if (typeof emailjs !== 'undefined') {
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
     
     // Cek Mode Public (Wali Murid)
     const urlParams = new URLSearchParams(window.location.search);
@@ -1584,3 +1609,5 @@ async function verifyOTPAndSavePin() {
     closeModal('otpVerifyModal'); 
     showToast("PIN Berhasil Dipulihkan & Disimpan!"); 
 }
+
+bootApp();
