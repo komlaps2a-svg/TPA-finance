@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tpa-finance-cache-v4.8';
+const CACHE_NAME = 'tpa-finance-cache-v4.9';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -12,16 +12,18 @@ const ASSETS_TO_CACHE = [
     'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js'
 ];
 
+// 1. INSTALLATION: Pre-cache semua aset penting
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
+    self.skipWaiting(); // Memaksa SW baru segera mengambil alih
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[Service Worker] Caching App Shell v4.7');
+            console.log('[Service Worker] Caching App Shell v4.8');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
 });
 
+// 2. ACTIVATION: Hapus cache dari versi lama untuk mencegah bentrok
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -33,11 +35,13 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        }).then(() => self.clients.claim())
+        }).then(() => self.clients.claim()) // Langsung pegang kendali semua client
     );
 });
 
+// 3. FETCH: Network-First Strategy dengan Cache Fallback
 self.addEventListener('fetch', (event) => {
+    // Abaikan request API Supabase, EmailJS, dan API GPS Aladhan dari caching SW (Selalu butuh jaringan asli)
     if (event.request.url.includes('supabase.co') || event.request.url.includes('api.emailjs.com') || event.request.url.includes('api.aladhan.com')) {
         return;
     }
@@ -45,6 +49,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
+                // Jika koneksi berhasil, update cache secara diam-diam
                 if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
@@ -54,6 +59,7 @@ self.addEventListener('fetch', (event) => {
                 return networkResponse;
             })
             .catch(() => {
+                // Jika koneksi gagal (OFFLINE), ambil dari cache
                 console.log('[Service Worker] Mode Offline aktif, mengambil dari cache:', event.request.url);
                 return caches.match(event.request);
             })
