@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tpa-finance-cache-v5.1';
+const CACHE_NAME = 'tpa-finance-cache-v5.2';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -16,7 +16,7 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[Service Worker] Caching App Shell v5.1');
+            console.log('[Service Worker] Caching App Shell v5.2');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
