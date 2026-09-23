@@ -1,17 +1,17 @@
 /* =========================================================
-   TPA FINANCE v4.7 - ENTERPRISE CORE LOGIC (PART 1)
+   TPA FINANCE v4.9 - ENTERPRISE CORE LOGIC (PART 1)
    Strict Mode, Z-Index Engine, Custom UI, Supabase Realtime, GPS Prayer
 ========================================================= */
 
 "use strict";
 
-const APP_VERSION = '4.8'; 
-const LS_PREFIX = 'tpa_finance_v48_';
+const APP_VERSION = '4.9'; 
+const LS_PREFIX = 'tpa_finance_v49_';
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kc3l5YXhtaXdza3Jra2xzZWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDU4NjIsImV4cCI6MjEwMDcyMTg2Mn0.uXgAIhUjjkNpe9s6N6LGvRXZLUDQUZJrSfUFf1BDmKU';
-const SECRET_KEY = "TPA_Finance_Secure_K3y_v47";
-const EMAILJS_PUBLIC_KEY = "Ubh_Dengan_Public_Key_EmailJS_Anda"; // Jika ada
+const SECRET_KEY = "TPA_Finance_Secure_K3y_v48";
+const EMAILJS_PUBLIC_KEY = "u7HQ-8xrDo99w3wmh"; 
 
 // ==========================================
 // STATE MANAGEMENT & VARIABLES
@@ -21,8 +21,8 @@ let db = [];
 let pendingSync = JSON.parse(getLS('pending_sync')) || []; 
 let wishlists = JSON.parse(getLS('wishlists')) || [];
 let driveLinks = JSON.parse(getLS('drivelinks')) || [];
-let sppData = JSON.parse(getLS('spp_data_v47')) || [];
-let attendanceData = JSON.parse(getLS('attendance_data_v47')) || { lastReset: new Date().toISOString(), records: {} };
+let sppData = JSON.parse(getLS('spp_data_v48')) || [];
+let attendanceData = JSON.parse(getLS('attendance_data_v48')) || { lastReset: new Date().toISOString(), records: {} };
 let currentUser = null; 
 
 let APP_MODE = getLS('app_mode') || 'GUEST';
@@ -35,14 +35,13 @@ let aiMessages = [], aiCurrentMsgIdx = 0, aiCarouselInterval = null;
 let generatedOTP = "", otpExpiryTime = 0;
 let isPublicMode = false;
 
-// Perbaikan: Profil Default dengan Foto valid
 const defaultProfile = { 
     name: 'Pengurus Baru', pin: '', 
     photo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzIyYzU1ZSI+PHBhdGggZD0iTTEyIDJhNSA1IDAgMSAwIDUgNSBNMTIgMTRhNyA3IDAgMCAwLTcgN3YxSDE5di0xYTcgNyAwIDAgMC03LTdaIi8+PC9zdmc+', 
     joinDate: new Date().toISOString(), birthDate: '', gender: 'Rahasia', googleLinked: false, googleEmail: ''
 };
-let profile = JSON.parse(getLS('profile_secure_v47'));
-if (!profile) { profile = { ...defaultProfile }; setLS('profile_secure_v47', JSON.stringify(profile)); }
+let profile = JSON.parse(getLS('profile_secure_v48'));
+if (!profile) { profile = { ...defaultProfile }; setLS('profile_secure_v48', JSON.stringify(profile)); }
 
 const categories = { 
     masuk: ['Infak Santri', 'Infak Jumat', 'Donasi Masyarakat', 'Wakaf', 'Bantuan Pemerintah', 'Bantuan Masjid', 'Hibah', 'Donatur Tetap', 'Lainnya'], 
@@ -50,16 +49,16 @@ const categories = {
 };
 const monthsArr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-// SVGs Setup (Termasuk Trash & Edit untuk Modifikasi v4.7)
+// SVGs Setup
 const svgs = {
-    makan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-    uang: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>`,
-    book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
-    user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+    makan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+    uang: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>`,
+    book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+    user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
     plus_bold: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
     minus_bold: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-    link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
-    shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`,
+    shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
     trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
     edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`
 };
@@ -96,22 +95,25 @@ async function hashPIN(pin) {
 
 function showToast(msg, type = 'success') { 
     const box = document.getElementById('toastBox'); if(!box) return; 
-    const t = document.createElement('div'); t.className = `toast ${type}`; t.innerHTML = msg; box.appendChild(t); 
+    const t = document.createElement('div'); t.className = `toast ${type}`; 
+    // Tambahkan tombol refresh manual jika error/kritis agar admin bisa mereload DOM
+    const refreshBtn = type === 'error' ? `<br><span style="font-size:11px; text-decoration:underline; cursor:pointer;" onclick="window.location.reload(true)">Klik untuk Muat Ulang</span>` : '';
+    t.innerHTML = msg + refreshBtn; 
+    box.appendChild(t); 
     setTimeout(() => t.classList.add('show'), 10); 
-    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 5000); // 5 Detik agar terbaca
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 500); }, 6000); // Tahan lebih lama agar mudah dibaca
 }
 
 // ==========================================
-// Z-INDEX MODAL ENGINE (Anti Overlap Multi-Layer)
+// Z-INDEX MODAL ENGINE (Anti Overlap Berlapis)
 // ==========================================
 let modalStack = [];
 function openModal(id) {
     const el = document.getElementById(id);
     if (!el) return;
     
-    // Perbaikan Z-Index Dinamis
     const baseZIndex = 10000;
-    const currentZIndex = baseZIndex + (modalStack.length * 20); // Gap lebih besar
+    const currentZIndex = baseZIndex + (modalStack.length * 20); // Jarak aman antar layer
     
     el.style.zIndex = currentZIndex;
     el.classList.add('active');
@@ -133,7 +135,6 @@ function closeModal(id) {
     }
 }
 
-// Konfirmasi Ganda (Custom Popup Penuh)
 function openCustomConfirm(title, desc, action) { 
     document.getElementById('confirmTitle').innerText = title; 
     document.getElementById('confirmDesc').innerHTML = desc; 
@@ -142,7 +143,7 @@ function openCustomConfirm(title, desc, action) {
 }
 document.getElementById('btnConfirmYes').addEventListener('click', () => { 
     closeModal('confirmModal');
-    setTimeout(() => { openModal('confirmModal2'); }, 350); // Jeda transisi aman
+    setTimeout(() => { openModal('confirmModal2'); }, 350); 
 });
 document.getElementById('btnConfirmYes2').addEventListener('click', () => { 
     if(window.confirmActionStep1) window.confirmActionStep1(); 
@@ -150,7 +151,7 @@ document.getElementById('btnConfirmYes2').addEventListener('click', () => {
 });
 
 // ==========================================
-// DATABASE ENGINE & ENCRYPTION
+// DATABASE ENGINE
 // ==========================================
 function getDBKey() { return APP_MODE === 'CLOUD' ? LS_PREFIX + 'cloud_db' : LS_PREFIX + 'guest_db'; }
 
@@ -175,19 +176,24 @@ function loadLocalDB() {
 }
 
 // ==========================================
-// PRAYER TIMES (JADWAL SHOLAT via GPS)
+// PRAYER TIMES (JADWAL SHOLAT via GPS REAL-TIME)
 // ==========================================
-async function initPrayerTimes() {
+async function initPrayerTimes(forceRefresh = false) {
     const pText = document.getElementById('prayerLocationText');
     const pDate = document.getElementById('prayerDateText');
     const pGrid = document.getElementById('prayerTimesGrid');
     if(!pText || !pGrid) return;
 
+    if (forceRefresh) {
+        pText.innerText = "Melacak Lokasi Baru...";
+        showToast("Sinkronisasi GPS Berjalan...", "syncing");
+    }
+
     const todayStr = new Date().toISOString().split('T')[0];
     const cached = JSON.parse(getLS('prayer_cache') || 'null');
 
-    // Jika sudah ada cache hari ini, langsung render
-    if (cached && cached.date === todayStr && cached.timings) {
+    // Gunakan cache jika tidak di-refresh paksa
+    if (!forceRefresh && cached && cached.date === todayStr && cached.timings) {
         renderPrayerUI(cached);
         return;
     }
@@ -197,21 +203,18 @@ async function initPrayerTimes() {
             const lat = pos.coords.latitude;
             const lon = pos.coords.longitude;
             try {
-                // Fetch API Aladhan Method Kemenag (11) atau standar
+                // Fetch API Aladhan Method 11
                 const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=11`);
                 const data = await res.json();
                 
                 if(data && data.data) {
                     const pt = data.data.timings;
-                    // Hitung Tahajud Manual (Sepertiga Malam Terakhir)
-                    const maghribStr = pt.Maghrib; const shubuhStr = pt.Fajr;
-                    
                     const newCache = {
                         date: todayStr,
-                        location: "Lokasi GPS",
+                        location: "Lokasi Terdeteksi",
                         timings: [
-                            { n: 'Tahajud', t: '02:30' }, // Waktu kisaran umum jika sulit dikalkulasi
-                            { n: 'Shubuh', t: pt.Fajr },
+                            { n: 'Tahajud', t: '02:30' },
+                            { n: 'Subuh', t: pt.Fajr },
                             { n: 'Dhuha', t: pt.Sunrise },
                             { n: 'Dzuhur', t: pt.Dhuhr },
                             { n: 'Ashar', t: pt.Asr },
@@ -221,13 +224,16 @@ async function initPrayerTimes() {
                     };
                     setLS('prayer_cache', JSON.stringify(newCache));
                     renderPrayerUI(newCache);
+                    if(forceRefresh) showToast("Jadwal Diperbarui", "success");
                 }
             } catch(e) {
                 pText.innerText = "Gagal memuat jadwal";
+                if(forceRefresh) showToast("API Gagal Merespon", "error");
             }
         }, (err) => {
             pText.innerText = "Izin GPS Ditolak";
-        });
+            if(forceRefresh) showToast("Aktifkan izin lokasi di browser", "error");
+        }, { timeout: 10000 });
     } else {
         pText.innerText = "GPS Tidak Didukung";
     }
@@ -269,7 +275,7 @@ function checkAppVersion() {
 function bootApp() {
     checkAppVersion();
     
-    // Cek Mode Pelihat (Wali Murid)
+    // Cek Mode Public (Wali Murid)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('view') === 'public') {
         isPublicMode = true;
@@ -277,15 +283,15 @@ function bootApp() {
         return;
     }
 
-    // Eksekusi Admin
+    // Eksekusi Admin / Pengurus
     db = loadLocalDB(); 
     initAppHeader();
     renderShortcuts();
     renderWishlist();
     renderDriveLinks();
-    checkAttendanceReset();
+    checkAttendanceReset(); 
     updateUI('');
-    initPrayerTimes();
+    initPrayerTimes(); // Panggil awal GPS
 
     const netStatus = document.getElementById('networkStatus');
     if (APP_MODE === 'CLOUD') {
@@ -298,10 +304,9 @@ function bootApp() {
     
     setTimeout(initSupabaseBackground, 500);
     
-    // Notifikasi Dev Support Interaktif
     setInterval(triggerDevSupportNotification, 180000); 
     
-    // Auto-Ping Cloud tiap klik (Cegah idle supabase)
+    // Auto ping DB saat interaksi (mencegah sleep)
     document.body.addEventListener('click', () => {
         if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient && currentUser?.id !== 'offline_user') {
             try { sbClient.from('profiles').select('id').limit(1).then(); } catch(e){}
@@ -339,7 +344,6 @@ async function initSupabaseBackground() {
                     const { data: profileData } = await sbClient.from('profiles').select('data').eq('id', currentUser.id).single();
                     if (profileData && profileData.data) { profile = { ...profile, ...profileData.data }; } 
                     else { 
-                        // Perbaikan: Jangan timpa nama custom pengurus
                         if(profile.name === 'Pengurus' || profile.name === 'Pengurus Baru') profile.name = properTitleCase(currentUser.user_metadata?.full_name) || 'Member TPA'; 
                         profile.photo = currentUser.user_metadata?.avatar_url || profile.photo; 
                         await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
@@ -347,7 +351,7 @@ async function initSupabaseBackground() {
                 } catch(e) {}
                 
                 profile.googleLinked = true; profile.googleEmail = currentUser.email; 
-                setLS('profile_secure_v47', JSON.stringify(profile));
+                setLS('profile_secure_v48', JSON.stringify(profile));
                 
                 db = loadLocalDB(); initAppHeader(); renderShortcuts(); fetchUserTransactions(); setupRealtime(); 
                 closeModal('googleAuthModal');
@@ -356,18 +360,22 @@ async function initSupabaseBackground() {
         });
     }
 }
-
 function updateNetworkStatus(text, statusClass) {
     const netStatus = document.getElementById('networkStatus');
     if(netStatus) { 
         netStatus.innerText = text; 
         netStatus.className = `status-sync ${statusClass}`; 
     }
+    const publicNetStatus = document.getElementById('publicNetworkStatus');
+    if(publicNetStatus) {
+        publicNetStatus.innerText = text; 
+        publicNetStatus.className = `status-sync ${statusClass}`;
+    }
 }
 
 function forceLogoutToGuest() {
     currentUser = null; APP_MODE = 'GUEST'; setLS('app_mode', 'GUEST');
-    profile = { ...defaultProfile }; setLS('profile_secure_v47', JSON.stringify(profile));
+    profile = { ...defaultProfile }; setLS('profile_secure_v48', JSON.stringify(profile));
     removeLS('cloud_db'); removeLS('cloud_db_fallback'); db = loadLocalDB(); 
     initAppHeader(); renderShortcuts(); updateUI(''); 
     showToast("Berhasil Logout.", "success"); closeModal('profileViewModal');
@@ -382,6 +390,11 @@ async function fetchUserTransactions() {
         if (error) throw error;
         db = data; saveLocalDB(db); 
         updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
+        
+        // Panggil refresh Public Portal jika sedang aktif
+        if(isPublicMode && document.getElementById('publicStudentInput').value) {
+            validatePublicLogin();
+        }
     } catch (error) {}
 }
 
@@ -430,7 +443,6 @@ window.addEventListener('DOMContentLoaded', () => { updateThemeIcon(savedTheme);
 function toggleTheme(e) {
     const layer = document.getElementById('themeTransitionLayer');
     
-    // Set koordinat ripple dari titik klik, agar menyebar persis dari tombol
     if (e && e.currentTarget) {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = rect.left + rect.width / 2;
@@ -455,7 +467,6 @@ function toggleTheme(e) {
         document.getElementById('metaThemeColor').setAttribute("content", newTheme === 'light' ? "#059669" : "#05140d");
         updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
         
-        // Mulai transisi fade out (bayangan pudar)
         document.body.classList.add('theme-fade-out');
     }, 450); 
 
@@ -472,20 +483,6 @@ function updateThemeIcon(theme) {
 // ==========================================
 // UI & NAVIGATION ENGINE
 // ==========================================
-function initAppHeader() { 
-    // Pastikan UI Header merender Nama dan Base64 Photo Profil
-    document.getElementById('headName').innerText = formatSmartName(profile.name); 
-    document.getElementById('headGender').innerText = profile.gender || 'Rahasia'; 
-    document.getElementById('headProfileImg').src = profile.photo; 
-}
-
-function formatSmartName(name) { 
-    if (!name) return name; 
-    if (window.innerWidth > 400) return name; 
-    if (name.length > 12) { let words = name.trim().split(/\s+/); if (words.length > 1) { let lastWord = words.pop(); return words.join(' ') + ' ' + lastWord.charAt(0).toUpperCase() + '.'; } } 
-    return name; 
-}
-
 function switchWallet(type) { 
     activeWallet = type; 
     document.getElementById('walletSwitchContainer').setAttribute('data-active', type); 
@@ -939,7 +936,6 @@ function openEditTxModal(txId) {
     document.getElementById('disp-edit-tx-date').innerText = formatDetailDate(tx.date);
     document.getElementById('edit-tx-desc').value = tx.desc;
     
-    // Parse title & pihak
     if(tx.pihak_terkait) {
         let parts = tx.pihak_terkait.split(' ');
         let potentialTitle = parts[0];
@@ -1142,7 +1138,7 @@ function executeCSVExport() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("Berhasil Diunduh", "success"); 
 }
 
-// Download Absensi Santri (Fitur Khusus Sabtu/Minggu)
+// Download Absensi Santri
 function downloadAbsensiCSV() {
     if(sppData.length === 0) { showToast("Data murid kosong.", "error"); return; }
     let csv = "Nama_Murid,Bulan_Lunas,Status_Hadir_Hari_Ini,Log_Absensi_Mingguan\n";
@@ -1160,10 +1156,8 @@ function downloadAbsensiCSV() {
 const searchInput = document.getElementById('searchTxInput'); const searchClear = document.getElementById('searchClearBtn'); 
 if(searchInput) { searchInput.addEventListener('input', function(e) { let val = e.target.value.toLowerCase(); searchClear.style.display = val.length > 0 ? 'block' : 'none'; updateUI(val); }); }
 function clearSearch() { searchInput.value = ''; searchClear.style.display = 'none'; updateUI(''); }
-
-
 // ==========================================
-// ADMIN: SPP & ABSENSI ENGINE (v4.7 - Backward Logic)
+// ADMIN: SPP & ABSENSI ENGINE (v4.8 - Backward Logic)
 // ==========================================
 function openSppAbsenModal() { openModal('sppAbsenModal'); renderAdminStudentTable(); }
 
@@ -1171,12 +1165,12 @@ function registerStudent() {
     const input = document.getElementById('newStudentName'); const name = properTitleCase(input.value.trim());
     if (!name) { showToast("Nama murid wajib diisi", "error"); return; }
     sppData.push({ id: Date.now().toString(), name: name, months: [], presentToday: false, attendLogs: [] });
-    setLS('spp_data_v47', JSON.stringify(sppData)); input.value = ''; renderAdminStudentTable(); showToast("Murid terdaftar", "success");
+    setLS('spp_data_v48', JSON.stringify(sppData)); input.value = ''; renderAdminStudentTable(); showToast("Murid terdaftar", "success");
 }
 
 function deleteStudentAdmin(id) { 
     openCustomConfirm("Hapus Murid", "Semua riwayat SPP dan Absen murid ini akan hilang permanen.", () => {
-        sppData = sppData.filter(s => s.id !== id); setLS('spp_data_v47', JSON.stringify(sppData)); renderAdminStudentTable(); showToast("Dihapus", "success");
+        sppData = sppData.filter(s => s.id !== id); setLS('spp_data_v48', JSON.stringify(sppData)); renderAdminStudentTable(); showToast("Dihapus", "success");
     });
 }
 
@@ -1192,7 +1186,7 @@ function saveEditStudentName() {
     if(!newName) return;
     const sIdx = sppData.findIndex(x => x.id === id);
     if(sIdx > -1) {
-        sppData[sIdx].name = newName; setLS('spp_data_v47', JSON.stringify(sppData)); closeModal('editStudentModal'); renderAdminStudentTable(); showToast("Nama Diubah");
+        sppData[sIdx].name = newName; setLS('spp_data_v48', JSON.stringify(sppData)); closeModal('editStudentModal'); renderAdminStudentTable(); showToast("Nama Diubah");
     }
 }
 
@@ -1202,11 +1196,12 @@ function renderAdminStudentTable() {
     if (sppData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data murid.</td></tr>`; return; }
     
     tbody.innerHTML = sppData.map(s => {
-        const lunasBadge = s.months.length > 0 ? s.months.map(m => `<span style="background:var(--hijau); color:#052e16; padding:2px 6px; border-radius:4px; font-size:9px; margin:2px; display:inline-block; font-weight:800;">${m.substring(0,3)}</span>`).join('') : `-`;
+        // Badge Lunas
+        const lunasBadge = s.months.length > 0 ? s.months.map(m => `<span style="background:var(--hijau); color:#052e16; padding:2px 6px; border-radius:4px; font-size:9px; margin:2px; display:inline-block; font-weight:800;">${m.substring(0,3)}</span>`).join('') : `<span style="color:var(--text-muted); font-size:10px; font-weight:800;">-</span>`;
         
-        // Logika Belum Bayar (Mengurangi list monthsArr dengan s.months)
+        // Logika Belum Bayar (Bulan tunggakan)
         const unpd = monthsArr.filter(m => !s.months.includes(m));
-        const blmBadge = unpd.length === 12 ? `<span style="color:var(--merah-solid); font-size:10px; font-weight:800;">Full Belum</span>` : unpd.slice(0,2).map(m => `<span style="background:var(--merah-solid); color:#fff; padding:2px 6px; border-radius:4px; font-size:9px; margin:2px; display:inline-block; font-weight:800;">${m.substring(0,3)}</span>`).join('') + (unpd.length>2?'...':'');
+        const blmBadge = unpd.length === 12 ? `<span style="color:var(--merah-solid); font-size:10px; font-weight:800;">Full Belum</span>` : unpd.slice(0,2).map(m => `<span style="background:rgba(239, 68, 68, 0.15); border:1px solid var(--merah-solid); color:var(--merah-solid); padding:2px 6px; border-radius:4px; font-size:9px; margin:2px; display:inline-block; font-weight:800;">${m.substring(0,3)}</span>`).join('') + (unpd.length>2?'<span style="font-size:9px; color:var(--text-muted);">...</span>':'');
 
         return `
         <tr style="border-bottom:1px solid var(--border);" class="admin-spp-row">
@@ -1215,12 +1210,12 @@ function renderAdminStudentTable() {
                 <div style="font-size:9px; color:var(--biru); cursor:pointer; margin-top:4px;" onclick="openEditStudentModal('${s.id}')">✎ Ubah Nama</div>
             </td>
             <td style="padding:10px; text-align:center; cursor:pointer;" onclick="openMultiMonthSelect('${s.id}')">
-                <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); padding:6px; border-radius:8px; min-height:30px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center;">
+                <div style="background:rgba(34,197,94,0.05); border:1px dashed rgba(34,197,94,0.3); padding:6px; border-radius:8px; min-height:30px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center;">
                     ${lunasBadge}
                 </div>
             </td>
             <td style="padding:10px; text-align:center; cursor:pointer;" onclick="openMultiMonthSelect('${s.id}')">
-                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:6px; border-radius:8px; min-height:30px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center;">
+                <div style="background:rgba(239,68,68,0.05); border:1px dashed rgba(239,68,68,0.3); padding:6px; border-radius:8px; min-height:30px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center;">
                     ${blmBadge}
                 </div>
             </td>
@@ -1251,13 +1246,29 @@ function openMultiMonthSelect(id) {
     document.getElementById('multiMonthTargetId').value = id;
     document.getElementById('multiMonthStudentName').innerText = `SPP: ${s.name}`;
     
-    const grid = document.getElementById('multiMonthGrid');
-    grid.innerHTML = monthsArr.map(m => `
+    const gridLunas = document.getElementById('multiMonthGrid');
+    const gridBelum = document.getElementById('multiMonthUnpaidGrid');
+    
+    // Render Grid Interaktif untuk Bulan Lunas
+    gridLunas.innerHTML = monthsArr.map(m => `
         <div>
             <input type="checkbox" id="cb_${m}" value="${m}" class="spp-month-cb" ${s.months.includes(m) ? 'checked' : ''}>
             <label for="cb_${m}" class="spp-month-label">${m.substring(0,3)}</label>
         </div>
     `).join('');
+
+    // Render Grid Indikator Visual untuk Bulan Belum Bayar
+    const unpd = monthsArr.filter(m => !s.months.includes(m));
+    if(unpd.length === 0) {
+        gridBelum.innerHTML = `<span style="font-size:12px; color:var(--text-muted); grid-column:span 4; text-align:center;">Lunas Sepenuhnya! 🎉</span>`;
+    } else {
+        gridBelum.innerHTML = unpd.map(m => `
+            <div style="background:rgba(239, 68, 68, 0.1); border:1px solid var(--merah-solid); color:var(--merah-solid); padding:10px 5px; text-align:center; border-radius:10px; font-size:11px; font-weight:800; text-transform:uppercase;">
+                ${m.substring(0,3)}
+            </div>
+        `).join('');
+    }
+
     openModal('multiMonthSelectModal');
 }
 
@@ -1270,11 +1281,11 @@ function saveMultiMonthSpp() {
     document.querySelectorAll('.spp-month-cb:checked').forEach(cb => selected.push(cb.value));
     
     sppData[sIdx].months = selected;
-    setLS('spp_data_v47', JSON.stringify(sppData));
+    setLS('spp_data_v48', JSON.stringify(sppData));
     closeModal('multiMonthSelectModal'); renderAdminStudentTable(); showToast("Status SPP Diperbarui");
 }
 
-// Logika Absen Mundur / Backward Logging
+// Logika Absen Mundur / Backward Logging (H-7)
 function openAbsenDetailModal(id) {
     const s = sppData.find(x => x.id === id); if(!s) return;
     document.getElementById('absenTargetId').value = id;
@@ -1282,27 +1293,26 @@ function openAbsenDetailModal(id) {
 
     const grid = document.getElementById('absenDaysGrid');
     const today = new Date();
-    // Hari ini (0=Minggu, 1=Senin...) -> kita ambil 7 hari ke belakang
+    
     let html = '';
     for(let i=0; i<7; i++) {
         let loopDate = new Date();
         loopDate.setDate(today.getDate() - i);
         
         let dateStr = loopDate.toISOString().split('T')[0];
-        let displayStr = formatDetailDate(loopDate.toISOString()).split(' - ')[0]; // Ambil DD/MM/YYYY
+        let displayStr = formatDetailDate(loopDate.toISOString()).split(' - ')[0]; 
 
-        // Cek apakah di hari tsb ada log hadir
         let isPresent = false;
         if(s.attendLogs) {
             isPresent = s.attendLogs.some(l => l.time.startsWith(dateStr) && l.status === 'Hadir');
         }
 
         html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--hitam-btn); padding:10px; border-radius:10px; border:1px solid var(--border);">
-            <span style="font-size:12px; font-weight:800; color:var(--teks-netral);">${i===0?'HARI INI':displayStr}</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--hitam-btn); padding:10px 14px; border-radius:12px; border:1px solid var(--border);">
+            <span style="font-size:12px; font-weight:800; color:var(--teks-netral);">${i===0?'HARI INI (Live)':displayStr}</span>
             <div style="display:flex; gap:10px;">
-                <label style="font-size:11px; display:flex; align-items:center; gap:4px; color:var(--hijau);"><input type="radio" name="abs_${i}" value="Hadir" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Hadir')" ${isPresent?'checked':''}> Hadir</label>
-                <label style="font-size:11px; display:flex; align-items:center; gap:4px; color:var(--merah-solid);"><input type="radio" name="abs_${i}" value="Absen" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Absen')" ${!isPresent?'checked':''}> Absen</label>
+                <label style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--hijau); font-weight:700; cursor:pointer;"><input type="radio" name="abs_${i}" value="Hadir" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Hadir')" ${isPresent?'checked':''}> Hadir</label>
+                <label style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--merah-solid); font-weight:700; cursor:pointer;"><input type="radio" name="abs_${i}" value="Absen" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Absen')" ${!isPresent?'checked':''}> Absen</label>
             </div>
         </div>`;
     }
@@ -1315,25 +1325,24 @@ function saveAbsenMundur(id, dateStr, statusVal) {
     if(sIdx > -1) {
         if(!sppData[sIdx].attendLogs) sppData[sIdx].attendLogs = [];
         
-        // Buang log lama di tanggal yang sama agar tidak duplikat
+        // Bersihkan log lama di hari itu
         sppData[sIdx].attendLogs = sppData[sIdx].attendLogs.filter(l => !l.time.startsWith(dateStr));
         
-        // Simpan log baru dengan jam buatan 16:00
+        // Simpan log baru dengan jam virtual 16:00
         const fakeTime = `${dateStr}T16:00:00.000Z`;
         sppData[sIdx].attendLogs.unshift({ status: statusVal, time: fakeTime });
         
-        // Sort descending
+        // Urutkan dan potong jika lebih dari 20 log
         sppData[sIdx].attendLogs.sort((a,b) => new Date(b.time) - new Date(a.time));
         if(sppData[sIdx].attendLogs.length > 20) sppData[sIdx].attendLogs.length = 20;
 
-        // Sync checkbox utama jika yang diubah adalah 'HARI INI'
+        // Jika mengubah HARI INI, sinkronkan dengan checkbox di tabel utama
         const todayStr = new Date().toISOString().split('T')[0];
         if(dateStr === todayStr) {
             sppData[sIdx].presentToday = (statusVal === 'Hadir');
             renderAdminStudentTable();
         }
-
-        setLS('spp_data_v47', JSON.stringify(sppData));
+        setLS('spp_data_v48', JSON.stringify(sppData));
     }
 }
 
@@ -1348,16 +1357,13 @@ function toggleAttendance(id, isPresent) {
         
         sppData[sIdx].attendLogs = sppData[sIdx].attendLogs.filter(l => !l.time.startsWith(todayStr));
         
-        if(isPresent) {
-            sppData[sIdx].attendLogs.unshift({ status: 'Hadir', time: nowISO });
-        } else {
-            sppData[sIdx].attendLogs.unshift({ status: 'Batal / Absen', time: nowISO });
-        }
+        if(isPresent) { sppData[sIdx].attendLogs.unshift({ status: 'Hadir', time: nowISO }); } 
+        else { sppData[sIdx].attendLogs.unshift({ status: 'Batal / Absen', time: nowISO }); }
         
         sppData[sIdx].attendLogs.sort((a,b) => new Date(b.time) - new Date(a.time));
         if(sppData[sIdx].attendLogs.length > 20) sppData[sIdx].attendLogs.length = 20;
 
-        setLS('spp_data_v47', JSON.stringify(sppData));
+        setLS('spp_data_v48', JSON.stringify(sppData));
     }
 }
 
@@ -1365,22 +1371,22 @@ function checkAttendanceReset() {
     const today = new Date();
     const dayOfWeek = today.getDay(); 
     
-    if (dayOfWeek === 6 && !getLS('sat_reminder_done')) {
-        showToast("⚠️ Besok absensi di-reset otomatis. Jangan lupa Download Laporan CSV hari ini!", "support");
+    if ((dayOfWeek === 6 || dayOfWeek === 0) && !getLS('sat_reminder_done')) {
+        showToast("⚠️ Besok / Hari ini absensi di-reset otomatis. Jangan lupa Download Laporan CSV di menu Manajemen!", "support");
         setLS('sat_reminder_done', 'true'); 
     }
-    if (dayOfWeek !== 6) { removeLS('sat_reminder_done'); }
+    if (dayOfWeek !== 6 && dayOfWeek !== 0) { removeLS('sat_reminder_done'); }
     
-    if (dayOfWeek === 0) {
-        const lastReset = new Date(attendanceData.lastReset);
-        const diffDays = Math.floor((today - lastReset) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 6) { 
-            sppData = sppData.map(s => ({ ...s, presentToday: false }));
-            setLS('spp_data_v47', JSON.stringify(sppData));
-            attendanceData.lastReset = today.toISOString();
-            setLS('attendance_data_v47', JSON.stringify(attendanceData));
-            setTimeout(() => { showToast("Sistem: Data Absensi Mingguan telah di-reset otomatis.", "syncing"); }, 3000);
-        }
+    const lastReset = new Date(attendanceData.lastReset);
+    const diffDays = Math.floor((today - lastReset) / (1000 * 60 * 60 * 24));
+    
+    // Reset otomatis jika sudah selisih 7 hari ATAU paksa reset jika hari ini Minggu (0) dan belum direset minggu ini
+    if (diffDays >= 7 || (dayOfWeek === 0 && diffDays >= 1)) { 
+        sppData = sppData.map(s => ({ ...s, presentToday: false }));
+        setLS('spp_data_v48', JSON.stringify(sppData));
+        attendanceData.lastReset = today.toISOString();
+        setLS('attendance_data_v48', JSON.stringify(attendanceData));
+        setTimeout(() => { showToast("Sistem: Ceklis Data Absensi Harian telah dikosongkan untuk minggu baru.", "syncing"); }, 3000);
     }
 }
 
@@ -1389,7 +1395,6 @@ function checkAttendanceReset() {
 // PUBLIC PORTAL ENGINE (Wali Murid - Read Only)
 // ==========================================
 function openShareLinkModal() { 
-    // Set auto URL dari host saat ini
     const loc = window.location;
     const url = `${loc.protocol}//${loc.host}${loc.pathname}?view=public`;
     document.getElementById('publicLinkInput').value = url;
@@ -1403,7 +1408,7 @@ function copyPublicLink() {
 function initPublicPortal() {
     document.getElementById('adminDashboard').style.display = 'none';
     const pDash = document.getElementById('publicDashboard');
-    pDash.style.display = 'none'; // Sembunyikan dlu sblm login
+    pDash.style.display = 'none'; 
     document.getElementById('publicLoginOverlay').style.display = 'flex';
 }
 
@@ -1439,13 +1444,15 @@ function validatePublicLogin() {
         if(s.attendLogs && s.attendLogs.length > 0) {
             logHtml = s.attendLogs.slice(0,5).map(lg => {
                 const isH = lg.status === 'Hadir';
+                // Jika waktu 16:00:00, itu hasil edit mundur (hanya tampilkan tanggal tanpa jam palsu)
+                let timeStr = lg.time.includes('16:00:00') ? formatDetailDate(lg.time).split(' - ')[0] : formatDetailDate(lg.time);
                 return `<div class="public-attend-item">
-                    <span class="text-neutral" style="font-weight:800;">${formatDetailDate(lg.time)}</span>
+                    <span class="text-neutral" style="font-weight:800;">${timeStr}</span>
                     <span class="${isH ? 'public-badge-hadir' : 'public-badge-absen'}">${lg.status}</span>
                 </div>`;
             }).join('');
         } else {
-            logHtml = `<div class="public-attend-item" style="justify-content:center; color:var(--text-muted);">Belum ada riwayat</div>`;
+            logHtml = `<div class="public-attend-item" style="justify-content:center; color:var(--text-muted);">Belum ada riwayat absen</div>`;
         }
 
         let publicTxHtml = '';
@@ -1460,19 +1467,16 @@ function validatePublicLogin() {
         } else { publicTxHtml = `<div class="glass-card" style="padding:20px; text-align:center; color:var(--text-muted); font-size:12px;">Belum ada riwayat transaksi.</div>`; }
 
         const unpd = monthsArr.filter(m => !s.months.includes(m));
-        const unpdHtml = unpd.length === 12 ? `<span style="color:var(--merah-solid); font-weight:800; font-size:12px;">Semua Bulan Belum</span>` : unpd.slice(0,3).map(m => `<span style="background:rgba(239, 68, 68, 0.15); border:1px solid var(--merah-solid); color:var(--merah-solid); padding:6px 12px; border-radius:8px; font-weight:900; font-size:12px;">${m}</span>`).join('') + (unpd.length>3?' <span style="font-size:12px; font-weight:800; color:var(--text-muted); margin-left:5px;">dan lainnya..</span>':'');
+        const unpdHtml = unpd.length === 12 ? `<span style="color:var(--merah-solid); font-weight:800; font-size:12px;">Semua Bulan Belum Bayar</span>` : unpd.slice(0,3).map(m => `<span style="background:rgba(239, 68, 68, 0.15); border:1px solid var(--merah-solid); color:var(--merah-solid); padding:6px 12px; border-radius:8px; font-weight:900; font-size:12px;">${m}</span>`).join('') + (unpd.length>3?' <span style="font-size:12px; font-weight:800; color:var(--text-muted); margin-left:5px;">dan lainnya..</span>':'');
 
         const pDash = document.getElementById('publicDashboard');
-        pDash.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
-                <h2 class="text-neutral" style="margin:0;">Portal Transparansi</h2>
-                <button class="btn-outline-small" onclick="window.location.reload()" style="margin:0;">Keluar</button>
-            </div>
-            
+        const pDashContent = document.getElementById('publicDashboardContent');
+        
+        pDashContent.innerHTML = `
             <div class="public-status-card">
-                <h3 class="text-neutral" style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px; display:flex; align-items:center; gap:10px;">
-                    <div style="width:30px; height:30px; background:var(--hitam-btn); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text-muted);">${svgs.user}</div>
-                    Murid: ${s.name}
+                <h3 class="text-neutral" style="margin-top:0; border-bottom:1px solid var(--border); padding-bottom:15px; display:flex; align-items:center; gap:12px;">
+                    <div style="width:36px; height:36px; background:var(--hitam-btn); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text-muted); border: 1px solid var(--border);">${svgs.user}</div>
+                    Santri: ${s.name}
                 </h3>
                 
                 <div class="public-status-row">
@@ -1500,14 +1504,14 @@ function validatePublicLogin() {
                 </div>
             </div>
 
-            <h3 class="text-neutral" style="margin-top:30px; font-size:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">Laporan Kas Utama TPA</h3>
+            <h3 class="text-neutral" style="margin-top:30px; font-size:14px; border-bottom:1px solid var(--border); padding-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">Laporan Kas Utama TPA</h3>
             <div class="expand-item expanded glass-card" style="margin-bottom:15px; border-radius: 16px;">
                 <span class="card-label">Saldo Saat Ini (Kas Utama)</span>
                 <p class="card-value text-neutral" style="font-size:26px;">${totalUtama}</p>
             </div>
             ${publicTxHtml}
             
-            <div style="text-align:center; margin-top:30px; font-size:10px; color:var(--text-muted);">TPA Finance System v4.7 - Read Only Portal</div>
+            <div style="text-align:center; margin-top:35px; margin-bottom:10px; font-size:10px; color:var(--text-muted); letter-spacing:0.5px;">TPA Finance System v4.8 - Read Only Portal</div>
         `;
         
         pDash.style.display = 'block';
@@ -1516,136 +1520,67 @@ function validatePublicLogin() {
             const fdUtama = db.filter(tx => tx.wallet === 'utama');
             renderTable(fdUtama, true); // true = sembunyikan kolom aksi
         }
+        showToast(`Selamat datang, Wali dari ${s.name}`, "success");
 
     } else { showToast("Nama tidak ditemukan di database TPA.", "error"); }
 }
 
-
 // ==========================================
-// PROFILE, AUTH, & EXTRAS
+// OTP EMAILJS INTEGRATION (FIXED & SECURED)
 // ==========================================
-function openProfileView() { 
-    document.getElementById('viewGoogleStatus').innerText = (APP_MODE === 'CLOUD') ? (profile.googleEmail || currentUser?.email || "Terhubung") : "Tidak Terhubung";
-    document.getElementById('viewGoogleStatus').style.color = (APP_MODE === 'CLOUD') ? 'var(--hijau-terang)' : 'var(--text-muted)';
-    document.getElementById('textGoogleLink').innerText = (APP_MODE === 'CLOUD') ? "Logout" : "Hubungkan";
-    document.getElementById('viewJoinDate').innerText = "Bergabung: " + formatDetailDate(profile.joinDate).split(' - ')[0];
-    
-    document.getElementById('btnGoogleLink').onclick = () => {
-        if(APP_MODE === 'CLOUD') {
-            openCustomConfirm("Logout Cloud", "Keluar ke Mode Guest? Data aman tersimpan.", async () => { if(sbClient && navigator.onLine) await sbClient.auth.signOut(); else forceLogoutToGuest(); });
-        } else { openModal('googleAuthModal'); }
-    };
-    openModal('profileViewModal'); 
-}
-
-function requestProfileEdit() { 
-    if(profile.pin && profile.pin !== '') { 
-        closeModal('profileViewModal'); 
-        document.getElementById('actionPinType').value = 'edit_profile'; 
-        document.getElementById('inputActionPin').value = ''; 
-        openModal('actionPinModal'); 
-    } else { openProfileEdit(); } 
-}
-
-function openProfileEdit() { 
-    document.getElementById('editProfileImg').src = profile.photo; 
-    document.getElementById('editName').value = profile.name !== 'Pengurus Baru' ? profile.name : ''; 
-    selectGender(profile.gender); 
-    document.getElementById('editPin').value = ''; 
-    openModal('profileEditModal'); 
-}
-
-function selectGender(val) { document.getElementById('editGender').value = val; document.getElementById('dispGenderVal').innerText = val; closeModal(''); }
-
-document.getElementById('profileUploader').addEventListener('change', function(e) { 
-    const f = e.target.files[0]; if(!f) return; showToast("Memproses Foto...", "syncing"); const reader = new FileReader(); 
-    reader.onload = function(evt) { const img = new Image(); img.onload = function() { 
-        const canvas = document.createElement('canvas'); const MAX = 300; let w = img.width, h = img.height; 
-        if(w > h) { if(w > MAX) { h *= MAX/w; w = MAX; } } else { if(h > MAX) { w *= MAX/h; h = MAX; } } 
-        canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h); 
-        profile.photo = canvas.toDataURL('image/jpeg', 0.6); document.getElementById('editProfileImg').src = profile.photo; 
-    }; img.src = evt.target.result; }; reader.readAsDataURL(f); 
-});
-
-async function saveProfileData() { 
-    profile.name = properTitleCase(document.getElementById('editName').value.trim()) || 'Pengurus Baru'; 
-    profile.gender = document.getElementById('editGender').value; 
-    const rawPin = document.getElementById('editPin').value; if(rawPin && rawPin.length >= 4) { profile.pin = await hashPIN(rawPin); } 
-    setLS('profile_secure_v47', JSON.stringify(profile)); initAppHeader(); closeModal('profileEditModal'); showToast("Profil Berhasil Disimpan"); 
-    if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient) sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
-}
-
-function initResetSequence() { 
-    if(!profile.pin) { showToast("Buat PIN Keamanan dahulu di menu Edit Profil.", "error"); return; } 
-    closeModal('profileViewModal'); 
-    document.getElementById('actionPinType').value = 'reset'; 
-    document.getElementById('inputActionPin').value = ''; 
-    openModal('actionPinModal'); 
-}
-
-async function executeFactoryReset() { 
-    showToast("Membersihkan Database...", "syncing"); 
-    try { 
-        if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient) await sbClient.from('transactions').delete().eq('user_id', currentUser.id); 
-    } catch(e) {}
-    db = []; sppData = []; attendanceData = { lastReset: new Date().toISOString(), records: {} }; pendingSync = []; wishlists = []; driveLinks = [];
-    removeLS('cloud_db'); removeLS('guest_db'); removeLS('spp_data_v47'); removeLS('attendance_data_v47'); removeLS('pending_sync'); removeLS('wishlists'); removeLS('drivelinks');
-    updateUI(''); renderWishlist(); renderDriveLinks(); showToast("Reset Selesai.", "success"); 
-}
-
-// Dev Support Notification Randomizer
-function triggerDevSupportNotification() {
-    if(isPublicMode) return;
-    const msgs = [
-        "Bantu Developer terus update aplikasi dengan klik tombol 'Traktir Kopi' di menu Profil 🙏",
-        "Aplikasi bermanfaat? Dukung Developer via SociaBuzz di menu Profil ☕",
-        "TPA Finance 100% Gratis Tanpa Iklan. Dukung pemeliharaan server di menu Profil ❤️"
-    ];
-    showToast(msgs[Math.floor(Math.random() * msgs.length)], "support");
-}
-
-// Google Auth
-document.getElementById('btnRealGoogleLogin').addEventListener('click', async () => { 
-    const msg = document.getElementById('googleAuthStatusMsg');
-    msg.innerText = "Memproses login ke Google..."; msg.style.color = 'var(--biru)';
-    if(typeof window.supabase === 'undefined' || !sbClient || !navigator.onLine) { msg.innerText = "Gagal menyambung. Cek koneksi internet."; msg.style.color = 'var(--merah-solid)'; return; }
-    try {
-        await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); 
-    } catch (e) {
-        msg.innerText = "Terjadi kesalahan sistem OAuth."; msg.style.color = 'var(--merah-solid)';
-    }
-});
-
-// OTP Pin Reset via EmailJS
 function startOTPResetProcess() { 
     closeModal('actionPinModal'); 
-    if(!profile.googleLinked || !profile.googleEmail) { showToast("Akun belum terhubung Cloud!", "error"); return; } 
-    if(!navigator.onLine) { showToast("Butuh koneksi internet!", "error"); return; } 
+    if(!profile.googleLinked || !profile.googleEmail) { showToast("Akun belum terhubung Cloud Google!", "error"); return; } 
+    if(!navigator.onLine) { showToast("Sistem membutuhkan koneksi internet!", "error"); return; } 
     document.getElementById('displayUserEmail').innerText = profile.googleEmail; 
     openModal('otpRequestModal'); 
 }
+
 function sendOTPEmail() { 
-    const btn = document.getElementById('btnSendOTP'); btn.innerText = "Mengirim..."; btn.disabled = true; 
+    const btn = document.getElementById('btnSendOTP'); 
+    btn.innerText = "Mengirim..."; btn.disabled = true; 
     generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpExpiryTime = Date.now() + 300000; 
     
-    // Asumsi public key di inisialisasi di index.html. Jika tidak ada, fallback error lokal.
+    // Eksekusi API EmailJS menggunakan Service ID dan Template ID yang benar
     if (typeof emailjs !== 'undefined') {
-        emailjs.send('service_4v89q7h', 'template_w9fgvcf', { to_email: profile.googleEmail, to_name: profile.name, otp_code: generatedOTP })
-            .then(() => { showToast("OTP Terkirim ke Email!"); closeModal('otpRequestModal'); openModal('otpVerifyModal'); btn.innerText="Kirim Kode OTP"; btn.disabled=false; })
-            .catch(() => { showToast("Gagal kirim email. Periksa Public Key.", "error"); btn.innerText="Kirim Kode OTP"; btn.disabled=false; }); 
+        emailjs.send('service_l08406o', 'template_osq8mgb', { 
+            to_email: profile.googleEmail, 
+            to_name: profile.name, 
+            otp_code: generatedOTP 
+        })
+        .then(() => { 
+            showToast("Kode OTP berhasil dikirim ke Email!"); 
+            closeModal('otpRequestModal'); 
+            openModal('otpVerifyModal'); 
+            btn.innerText="Kirim Kode OTP"; btn.disabled=false; 
+        })
+        .catch((error) => { 
+            console.error("EmailJS Error:", error);
+            showToast("Gagal mengirim email. Sistem OTP Terganggu.", "error"); 
+            btn.innerText="Kirim Kode OTP"; btn.disabled=false; 
+        }); 
     } else {
-        showToast("Sistem Email Offline.", "error"); btn.innerText="Kirim Kode OTP"; btn.disabled=false;
+        showToast("Server EmailJS Tidak Tersedia / Terblokir.", "error"); 
+        btn.innerText="Kirim Kode OTP"; btn.disabled=false;
     }
 }
+
 async function verifyOTPAndSavePin() { 
     const c = document.getElementById('inputOTP').value; const np = document.getElementById('inputNewPinOTP').value; 
-    if(Date.now() > otpExpiryTime) { showToast("OTP Kadaluarsa!", "error"); return; } 
-    if(c !== generatedOTP) { showToast("OTP Salah!", "error"); return; } 
-    if(np.length < 4) { showToast("PIN minimal 4 digit!", "error"); return; } 
-    profile.pin = await hashPIN(np); setLS('profile_secure_v47', JSON.stringify(profile)); 
-    if(APP_MODE === 'CLOUD' && sbClient) sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
-    generatedOTP = ""; closeModal('otpVerifyModal'); showToast("PIN Berhasil Direset!"); 
+    if(Date.now() > otpExpiryTime) { showToast("OTP Kadaluarsa! Minta kembali.", "error"); return; } 
+    if(c !== generatedOTP) { showToast("Kode OTP Salah!", "error"); return; } 
+    if(np.length < 4) { showToast("PIN baru harus minimal 4 angka!", "error"); return; } 
+    
+    profile.pin = await hashPIN(np); 
+    setLS('profile_secure_v48', JSON.stringify(profile)); 
+    
+    if(APP_MODE === 'CLOUD' && sbClient) {
+        sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
+    }
+    
+    generatedOTP = ""; 
+    document.getElementById('inputOTP').value = '';
+    document.getElementById('inputNewPinOTP').value = '';
+    closeModal('otpVerifyModal'); 
+    showToast("PIN Berhasil Dipulihkan & Disimpan!"); 
 }
-
-// Kickstart Aplikasi
-bootApp();
