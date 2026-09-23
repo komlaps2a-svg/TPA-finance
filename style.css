@@ -1,5 +1,5 @@
 :root {
-    /* DARK MODE (Hijau Gelap Kehitaman - Lebih Elegan dari Hitam Pekat) */
+    /* DARK MODE (Hijau Gelap Kehitaman - Estetik & Profesional) */
     --bg-color: #05140d;
     --hitam-card: #092115;
     --hitam-btn: #0c2c1c;
@@ -7,7 +7,7 @@
     --text-muted: #8ba898;
     --border: #164027;
 
-    /* Aksen Kontras (Disesuaikan agar sangat terbaca di Dark Mode) */
+    /* Aksen Kontras Tajam */
     --hijau: #10b981;
     --hijau-terang: #34d399;
     --merah: #f87171;
@@ -21,10 +21,9 @@
     --header-l1: #03120a;
     --header-l2: #051a10;
 
-    /* Tekstur Kertas Gelap (Base64 Encoded SVG Noise) */
+    /* Tekstur Kertas Gelap */
     --paper-noise: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNub2lzZUZpbHRlciknIG9wYWNpdHk9JzAuMDUnLz48L3N2Zz4=");
 
-    /* Variabel Titik Ripple Transisi (Diubah via JS) */
     --ripple-x: 50%;
     --ripple-y: 50%;
 }
@@ -42,7 +41,6 @@
     --header-l1: #059669;
     --header-l2: #10b981;
 
-    /* Aksen Kontras Light Mode */
     --hijau: #059669;
     --hijau-terang: #047857;
     --merah: #dc2626;
@@ -51,7 +49,6 @@
     --kuning: #d97706;
     --ungu: #7e22ce;
 
-    /* Tekstur Kertas Terang */
     --paper-noise: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOCcgbnVtT2N0YXZlcz0nMycgc3RpdGNoVGlsZXM9J3N0aXRjaCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNub2lzZUZpbHRlciknIG9wYWNpdHk9JzAuMDgnLz48L3N2Zz4=");
 }
 
@@ -75,12 +72,10 @@ body {
     min-height: 100vh;
 }
 
-/* Kunci Scroll Total Saat Modal Terbuka */
+/* FIX BUG SCROLL: Menghapus position fixed agar saat modal ditutup layar tidak kembali ke paling atas */
 body.modal-open {
     overflow: hidden;
-    touch-action: none;
-    position: fixed;
-    width: 100%;
+    /* Dilarang keras menggunakan position: fixed di sini */
 }
 
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
@@ -101,7 +96,6 @@ body.modal-open {
     z-index: 999999;
     pointer-events: none;
     will-change: transform, opacity;
-    /* Efek Blur Bayangan agar transisi menyebar lembut, tidak terpotong tajam */
     box-shadow: 0 0 60px 40px var(--bg-color);
 }
 
@@ -144,31 +138,30 @@ body.modal-open {
 .status-sync-wrapper {
     display: flex;
     justify-content: flex-start;
-    margin-top: 4px;
+    margin-top: 5px;
 }
 .status-sync {
     display: inline-block;
-    width: max-content; /* Memastikan lebar latar belakang persis selebar teks */
+    width: max-content; 
     white-space: nowrap;
     color: #ffffff !important;
     font-weight: 900 !important;
     font-size: 11px;
     text-transform: uppercase;
-    /* Teknik Text-Shadow Berlapis untuk Garis Tepi Sempurna */
     text-shadow: 
         -1px -1px 0 var(--status-color),  
          1px -1px 0 var(--status-color),
         -1px  1px 0 var(--status-color),
          1px  1px 0 var(--status-color),
-         0px  2px 5px rgba(0,0,0,0.8);
-    padding: 4px 10px;
-    border-radius: 8px;
+         0px  3px 6px rgba(0,0,0,0.8);
+    padding: 5px 12px;
+    border-radius: 10px;
     letter-spacing: 0.5px;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.4);
     border: 1px solid var(--status-color);
 }
 [data-theme="light"] .status-sync {
-    background: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.6);
     text-shadow: 
         -1px -1px 0 var(--status-color),  
          1px -1px 0 var(--status-color),
@@ -183,14 +176,14 @@ body.modal-open {
 /* Tombol Dasar */
 .btn-primary { background: var(--hijau) !important; color: #022c22 !important; border: none !important; font-weight: 900 !important; text-transform: uppercase; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35); letter-spacing: 0.5px;}
 .btn-cancel { background: transparent !important; border: 1px solid var(--merah-solid) !important; color: var(--merah-solid) !important; font-weight: 800 !important; text-transform: uppercase; letter-spacing: 0.5px;}
-.btn-modal { width: 100%; padding: 16px; border-radius: 12px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-top: 10px;}
+.btn-modal { width: 100%; padding: 16px; border-radius: 14px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-top: 10px;}
 .btn-modal:active { transform: scale(0.97); }
 .btn-modal:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-outline-small { background: var(--hitam-btn); border: 1px solid var(--border); color: var(--text-muted); padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; text-transform: uppercase; transition: all 0.2s; }
 .btn-outline-small:active { transform: scale(0.95); background: var(--border); color: var(--teks-netral); }
 
-/* Tombol Ikon Khusus Aksi */
+/* Tombol Ikon Khusus Aksi (Trash / Edit) */
 .btn-icon-danger {
     background: rgba(239, 68, 68, 0.12);
     border: 1px solid rgba(239, 68, 68, 0.4);
@@ -223,18 +216,21 @@ body.modal-open {
 .btn-icon-neutral:active { transform: scale(0.9); background: var(--border); }
 .btn-icon-neutral svg { width: 18px; height: 18px; }
 
-/* Loading Screen & Toast (Tampil di atas Modal) */
+/* Loading Screen */
 #updateScreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s; }
 .update-text { font-size: 12px; font-weight: 800; color: var(--teks-netral); margin-top: 20px; letter-spacing: 1px; }
 .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--hijau); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ==========================================
+   TOAST NOTIFICATION (APPLE-STYLE BLUR)
+========================================== */
 .toast-container {
     position: fixed;
-    top: max(15px, env(safe-area-inset-top, 0px));
+    top: max(20px, env(safe-area-inset-top, 0px));
     left: 50%;
     transform: translateX(-50%);
-    z-index: 999999; /* Pastikan di atas modal-overlay */
+    z-index: 999999; /* Z-Index Tertinggi */
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -243,40 +239,69 @@ body.modal-open {
     max-width: 450px;
 }
 .toast {
-    background: var(--hitam-card);
-    border: 1px solid var(--border);
-    border-left: 5px solid var(--hijau);
-    color: var(--teks-netral) !important;
-    padding: 16px 20px;
-    border-radius: 14px;
-    font-weight: 800;
-    font-size: 13px;
+    /* Style Transparan & Blur khas Apple */
+    background: rgba(9, 33, 21, 0.7);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff !important;
+    padding: 18px 24px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 14px;
     line-height: 1.5;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     transform: translateY(-150%);
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    text-align: left;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 }
-.toast.error { border-left-color: var(--merah-solid); }
-.toast.syncing { border-left-color: var(--biru); }
-.toast.support { border-left-color: var(--ungu); font-size: 14px; }
+.toast::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0; width: 6px;
+    background: var(--hijau);
+}
+.toast.error::before { background: var(--merah-solid); }
+.toast.syncing::before { background: var(--biru); }
+.toast.support { font-size: 15px; } .toast.support::before { background: var(--kuning); }
 .toast.show { transform: translateY(0); opacity: 1; }
 
-[data-theme="light"] .toast { box-shadow: 0 15px 40px rgba(6, 78, 59, 0.2); }
+/* Apple Blur untuk Light Mode */
+[data-theme="light"] .toast { 
+    background: rgba(255, 255, 255, 0.75); 
+    border: 1px solid rgba(0, 0, 0, 0.1); 
+    color: #064e3b !important; 
+    box-shadow: 0 20px 40px rgba(6, 78, 59, 0.15); 
+}
 
 /* ==========================================
-   HEADER FLEKSIBEL & PROFIL
+   HEADER FLEKSIBEL & PROFIL TRIGGER BOX
 ========================================== */
 .app-header-flexible { position: relative; width: 100%; display: flex; flex-direction: column; }
 .header-layer-1 { background: var(--header-l1); padding: calc(25px + env(safe-area-inset-top, 0px)) 20px 15px 20px; z-index: 3; }
 .header-layer-2 { background: var(--header-l2); padding: 10px 20px; z-index: 2; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 .header-layer-3 { height: 35px; background: linear-gradient(180deg, var(--header-l2) 0%, transparent 100%); z-index: 1; }
 
-.profile-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.2s; position: relative; border: none; background: transparent; padding: 0; width: 100%;}
-.profile-header:active { transform: scale(0.98); }
-.profile-info { display: flex; align-items: center; gap: 14px; width: 100%; flex: 1; min-width: 0; }
+/* Pembatas & Pembungkus Profil Interaktif */
+.profile-trigger-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    width: 100%;
+}
+.profile-trigger-box:active { transform: scale(0.97); background: rgba(0, 0, 0, 0.6); }
+[data-theme="light"] .profile-trigger-box { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(0, 0, 0, 0.05); }
 
+.profile-info { display: flex; align-items: center; gap: 14px; width: 100%; flex: 1; min-width: 0; }
 .profile-pic-container { 
     width: 60px; height: 60px; 
     border-radius: 50%; 
@@ -292,7 +317,8 @@ body.modal-open {
 
 .profile-name-wrap { display: flex; flex-direction: column; min-width: 0; flex: 1; align-items: flex-start; }
 .profile-title { font-size: 11px; color: rgba(255,255,255,0.75); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; display: block; margin-bottom: 2px;}
-.profile-name { font-size: clamp(16px, 5.5vw, 22px); font-weight: 900; margin: 0; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: #ffffff; }
+[data-theme="light"] .profile-title { color: var(--text-muted); }
+.profile-name { font-size: clamp(16px, 5.5vw, 22px); font-weight: 900; margin: 0; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: var(--teks-netral); }
 
 .health-badge {
     padding: 10px 14px;
@@ -308,11 +334,12 @@ body.modal-open {
     border: 1px solid var(--border);
     flex-shrink: 0;
     min-width: 95px;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.5);
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
-.health-badge span { font-size: 9px; color: rgba(255,255,255,0.65); margin-bottom: 3px; }
-.health-netral   { border-color: var(--text-muted); color: #ffffff; }
+[data-theme="light"] .health-badge { background: rgba(255,255,255,0.7); }
+.health-badge span { font-size: 9px; color: var(--text-muted); margin-bottom: 3px; font-weight: 800;}
+.health-netral   { border-color: var(--text-muted); color: var(--teks-netral); }
 .health-sehat    { border-color: var(--hijau-terang); color: var(--hijau-terang); background: rgba(52, 211, 153, 0.15); }
 .health-waspada  { border-color: var(--kuning); color: var(--kuning); background: rgba(251, 191, 36, 0.15); }
 .health-kritis   { border-color: var(--merah-solid); color: var(--merah-solid); background: rgba(239, 68, 68, 0.15); }
@@ -324,8 +351,9 @@ body.modal-open {
     padding: 12px 16px;
     background: rgba(0,0,0,0.25);
     border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
 }
-[data-theme="light"] .prayer-widget { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); }
+[data-theme="light"] .prayer-widget { background: rgba(255,255,255,0.4); border-color: rgba(0,0,0,0.05); }
 .prayer-header {
     display: flex;
     justify-content: space-between;
@@ -337,7 +365,7 @@ body.modal-open {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-[data-theme="light"] .prayer-header { color: #ffffff; opacity: 0.9; }
+[data-theme="light"] .prayer-header { color: var(--teks-netral); opacity: 0.8; }
 .prayer-times-scroll {
     display: flex;
     gap: 10px;
@@ -359,7 +387,7 @@ body.modal-open {
     flex-shrink: 0;
     transition: transform 0.2s;
 }
-.prayer-item:active { transform: scale(0.95); }
+.prayer-item:active { transform: scale(0.95); background: var(--border); }
 .prayer-item .p-name { font-size: 10px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
 .prayer-item .p-time { font-size: 16px; font-weight: 900; color: var(--teks-netral); font-family: 'Courier New', Courier, monospace; letter-spacing: -0.5px; }
 
@@ -378,7 +406,7 @@ body.modal-open {
 
 
 /* ==========================================
-   KONTEN: FILTER WAKTU (KECIL) & AI INSIGHT (LEGA)
+   KONTEN: FILTER WAKTU (STATIS KECIL) & AI INSIGHT (LEGA)
 ========================================== */
 .content-wrapper { padding: 0 20px 30px 20px; }
 .section-divider { height: 1px; background: var(--border); margin: 30px 0 20px 0; width: 100%; border-radius: 50%; }
@@ -389,13 +417,11 @@ body.modal-open {
     width: 100%; 
     margin-bottom: 25px; 
     align-items: stretch; 
-    height: 95px; /* Tinggi Fix agar sejajar rata */
+    min-height: 85px; 
 }
 .time-filter-wrapper { 
-    width: 95px; /* Dibuat statis kecil */
-    flex-shrink: 0; 
+    flex: 0 0 100px; /* Dikunci absolute agar tak pernah memanjang */
     position: relative; 
-    height: 100%; 
     margin-bottom: 0; 
 }
 .time-filter-wrapper .custom-select-trigger { 
@@ -419,13 +445,13 @@ body.modal-open {
 .insight-box {
     border-left: 4px solid var(--text-muted);
     padding: 14px 16px;
-    flex: 1; /* Ambil sisa lebar layar secara eksklusif */
-    min-width: 0; /* Penting untuk flexbox overflow behavior */
+    flex: 1; /* Eksklusif Ambil sisa lebar layar penuh */
+    min-width: 0; /* Hindari box meluber ke luar kontainer */
     display: flex;
     align-items: flex-start;
     gap: 12px;
     border-radius: 14px;
-    height: 100%;
+    height: auto;
 }
 .insight-box svg { flex-shrink: 0; width: 22px; height: 22px; color: var(--teks-netral); margin-top: 2px;}
 .marquee-container {
@@ -664,7 +690,4 @@ tr:last-child td { border-bottom: none; }
     .prof-detail-grid { grid-template-columns: 1fr; }
     .sosmed-container { grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .health-badge { min-width: 80px; padding: 8px 10px; }
-    .filter-insight-row { flex-direction: column; height: auto; gap: 15px; }
-    .time-filter-wrapper { width: 100%; height: 50px; }
-    .insight-box { height: 80px; }
 }
