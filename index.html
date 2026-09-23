@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-title" content="TPA Finance">
     <link rel="apple-touch-icon" href="icon-192x192.png">
 
-    <title>TPA Finance v4.8 - Enterprise Edition</title>
+    <title>TPA Finance v4.9 - Enterprise Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- External Libraries -->
@@ -20,20 +20,20 @@
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <!-- Hard Cache Busting -->
-    <link rel="stylesheet" href="style.css?v=470">
-    <script defer src="main.js?v=470"></script>
+    <link rel="stylesheet" href="style.css?v=480">
+    <script defer src="main.js?v=480"></script>
 </head>
 <body>
-    <!-- Layer Transisi Tema Smooth dengan Shadow Edge -->
+    <!-- Layer Transisi Tema Smooth dengan Shadow Blur Edge -->
     <div id="themeTransitionLayer"></div>
 
     <!-- Update Screen -->
     <div id="updateScreen" style="display:none;">
         <div class="spinner"></div>
-        <p class="update-text">MENERAPKAN UPDATE VERSI BARU v4.7...</p>
+        <p class="update-text">MENERAPKAN UPDATE VERSI BARU v4.8...</p>
     </div>
 
-    <!-- Toast Notification (Z-Index Tertinggi) -->
+    <!-- Toast Notification (Z-Index Tertinggi, Apple-Style Blur) -->
     <div id="toastBox" class="toast-container"></div>
 
     <!-- =========================================================
@@ -43,17 +43,18 @@
         <!-- STICKY-FREE / FLEXIBLE HEADER -->
         <header class="app-header-flexible" id="mainHeader">
             <div class="header-layer-1">
-                <div class="profile-header" onclick="openProfileView()">
+                <!-- Wrapper Profil yang Tegas dan Bisa Diklik -->
+                <div class="profile-trigger-box glass-card" onclick="openProfileView()">
                     <div class="profile-info">
                         <div class="profile-pic-container">
                             <img src="" id="headProfileImg" class="profile-pic" alt="Profile">
                         </div>
                         <div class="profile-name-wrap">
                             <span class="profile-title" id="headGender">PENGURUS TPA</span>
-                            <h1 class="profile-name" id="headName">Memuat...</h1>
-                            <!-- Badge Status Fit Content -->
+                            <h1 class="profile-name" id="headName">Memuat Profil...</h1>
+                            <!-- Badge Status Text Stroke / Garis Tepi -->
                             <div class="status-sync-wrapper">
-                                <div id="networkStatus" class="status-sync sync-offline">Offline Mode</div>
+                                <div id="networkStatus" class="status-sync sync-offline">Menghubungkan...</div>
                             </div>
                         </div>
                     </div>
@@ -63,14 +64,14 @@
                     </div>
                 </div>
 
-                <!-- Widget Jadwal Sholat GPS -->
-                <div class="prayer-widget glass-card" id="prayerWidgetContainer">
+                <!-- Widget Jadwal Sholat GPS (Bisa Diklik untuk Refresh Live) -->
+                <div class="prayer-widget glass-card" id="prayerWidgetContainer" onclick="initPrayerTimes(true)" title="Klik untuk melacak ulang GPS">
                     <div class="prayer-header">
-                        <span style="display: flex; align-items: center; gap: 4px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                            <span id="prayerLocationText">Melacak Lokasi...</span>
+                        <span style="display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--hijau)" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <span id="prayerLocationText">Melacak Lokasi GPS...</span>
                         </span>
-                        <span id="prayerDateText">-</span>
+                        <span id="prayerDateText" style="color:var(--hijau); font-weight:900;">-</span>
                     </div>
                     <div class="prayer-times-scroll" id="prayerTimesGrid">
                         <div class="prayer-item"><span class="p-name">Subuh</span><span class="p-time">--:--</span></div>
@@ -99,12 +100,12 @@
         <!-- KONTEN UTAMA -->
         <div class="content-wrapper" id="mainContentWrapper">
 
-            <!-- ROW: Filter Waktu & AI Insight (Proporsi Diperbaiki) -->
+            <!-- ROW: Filter Waktu & AI Insight (Proporsi Diperbaiki & Sejajar) -->
             <div class="filter-insight-row">
                 <div class="custom-select-wrapper time-filter-wrapper">
                     <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('timeFilterOptions')">
                         <span id="dispTimeFilter">Semua</span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options glass-card" id="timeFilterOptions">
                         <div class="custom-option text-neutral" onclick="applyTimeFilter(365, 'Semua')">Semua Waktu</div>
@@ -116,7 +117,7 @@
                 </div>
 
                 <div id="aiInsightBox" class="insight-box glass-card">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     <div class="marquee-container">
                         <span id="aiInsightText" class="text-neutral">Menganalisis kesehatan finansial Anda secara real-time...</span>
                     </div>
@@ -162,7 +163,7 @@
             <div class="section-divider" id="div-admin"></div>
             <div class="section-header" id="head-admin" onclick="toggleSection('adminSection', 'adminToggleIcon')">
                 <h2 class="section-title">Manajemen Murid & Laporan</h2>
-                <svg id="adminToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                <svg id="adminToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
             </div>
             <div class="collapsible-content" id="adminSection">
                 <div class="quick-actions-wrap grid-mode grid-split-2" style="margin-top:0; margin-bottom:20px;">
@@ -182,10 +183,10 @@
             <div class="section-header">
                 <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('wishlistSection', 'wishlistToggleIcon')">
                     <h2 class="section-title">Target Dana</h2>
-                    <svg id="wishlistToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg id="wishlistToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <button onclick="openAddWishlistModal()" class="btn-outline-small glass-card" id="btnAddWishlist">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Tambah
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Tambah
                 </button>
             </div>
             <div class="collapsible-content" id="wishlistSection">
@@ -197,10 +198,10 @@
             <div class="section-header">
                 <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('driveSection', 'driveToggleIcon')">
                     <h2 class="section-title">Arsip Drive</h2>
-                    <svg id="driveToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg id="driveToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <button onclick="openAddDriveModal()" class="btn-outline-small glass-card" id="btnAddDrive">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Link Baru
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Link Baru
                 </button>
             </div>
             <div class="collapsible-content" id="driveSection">
@@ -211,27 +212,27 @@
             <div class="section-divider"></div>
             <div class="section-header" onclick="toggleSection('chartsSection', 'chartToggleIcon')">
                 <h2 class="section-title">Analitik Visual</h2>
-                <svg id="chartToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                <svg id="chartToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
             </div>
             <div class="collapsible-content" id="chartsSection">
                 <div class="expand-container" id="chartContainer">
                     <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
                         <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)" aria-label="Tutup">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                         <span class="card-label">Distribusi</span>
                         <div class="chart-box"><canvas id="pieChart"></canvas></div>
                     </div>
                     <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
                         <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)" aria-label="Tutup">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                         <span class="card-label">Timeline</span>
                         <div class="chart-box"><canvas id="barChart"></canvas></div>
                     </div>
                     <div class="expand-item glass-card" onclick="expandChart(this, 'chartContainer')">
                         <button class="btn-close-expand chart-close-red" onclick="closeChart(event, this)" aria-label="Tutup">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                         <span class="card-label">Arus Kas</span>
                         <div class="chart-box"><canvas id="lineChart"></canvas></div>
@@ -244,7 +245,7 @@
             <div class="section-header">
                 <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;" onclick="toggleSection('historySection', 'historyToggleIcon')">
                     <h2 class="section-title">Riwayat Transaksi</h2>
-                    <svg id="historyToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg id="historyToggleIcon" class="toggle-icon rotated" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <button onclick="openCSVModal()" class="btn-outline-small glass-card" id="btnExportCSV" style="border-color:var(--hijau); color:var(--hijau);">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export
@@ -276,39 +277,55 @@
     </div> <!-- End Admin Dashboard -->
 
     <!-- =========================================================
-         DASHBOARD PELIHAT (WALI MURID / PUBLIK)
+         DASHBOARD PELIHAT (WALI MURID / PUBLIK) - ESTETIS & REALTIME
     ========================================================= -->
     <div id="publicLoginOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg-color); z-index:99999; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
-        <div class="glass-card" style="padding:40px 20px; width:100%; max-width:400px; text-align:center; border:1px solid var(--hijau);">
-            <svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="var(--hijau)" stroke-width="2" style="margin-bottom:15px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <h2 class="text-neutral" style="margin:0 0 5px 0;">Portal Transparansi TPA</h2>
-            <p style="font-size:12px; color:var(--text-muted); margin-bottom:30px; line-height: 1.6;">Masukkan nama murid terdaftar untuk melihat saldo TPA, riwayat mutasi, dan status Absen/SPP secara Real-Time.</p>
+        <div class="glass-card" style="padding:40px 20px; width:100%; max-width:400px; text-align:center; border:1px solid var(--hijau); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--hijau)" stroke-width="2" style="margin-bottom:15px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <h2 class="text-neutral" style="margin:0 0 5px 0; font-size:22px; font-weight:900;">Portal Transparansi TPA</h2>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:30px; line-height: 1.6; font-weight:600;">Masukkan nama murid terdaftar untuk melihat Saldo TPA, Riwayat Mutasi, dan Status Absen/SPP secara Real-Time.</p>
 
             <div style="position:relative; text-align:left;">
-                <input type="text" id="publicStudentInput" class="input-field glass-card text-neutral" placeholder="Ketik nama murid..." oninput="handlePublicAutocomplete()" autocomplete="off" style="margin-bottom:10px;">
-                <div id="publicAutocompleteList" class="glass-card hidden" style="position:absolute; top:100%; left:0; width:100%; max-height:220px; overflow-y:auto; z-index:10; border:1px solid var(--border);"></div>
+                <input type="text" id="publicStudentInput" class="input-field glass-card text-neutral" placeholder="Ketik nama murid..." oninput="handlePublicAutocomplete()" autocomplete="off" style="margin-bottom:10px; font-size:16px;">
+                <div id="publicAutocompleteList" class="glass-card hidden" style="position:absolute; top:100%; left:0; width:100%; max-height:220px; overflow-y:auto; z-index:10; border:1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.5);"></div>
             </div>
-            <button class="btn-modal btn-primary" onclick="validatePublicLogin()">Akses Data Murid</button>
+            <button class="btn-modal btn-primary" style="font-size:15px; padding:18px;" onclick="validatePublicLogin()">Akses Data Murid</button>
             
-            <div style="margin-top: 30px; border-top: 1px dashed var(--border); padding-top: 20px;">
-                <p style="font-size:11px; font-weight:800; color:var(--text-muted); margin-bottom:15px; text-transform:uppercase;">Dukung Pemeliharaan Server TPA</p>
+            <div style="margin-top: 35px; border-top: 1px dashed var(--border); padding-top: 25px;">
+                <p style="font-size:11px; font-weight:900; color:var(--text-muted); margin-bottom:15px; text-transform:uppercase; letter-spacing:1px;">Dukung Pemeliharaan Server TPA</p>
                 <div class="sosmed-container">
                     <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" rel="noopener" class="btn-sosmed sw">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Traktir Kopi
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Traktir Kopi
                     </a>
                     <a href="https://www.instagram.com/daengtio_?igsh=MXY4dTVhMGEzNDJxZA==" target="_blank" rel="noopener" class="btn-sosmed ig">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> Instagram
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> Instagram
                     </a>
                     <a href="https://www.tiktok.com/@daengtio_0?_r=1&_t=ZS-94Cu2soiSXJ" target="_blank" rel="noopener" class="btn-sosmed tt">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> TikTok
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> TikTok
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="publicDashboard" style="display:none; padding: 20px; background:var(--bg-color); min-height: 100vh;">
-        <!-- Akan di-render via JS agar sinkron Real-Time -->
+    <div id="publicDashboard" style="display:none; padding: 0; background:var(--bg-color); min-height: 100vh;">
+        <!-- Header Khusus Pelihat -->
+        <div style="background:var(--header-l1); padding: calc(20px + env(safe-area-inset-top, 0px)) 20px 20px 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2 class="text-neutral" style="margin:0 0 4px 0; font-size:20px; font-weight:900;">Transparansi TPA</h2>
+                    <div class="status-sync-wrapper">
+                        <div id="publicNetworkStatus" class="status-sync sync-pending">Menghubungkan Database...</div>
+                    </div>
+                </div>
+                <button class="btn-outline-small glass-card" onclick="window.location.reload()" style="margin:0; border-color:var(--merah-solid); color:var(--merah-solid);">
+                    Keluar
+                </button>
+            </div>
+        </div>
+        
+        <!-- Render Realtime via JS -->
+        <div id="publicDashboardContent" style="padding: 20px;"></div>
     </div>
 
 
@@ -326,15 +343,15 @@
             </div>
             <div style="position: absolute; top: 15px; right: 15px;">
                 <button onclick="requestProfileEdit()" class="icon-btn" id="btnEditProfileMode">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
             </div>
 
             <div style="text-align: center; margin-bottom: 20px; margin-top:35px;">
-                <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto; border-color:var(--hijau);">
+                <div class="profile-pic-container" style="width: 85px; height: 85px; margin: 0 auto 10px auto; border: 3px solid var(--hijau-terang); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
                     <img src="" id="viewProfileImg" class="profile-pic" alt="Profile View">
                 </div>
-                <h2 style="margin:0; font-size: 24px; font-weight:900;" class="text-neutral" id="viewProfileName">Memuat...</h2>
+                <h2 style="margin:0; font-size: 24px; font-weight:900; letter-spacing:-0.5px;" class="text-neutral" id="viewProfileName">Memuat...</h2>
                 <p style="margin:5px 0 0 0; font-size: 11px; color: var(--text-muted); font-weight:700;" id="viewJoinDate"></p>
             </div>
 
@@ -343,27 +360,27 @@
                 <div class="prof-detail-box glass-card"><span class="prof-detail-label">Tgl Lahir</span><p class="prof-detail-val text-neutral" id="viewBirth">-</p></div>
                 <div class="prof-detail-box glass-card" style="grid-column: span 2; display:flex; flex-direction: row; justify-content:space-between; align-items:center; gap: 10px;" id="cloudStatusContainer">
                     <div style="text-align: left; flex: 1;">
-                        <span class="prof-detail-label">Status Cloud DB</span>
+                        <span class="prof-detail-label">Status Database</span>
                         <p class="prof-detail-val text-neutral" id="viewGoogleStatus">Tidak Terhubung</p>
                     </div>
-                    <button id="btnGoogleLink" class="btn-outline-small" style="border-color:var(--biru); color:var(--biru);" onclick="openGoogleAuthModal()">
-                        <span id="textGoogleLink">Hubungkan</span>
+                    <button id="btnGoogleLink" class="btn-outline-small" style="border-color:var(--biru); color:var(--biru); padding:10px 14px;" onclick="openGoogleAuthModal()">
+                        <span id="textGoogleLink" style="font-weight:900;">Hubungkan</span>
                     </button>
                 </div>
             </div>
 
             <!-- Rules & Panduan Aplikasi -->
-            <div style="margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding: 10px;" class="glass-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleSection('rulesContent', 'rulesIcon')">
-                    <span style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">📖 Panduan & Rules Aplikasi</span>
-                    <svg id="rulesIcon" class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            <div style="margin-bottom: 20px; border: 1px solid var(--border); border-radius: 14px; padding: 10px;" class="glass-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding:5px;" onclick="toggleSection('rulesContent', 'rulesIcon')">
+                    <span style="font-size:12px; font-weight:900; color:var(--text-muted); text-transform:uppercase;">📖 Panduan & Rules Aplikasi</span>
+                    <svg id="rulesIcon" class="toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div id="rulesContent" class="collapsible-content hidden" style="margin-top: 10px; font-size: 12px; color: var(--teks-netral); line-height: 1.7;">
                     <ul style="padding-left: 15px; margin:0;">
-                        <li><b>Absensi Otomatis:</b> Status hadir seluruh murid direset otomatis setiap hari Minggu jam 00:00 untuk menghemat database.</li>
-                        <li><b>Reminder Unduh:</b> Setiap Sabtu/Minggu, unduh rekapan CSV sebelum sistem melakukan *reset*.</li>
-                        <li><b>Kelola Murid:</b> Anda bisa mengisi absen mundur (misal hari Senin diisi pada hari Rabu) melalui detail tombol absen di menu Manajemen Murid.</li>
-                        <li><b>Link Publik:</b> Wali murid bisa memantau *real-time* riwayat transaksi TPA dan status absensi anak spesifik melalui URL Publik (Pencarian berbasis nama).</li>
+                        <li style="margin-bottom:8px;"><b>Absensi Otomatis:</b> Status hadir seluruh murid direset otomatis setiap hari Minggu jam 00:00 untuk menghemat database.</li>
+                        <li style="margin-bottom:8px;"><b>Reminder Unduh:</b> Setiap Sabtu/Minggu, unduh rekapan CSV sebelum sistem melakukan *reset*.</li>
+                        <li style="margin-bottom:8px;"><b>Kelola Murid:</b> Anda bisa mengisi absen mundur (misal hari Senin diisi pada hari Rabu) melalui detail tombol "Log" di menu Manajemen Murid.</li>
+                        <li style="margin-bottom:8px;"><b>Link Publik:</b> Wali murid bisa memantau *real-time* riwayat transaksi TPA dan status absensi anak spesifik melalui URL Publik (Pencarian berbasis nama).</li>
                         <li><b>Keamanan:</b> Edit profil & hapus data dilindungi PIN. Jika lupa PIN, pulihkan via OTP Email (Wajib Login Cloud).</li>
                     </ul>
                 </div>
@@ -372,17 +389,17 @@
             <span class="prof-detail-label" style="text-align: center; margin-bottom: 10px; display:block;">Support Developer</span>
             <div class="sosmed-container" style="margin-bottom: 20px;">
                 <a href="https://www.instagram.com/daengtio_?igsh=MXY4dTVhMGEzNDJxZA==" target="_blank" rel="noopener" class="btn-sosmed ig">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> Instagram
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> Instagram
                 </a>
                 <a href="https://www.tiktok.com/@daengtio_0?_r=1&_t=ZS-94Cu2soiSXJ" target="_blank" rel="noopener" class="btn-sosmed tt">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> TikTok
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> TikTok
                 </a>
                 <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" rel="noopener" class="btn-sosmed sw">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Traktir Kopi
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Traktir Kopi
                 </a>
             </div>
 
-            <button class="btn-modal" onclick="initResetSequence()" style="background: transparent; border: 1px solid var(--merah); color: var(--merah); margin-bottom: 10px;">
+            <button class="btn-modal" onclick="initResetSequence()" style="background: rgba(239,68,68,0.1); border: 1px solid var(--merah-solid); color: var(--merah-solid); margin-bottom: 10px;">
                 Reset Database
             </button>
             <button class="btn-modal btn-cancel" onclick="closeModal('profileViewModal')">Tutup Panel</button>
@@ -394,10 +411,10 @@
         <div class="modal-card">
             <h2 class="text-neutral modal-header-title">Edit Profil</h2>
             <div style="text-align: center; margin-bottom: 20px;">
-                <div class="profile-pic-container" style="width: 80px; height: 80px; margin: 0 auto 10px auto;">
+                <div class="profile-pic-container" style="width: 85px; height: 85px; margin: 0 auto 10px auto; border: 3px solid var(--hijau-terang); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
                     <img src="" id="editProfileImg" class="profile-pic" alt="Edit Profile">
                 </div>
-                <button type="button" class="btn-outline-small glass-card" onclick="document.getElementById('profileUploader').click()" style="margin:auto;">Ganti Foto</button>
+                <button type="button" class="btn-outline-small glass-card" onclick="document.getElementById('profileUploader').click()" style="margin:auto; padding:10px 16px;">Ganti Foto</button>
                 <input type="file" id="profileUploader" accept="image/*" class="visually-hidden">
             </div>
 
@@ -437,7 +454,7 @@
                 <div class="custom-select-wrapper" id="catSelectWrapper" style="margin-bottom: 0;">
                     <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('catOptionsBox')">
                         <span id="dispTxCat">Pilih Kategori</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options glass-card" id="catOptionsBox"></div>
                 </div>
@@ -446,9 +463,9 @@
             <input type="hidden" id="tx-category">
 
             <label class="input-label">Waktu Transaksi</label>
-            <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('tx-date-hidden', 'disp-tx-date')" style="padding: 16px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; cursor: pointer; display:flex; justify-content:space-between;">
+            <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('tx-date-hidden', 'disp-tx-date')" style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; cursor: pointer; display:flex; justify-content:space-between; align-items:center;">
                 <span id="disp-tx-date">Gunakan Waktu Saat Ini</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             </div>
             <input type="hidden" id="tx-date-hidden">
 
@@ -491,16 +508,16 @@
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('editCatOptionsBox')">
                     <span id="dispEditTxCat">Pilih Kategori</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="editCatOptionsBox"></div>
             </div>
             <input type="hidden" id="edit-tx-category">
 
             <label class="input-label">Waktu Transaksi</label>
-            <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('edit-tx-date-hidden', 'disp-edit-tx-date')" style="padding: 16px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; cursor: pointer; display:flex; justify-content:space-between;">
+            <div class="custom-date-trigger glass-card text-neutral" onclick="openCustomDatePicker('edit-tx-date-hidden', 'disp-edit-tx-date')" style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; cursor: pointer; display:flex; justify-content:space-between; align-items:center;">
                 <span id="disp-edit-tx-date">-</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             </div>
             <input type="hidden" id="edit-tx-date-hidden">
 
@@ -541,7 +558,7 @@
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('transferSourceOptions')">
                     <span id="dispTransferSource">Kas Utama</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="transferSourceOptions">
                     <div class="custom-option text-neutral" onclick="selectTransferSource('utama','Kas Utama')">Kas Utama</div>
@@ -572,7 +589,7 @@
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('transferFromOptions')">
                     <span id="dispTransferFrom">Kas Utama</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="transferFromOptions">
                     <div class="custom-option text-neutral" onclick="selectTransferFrom('utama','Kas Utama')">Kas Utama</div>
@@ -587,7 +604,7 @@
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('transferToOptions')">
                     <span id="dispTransferTo">Operasional</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
                 <div class="custom-options glass-card" id="transferToOptions">
                     <div class="custom-option text-neutral" onclick="selectTransferTo('utama','Kas Utama')">Kas Utama</div>
@@ -618,14 +635,14 @@
                 <div class="custom-select-wrapper" style="flex:1; margin-bottom:0;">
                     <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('custCalMonthOptions')" style="padding:12px;">
                         <span id="dispCalMonth">Januari</span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options glass-card" id="custCalMonthOptions"></div>
                 </div>
                 <div class="custom-select-wrapper" style="flex:1; margin-bottom:0;">
                     <div class="custom-select-trigger glass-card text-neutral" onclick="toggleCustomSelect('custCalYearOptions')" style="padding:12px;">
                         <span id="dispCalYear">2026</span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <div class="custom-options glass-card" id="custCalYearOptions"></div>
                 </div>
@@ -673,9 +690,9 @@
             <h2 class="text-neutral modal-header-title">Monitor SPP & Absensi Murid</h2>
             
             <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 15px;">
-                <p style="font-size:11px; color:var(--text-muted); margin:0;">Data ini akan direfleksikan *real-time* ke Link Transparansi Wali Murid.</p>
+                <p style="font-size:11px; color:var(--text-muted); margin:0; line-height:1.4;">Data ini akan direfleksikan *real-time* ke Link Transparansi Wali Murid.</p>
                 <button class="btn-outline-small" style="margin:0; border-color:var(--hijau); color:var(--hijau);" onclick="downloadAbsensiCSV()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Rekap
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Rekap
                 </button>
             </div>
 
@@ -709,10 +726,10 @@
     <div class="modal-overlay" id="absenDetailModal">
         <div class="modal-card">
             <h2 class="text-neutral modal-header-title">Log Absensi Mingguan</h2>
-            <p id="absenStudentName" style="color:var(--hijau); font-weight:800; font-size:14px; text-align:center; margin-bottom:15px;"></p>
+            <p id="absenStudentName" style="color:var(--hijau); font-weight:800; font-size:16px; text-align:center; margin-bottom:15px;"></p>
             <input type="hidden" id="absenTargetId">
             
-            <p style="font-size:11px; color:var(--text-muted); margin-bottom: 15px; text-align:center;">Anda dapat mengisi absen yang terlewat (mundur) di minggu ini. Tanggal mendatang akan dikunci.</p>
+            <p style="font-size:11px; color:var(--text-muted); margin-bottom: 15px; text-align:center; line-height:1.5;">Anda dapat mengisi absen yang terlewat (mundur) di minggu ini. Tanggal mendatang akan dikunci.</p>
 
             <div id="absenDaysGrid" style="display:flex; flex-direction:column; gap:8px; margin-bottom: 20px;">
                 <!-- Dibuat via JS -->
@@ -736,13 +753,19 @@
 
     <!-- MODAL SELECT MULTIPLE BULAN SPP -->
     <div class="modal-overlay" id="multiMonthSelectModal">
-        <div class="modal-card" style="padding: 20px;">
-            <h2 class="text-neutral modal-header-title">Atur Bulan Lunas</h2>
-            <p id="multiMonthStudentName" style="color:var(--hijau); font-weight:800; font-size:14px; text-align:center; margin-bottom:15px;"></p>
+        <div class="modal-card" style="padding: 20px; max-width: 480px;">
+            <h2 class="text-neutral modal-header-title">Manajemen SPP Murid</h2>
+            <p id="multiMonthStudentName" style="color:var(--hijau); font-weight:800; font-size:16px; text-align:center; margin-bottom:20px;"></p>
             <input type="hidden" id="multiMonthTargetId">
-
-            <div id="multiMonthGrid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;">
-                <!-- Dibuat via JS -->
+            
+            <label class="input-label" style="margin-bottom:10px;">Bulan Lunas (Telah Dibayar)</label>
+            <div id="multiMonthGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:25px;">
+                <!-- Dibuat via JS (Centang Hijau) -->
+            </div>
+            
+            <label class="input-label" style="margin-bottom:10px; color:var(--merah-solid);">Bulan Belum Dibayar (Tunggakan)</label>
+            <div id="multiMonthUnpaidGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:20px;">
+                <!-- Dibuat via JS (Silang Merah) -->
             </div>
 
             <button class="btn-modal btn-primary" onclick="saveMultiMonthSpp()">Simpan SPP</button>
@@ -799,7 +822,7 @@
     <div class="modal-overlay" id="confirmModal">
         <div class="modal-card" style="text-align:center;">
             <div style="background: rgba(239, 68, 68, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--merah-solid);">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             </div>
             <h2 class="text-neutral" style="margin-top:0;" id="confirmTitle">Konfirmasi Awal</h2>
             <p id="confirmDesc" style="color:var(--text-muted); font-size:13px; line-height: 1.5; margin-bottom: 25px;">Data yang dihapus tidak dapat dikembalikan. Yakin?</p>
@@ -812,7 +835,7 @@
     <div class="modal-overlay" id="confirmModal2">
         <div class="modal-card" style="text-align:center;">
             <div style="background: rgba(239, 68, 68, 0.15); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--merah-solid);">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
             </div>
             <h2 class="text-neutral" style="margin-top:0;">Yakin Sekali Lagi?</h2>
             <p id="confirm2Desc" style="color:var(--text-muted); font-size:13px; line-height: 1.5; margin-bottom: 25px;">Ini adalah konfirmasi terakhir. Tindakan ini permanen dan tidak bisa dibatalkan setelah diproses.</p>
@@ -833,7 +856,7 @@
     <div class="modal-overlay" id="shareLinkModal">
         <div class="modal-card" style="text-align: center;">
             <div style="background: rgba(59, 130, 246, 0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; color: var(--biru);">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
             </div>
             <h2 class="text-neutral" style="margin-top:0;">Transparansi Publik</h2>
             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px;">Wali Murid dapat memantau saldo, riwayat transaksi, SPP, dan Absensi secara Live melalui link ini (Otomatis menyesuaikan domain).</p>
@@ -876,7 +899,7 @@
         <div class="modal-card" style="text-align: center;">
             <h2 class="text-neutral modal-header-title">Database Cloud (Supabase)</h2>
             <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 25px;">Gunakan Google OAuth untuk menyimpan dan mengamankan database TPA secara Real-Time.</p>
-            <button class="btn-modal" id="btnRealGoogleLogin" style="background:#fff; color:#0f172a; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800; border:1px solid #e2e8f0;">
+            <button class="btn-modal" id="btnRealGoogleLogin" style="background:#fff; color:#0f172a; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:900; border:1px solid #e2e8f0;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
                 <span>Login dengan Google</span>
             </button>
@@ -906,11 +929,10 @@
         </div>
     </div>
 
-    <!-- INISIALISASI DUMMY EMAILJS (Akan di set di main.js jika key valid) -->
+    <!-- INISIALISASI EMAILJS -->
     <script>
         (function(){
-            // Initialize with your actual EmailJS public key.
-            // emailjs.init("YOUR_PUBLIC_KEY");
+            emailjs.init("u7HQ-8xrDo99w3wmh");
         })();
     </script>
 </body>
