@@ -1,5 +1,5 @@
 /* =========================================================
-   TPA FINANCE v4.4 - MAIN.JS  (BAGIAN 1 dari 3)
+   TPA FINANCE v4.5 - MAIN.JS
    Isi: Config, State, Utils, Toast Apple, Modal + Scroll Lock,
         DB Lokal, Jadwal Sholat GPS Live, Versi/Refresh, Supabase Sync,
         Tema, Header & Profil (lihat + edit).
@@ -7,7 +7,7 @@
 ========================================================= */
 "use strict";
 
-const APP_VERSION = '4.4';
+const APP_VERSION = '4.5';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
@@ -84,7 +84,7 @@ function $(id) { return document.getElementById(id); }
 function currentSearch() { const s = $('searchTxInput'); return s ? s.value.toLowerCase() : ''; }
 function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function formatRp(num) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0); }
-function formatRpPendek(num) { return formatRp(num).replace(/\.000$/, '...'); }
+function formatRpPendek(num) { return formatRp(num); }
 function pad2(n) { return String(n).padStart(2, '0'); }
 function formatDetailDate(iso) { if (!iso) return '-'; const d = new Date(iso); if (isNaN(d)) return '-'; return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} - ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
 function formatDateOnly(iso) { return formatDetailDate(iso).split(' - ')[0]; }
@@ -218,7 +218,7 @@ function fromMinutes(m) { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${
 function distKm(a, b, c, d) { const R = 6371, r = Math.PI / 180, dl = (c - a) * r, dn = (d - b) * r; const x = Math.sin(dl / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dn / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); }
 
 async function fetchPrayerByGPS(force) {
-    if (isPublicMode || prayerBusy || !navigator.geolocation) return;
+    if (prayerBusy || !navigator.geolocation) return;
     const cached = loadPrayerCache();
     if (!force && cached && cached.date === localDateKey() && gpsState === 'on') return;
     prayerBusy = true;
@@ -254,16 +254,29 @@ async function fetchPrayerByGPS(force) {
 }
 
 function renderPrayerUI(data) {
-    if (!data) return;
-    const pText = $('prayerLocationText'), pDate = $('prayerDateText'), pGrid = $('prayerTimesGrid');
-    const now = new Date(); const nowMin = now.getHours() * 60 + now.getMinutes();
-    if (pText) pText.innerText = data.location || 'Lokasi Anda';
-    if (pDate) pDate.innerText = `${dayNames[now.getDay()].substring(0, 3)}, ${now.getDate()} ${monthsArr[now.getMonth()].substring(0, 3)} ${now.getFullYear()}`;
-    if (!pGrid || !data.timings) return;
+    if (!data || !data.timings) return;
+    const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
     let nextIdx = data.timings.findIndex(p => p.n !== 'Terbit' && toMinutes(p.t) > nowMin);
     if (nextIdx === -1) nextIdx = data.timings.findIndex(p => p.n === 'Subuh');
-    pGrid.innerHTML = data.timings.map((p, i) => `<div class="prayer-item ${i === nextIdx ? 'next' : ''}"><span class="p-name">${p.n}</span><span class="p-time">${p.t}</span></div>`).join('');
-    const nEl = pGrid.querySelector('.next'); if (nEl && !pGrid.dataset.scrolled) { pGrid.dataset.scrolled = '1'; pGrid.scrollLeft = Math.max(0, nEl.offsetLeft - 20); }
+    
+    const html = data.timings.map((p, i) => `<div class="prayer-item ${i === nextIdx ? 'next' : ''}"><span class="p-name">${p.n}</span><span class="p-time">${p.t}</span></div>`).join('');
+    
+    // Inject ke Admin
+    const pText = $('prayerLocationText'), pDate = $('prayerDateText'), pGrid =$('prayerTimesGrid');
+    if (pText) pText.innerText = data.location || 'Lokasi Anda';
+    if (pDate) pDate.innerText = `${dayNames[now.getDay()].substring(0, 3)}, ${now.getDate()} ${monthsArr[now.getMonth()].substring(0, 3)} ${now.getFullYear()}`;
+    if (pGrid) {
+        pGrid.innerHTML = html;
+        if (!pGrid.dataset.scrolled) { const nEl = pGrid.querySelector('.next'); if (nEl) { pGrid.dataset.scrolled = '1'; pGrid.scrollLeft = Math.max(0, nEl.offsetLeft - 20); } }
+    }
+    
+    // Inject ke Publik
+    const pubLoc = $('pubPrayerLoc'), pubGrid =$('pubPrayerGrid');
+    if (pubLoc) pubLoc.innerText = data.location || '';
+    if (pubGrid) {
+        pubGrid.innerHTML = html;
+        if (!pubGrid.dataset.scrolled) { const nElPub = pubGrid.querySelector('.next'); if (nElPub) { pubGrid.dataset.scrolled = '1'; pubGrid.scrollLeft = Math.max(0, nElPub.offsetLeft - 20); } }
+    }
 }
 
 async function initPrayerTimes() {
@@ -1051,9 +1064,9 @@ function saveEditStudentName() {
     if (!s || !n) return; s.name = n; saveSpp(); closeModal('editStudentModal'); renderAdminStudentTable(); showToast("Nama murid diubah.");
 }
 
-function monthBadges(list, cls) {
-    if (!list.length) return '<span class="muted-xs">-</span>';
-    return list.slice(0, 4).map(m => `<span class="mb ${cls}">${m.substring(0, 3)}</span>`).join('') + (list.length > 4 ? `<span class="mb more">+${list.length - 4}</span>` : '');
+function monthBadges(list, cls) { 
+    if (!list.length) return '<span class="muted-xs">-</span>'; 
+    return list.map(m => `<span class="mb ${cls}">${m.substring(0, 3)}</span>`).join(''); 
 }
 function renderAdminStudentTable() {
     const tb = $('adminStudentTableBody'); if (!tb) return;
@@ -1134,6 +1147,7 @@ let pubPublishTimer = null;
 function buildSnapshot() {
     return {
         v: APP_VERSION, updatedAt: new Date().toISOString(),
+        wishlists: wishlists,
         students: sppData.map(s => ({ id: s.id, name: s.name, months: s.months, unpaid: getUnpaid(s), att: s.att || {} })),
         tx: db.map(t => ({ id: t.id, wallet: t.wallet, type: t.type, category: t.category, desc: t.desc, pihak_terkait: t.pihak_terkait || '', link_bukti: t.link_bukti || '', amount: t.amount, date: t.date }))
     };
@@ -1170,12 +1184,24 @@ async function loadPublicData() {
             if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             const { data, error } = await sbClient.from('public_snapshot').select('data,updated_at').eq('owner_id', publicOwner).maybeSingle();
             if (error) throw error;
-            if (data && data.data) { notifyPublicChanges(data.data); publicStudents = data.data.students || []; window.publicTx = data.data.tx || []; publicUpdated = data.updated_at || data.data.updatedAt; publicSource = 'cloud'; ok = true; }
+            if (data && data.data) { 
+                notifyPublicChanges(data.data); 
+                publicStudents = data.data.students || []; 
+                window.publicTx = data.data.tx || []; 
+                window.publicWishlists = data.data.wishlists || []; // <--- Injeksi Data Cloud
+                publicUpdated = data.updated_at || data.data.updatedAt; 
+                publicSource = 'cloud'; 
+                ok = true; 
+            }
         } catch (e) {}
     }
-    if (!ok && !publicLoaded) { // cadangan: data di perangkat ini (berlaku di HP admin)
+    if (!ok && !publicLoaded) { 
         db = loadLocalDB(); migrateSppData();
-        publicStudents = sppData.map(s => ({ id: s.id, name: s.name, months: s.months, unpaid: getUnpaid(s), att: s.att })); window.publicTx = db; publicUpdated = new Date().toISOString(); publicSource = 'lokal';
+        publicStudents = sppData.map(s => ({ id: s.id, name: s.name, months: s.months, unpaid: getUnpaid(s), att: s.att })); 
+        window.publicTx = db; 
+        window.publicWishlists = wishlists; // <--- Injeksi Data Lokal (Fallback)
+        publicUpdated = new Date().toISOString(); 
+        publicSource = 'lokal';
     }
     publicLoaded = true; return ok;
 }
@@ -1220,19 +1246,25 @@ function renderPublicHistory() {
     const list = window.publicTx.filter(t => (publicWalletFilter === 'semua' || t.wallet === publicWalletFilter) && (!q || `${t.desc} ${t.category} ${t.pihak_terkait}`.toLowerCase().includes(q)));
     renderTable(list, true);
 }
+// Fungsi baru untuk merender Target Dana di Publik
+function renderPublicWishlist() {
+    const c = $('pubWishlistGrid'); if (!c) return;
+    if (!window.publicWishlists || !window.publicWishlists.length) { c.innerHTML = `<div class="glass-card empty-box text-neutral">Belum ada target dana TPA saat ini.</div>`; return; }
+    c.innerHTML = window.publicWishlists.map(w => `<div class="glass-card list-row"><div><div class="list-title text-neutral">${escapeHtml(w.name)}</div><div class="list-sub">Kebutuhan: <span class="text-neutral">${formatRp(w.amount)}</span></div></div></div>`).join('');
+}
+
+// Timpa keseluruhan fungsi renderPublicAll ini
 function renderPublicAll() {
     const s = publicStudents.find(x => x.name === publicStudentName); if (!s) return;
     updateThemeIcon(document.documentElement.getAttribute('data-theme'));
     const tot = { utama: [0, 0], wakaf: [0, 0], operasional: [0, 0], darurat: [0, 0] };
     window.publicTx.forEach(t => { if (tot[t.wallet]) tot[t.wallet][t.type === 'masuk' ? 0 : 1] += t.amount; });
-    let all = 0; Object.keys(tot).forEach(w => { const b = tot[w][0] - tot[w][1]; all += b; $('pubBal-' + w).innerText = formatRp(b); $('pubFlow-' + w).innerText = `Masuk ${formatRpPendek(tot[w][0])} · Keluar ${formatRpPendek(tot[w][1])}`; });
-    $('pubStudentName').innerText = s.name; $('pubTotalAll').innerText = formatRp(all);
-    $('pubLastUpdate').innerText = 'Diperbarui: ' + formatDetailDate(publicUpdated);
+    let all = 0; Object.keys(tot).forEach(w => { const b = tot[w][0] - tot[w][1]; all += b; $('pubBal-' + w).innerText = formatRp(b);$('pubFlow-' + w).innerText = `Masuk ${formatRpPendek(tot[w][0])} · Keluar ${formatRpPendek(tot[w][1])}`; });
+    $('pubStudentName').innerText = s.name; $('pubTotalAll').innerText = formatRp(all);$('pubLastUpdate').innerText = 'Diperbarui: ' + formatDetailDate(publicUpdated);
     const st = $('pubSyncStatus'); st.innerText = publicSource === 'cloud' ? (navigator.onLine ? 'Live (Cloud)' : 'Offline') : 'Data Perangkat'; st.className = 'status-sync ' + (publicSource === 'cloud' && navigator.onLine ? 'sync-online' : 'sync-pending');
 
     // Absensi
-    const wk = weekDates(), today = new Date(), stats = wk.map(d => attStatus(s, d)), badge = $('pubTodayBadge'), ts = attStatus(s, today);
-    $('pubTodayDate').innerText = `${dayNames[today.getDay()]}, ${today.getDate()} ${monthsArr[today.getMonth()]} ${today.getFullYear()}`;
+    const wk = weekDates(), today = new Date(), stats = wk.map(d => attStatus(s, d)), badge = $('pubTodayBadge'), ts = attStatus(s, today);$('pubTodayDate').innerText = `${dayNames[today.getDay()]}, ${today.getDate()} ${monthsArr[today.getMonth()]} ${today.getFullYear()}`;
     badge.className = ts === 'hadir' ? 'public-badge-hadir' : (ts === 'belum' ? 'public-badge-wait' : 'public-badge-absen'); badge.innerText = ts === 'hadir' ? 'HADIR HARI INI' : 'BELUM DIABSEN';
     const ic = { hadir: '✓', absen: '✕', belum: '•', next: '–' };
     $('pubWeekTrack').innerHTML = wk.map((d, i) => `<div class="pub-day ${stats[i]}"><b>${dayNames[d.getDay()].substring(0, 3)}</b><span>${d.getDate()}</span><i>${ic[stats[i]]}</i></div>`).join('');
@@ -1243,18 +1275,23 @@ function renderPublicAll() {
 
     // SPP
     const cur = today.getMonth(), unp = s.unpaid || [];
-    $('pubSppYear').innerText = today.getFullYear();
-    $('pubSppSummary').innerHTML = `<span class="sum-pill ok">Lunas ${s.months.length} bulan</span><span class="sum-pill bad">Belum Bayar ${unp.length} bulan</span>`;
+    $('pubSppYear').innerText = today.getFullYear();$('pubSppSummary').innerHTML = `<span class="sum-pill ok">Lunas ${s.months.length} bulan</span><span class="sum-pill bad">Belum Bayar ${unp.length} bulan</span>`;
     $('pubSppGrid').innerHTML = monthsArr.map((m, i) => { const c = s.months.includes(m) ? 'lunas' : (unp.includes(m) ? 'belum' : 'none'); return `<div class="pub-spp ${c} ${i === cur ? 'now' : ''}"><b>${m.substring(0, 3)}</b><span>${c === 'lunas' ? 'LUNAS' : (c === 'belum' ? 'BELUM' : '-')}</span></div>`; }).join('');
 
-    // Notifikasi
+    // Notifikasi (Teks bulan SPP kini transparan 100% tanpa limitasi)
     const n = [];
     n.push(ts === 'hadir' ? { t: 'ok', a: `${s.name} hadir hari ini`, b: dayNames[today.getDay()] + ', ' + formatDateOnly(today.toISOString()) } : { t: 'warn', a: `Absensi hari ini belum tercatat`, b: 'Admin belum mencentang kehadiran hari ini.' });
-    if (unp.length) n.push({ t: 'warn', a: `SPP belum dibayar: ${unp.slice(0, 3).join(', ')}${unp.length > 3 ? ' dan ' + (unp.length - 3) + ' bulan lain' : ''}`, b: 'Mohon hubungi pengurus TPA untuk pembayaran.' });
+    
+    if (unp.length) n.push({ t: 'warn', a: `SPP belum dibayar: ${unp.join(', ')}`, b: 'Mohon hubungi pengurus TPA untuk pembayaran.' });
     else n.push({ t: 'ok', a: 'SPP tidak ada tunggakan', b: 'Terima kasih atas ketertiban pembayaran.' });
+
     [...window.publicTx].sort((x, y) => new Date(y.date) - new Date(x.date)).slice(0, 4).forEach(t => n.push({ t: 'info', a: `${t.type === 'masuk' ? 'Pemasukan' : 'Pengeluaran'} ${formatRp(t.amount)} · ${walletNames[t.wallet] || t.wallet}`, b: `${escapeHtml(t.desc)} — ${formatDetailDate(t.date)}` }));
     $('pubNotifList').innerHTML = n.map(x => `<div class="pub-notif ${x.t}"><b>${x.a}</b><span>${x.b}</span></div>`).join('');
+    
     renderPublicHistory();
+    
+    // Injeksi render Target Dana di akhir proses sinkronisasi publik
+    renderPublicWishlist();
 }
 
 // ==========================================
