@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tpa-finance-cache-v5.2';
+const CACHE_NAME = 'tpa-finance-cache-v5.3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -16,7 +16,7 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[Service Worker] Caching App Shell v5.2');
+            console.log('[Service Worker] Caching App Shell v5.3');
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME) {
-                        console.log('[Service Worker] Menghapus cache lama:', cacheName);
+                        console.log('[Service Worker] Menghapus cache usang:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
@@ -38,7 +38,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Bypass interceptor untuk API Eksternal & Cloud Database
+    // Bypass request ke API Eksternal (Supabase, EmailJS, Aladhan/GPS) agar tidak di-cache secara agresif
     if (event.request.url.includes('supabase.co') || event.request.url.includes('api.emailjs.com') || event.request.url.includes('api.aladhan.com')) {
         return;
     }
@@ -46,7 +46,6 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
-                // Simpan ke cache jika respons valid
                 if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
