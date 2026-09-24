@@ -1,5 +1,5 @@
 /* =========================================================
-   TPA FINANCE v4.5 - MAIN.JS
+   TPA FINANCE v4.7 - MAIN.JS
    Isi: Config, State, Utils, Toast Apple, Modal + Scroll Lock,
         DB Lokal, Jadwal Sholat GPS Live, Versi/Refresh, Supabase Sync,
         Tema, Header & Profil (lihat + edit).
@@ -7,7 +7,7 @@
 ========================================================= */
 "use strict";
 
-const APP_VERSION = '4.6';
+const APP_VERSION = '4.7';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
@@ -1214,8 +1214,11 @@ function notifyPublicChanges(next) {
     if (o && n && JSON.stringify([o.att, o.months, o.unpaid]) !== JSON.stringify([n.att, n.months, n.unpaid])) showToast(`Data absensi/SPP ${publicStudentName} diperbarui oleh admin.`, 'info');
 }
 async function initPublicPortal() {
-    $('adminDashboard').style.display = 'none'; $('publicDashboard').style.display = 'none'; $('publicLoginOverlay').style.display = 'flex';
+    $('adminDashboard').style.display = 'none'; 
+    $('publicDashboard').style.display = 'none'; 
+    $('publicLoginOverlay').style.display = 'flex';
     await loadPublicData();
+    initPrayerTimes(); // <--- Eksekusi pelacakan lokasi & jadwal sholat di mode publik
 }
 function handlePublicAutocomplete() {
     const v = $('publicStudentInput').value.toLowerCase(), list = $('publicAutocompleteList');
