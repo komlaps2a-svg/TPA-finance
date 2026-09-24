@@ -1,16 +1,21 @@
 /* =========================================================
-   TPA FINANCE v5.2 - ENTERPRISE CORE LOGIC (PART 1)
-   Strict Mode, Z-Index Engine, Scroll Lock Fix, GPS Live
+   TPA FINANCE v5.3 - ENTERPRISE CORE LOGIC (PART 1 / 3)
+   Core State, Integrasi EmailJS, Scroll-Lock Modal, Auth & Profile
 ========================================================= */
 
 "use strict";
 
-const APP_VERSION = '5.2'; 
-const LS_PREFIX = 'tpa_finance_v52_';
+const APP_VERSION = '5.3'; 
+const LS_PREFIX = 'tpa_finance_v53_';
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kc3l5YXhtaXdza3Jra2xzZWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDU4NjIsImV4cCI6MjEwMDcyMTg2Mn0.uXgAIhUjjkNpe9s6N6LGvRXZLUDQUZJrSfUFf1BDmKU';
-const SECRET_KEY = "TPA_Finance_Secure_K3y_v51";
+const SECRET_KEY = "TPA_Finance_Secure_K3y_v53";
+
+// Konfigurasi Kredensial EmailJS Baru
+const EMAILJS_PUBLIC_KEY = "u7HQ-8xrDo99w3wmh"; 
+const EMAILJS_SERVICE = "service_l08406o";
+const EMAILJS_TEMPLATE = "template_osq8mgb";
 
 // ==========================================
 // STATE MANAGEMENT & VARIABLES
@@ -20,8 +25,8 @@ let db = [];
 let pendingSync = JSON.parse(getLS('pending_sync')) || []; 
 let wishlists = JSON.parse(getLS('wishlists')) || [];
 let driveLinks = JSON.parse(getLS('drivelinks')) || [];
-let sppData = JSON.parse(getLS('spp_data_v51')) || [];
-let attendanceData = JSON.parse(getLS('attendance_data_v51')) || { lastReset: new Date().toISOString(), records: {} };
+let sppData = JSON.parse(getLS('spp_data')) || [];
+let attendanceData = JSON.parse(getLS('attendance_data')) || { lastReset: new Date().toISOString(), records: {} };
 let currentUser = null; 
 
 let APP_MODE = getLS('app_mode') || 'GUEST';
@@ -33,16 +38,20 @@ let realTimeSubscription = null;
 let aiMessages = [], aiCurrentMsgIdx = 0, aiCarouselInterval = null;
 let generatedOTP = "", otpExpiryTime = 0;
 let isPublicMode = false;
-let scrollPos = 0; // Fix scroll jump bug
+let scrollPosition = 0; // Engine untuk mencegah scroll melompat saat tutup modal
 
-// Perbaikan: Profil Default dengan Foto valid agar tidak "Memuat..."
+// Inisialisasi Profil (Perbaikan Bug "Memuat...")
 const defaultProfile = { 
-    name: 'Pengurus Baru', pin: '', 
+    name: 'Pengurus TPA', pin: '', 
     photo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzIyYzU1ZSI+PHBhdGggZD0iTTEyIDJhNSA1IDAgMSAwIDUgNSBNMTIgMTRhNyA3IDAgMCAwLTcgN3YxSDE5di0xYTcgNyAwIDAgMC03LTdaIi8+PC9zdmc+', 
     joinDate: new Date().toISOString(), birthDate: '', gender: 'Rahasia', googleLinked: false, googleEmail: ''
 };
-let profile = JSON.parse(getLS('profile_secure_v51'));
-if (!profile) { profile = { ...defaultProfile }; setLS('profile_secure_v51', JSON.stringify(profile)); }
+
+let profile = JSON.parse(getLS('profile_secure'));
+if (!profile || typeof profile.name === 'undefined') { 
+    profile = { ...defaultProfile }; 
+    setLS('profile_secure', JSON.stringify(profile)); 
+}
 
 const categories = { 
     masuk: ['Infak Santri', 'Infak Jumat', 'Donasi Masyarakat', 'Wakaf', 'Bantuan Pemerintah', 'Bantuan Masjid', 'Hibah', 'Donatur Tetap', 'Lainnya'], 
@@ -50,7 +59,6 @@ const categories = {
 };
 const monthsArr = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-// SVGs Setup
 const svgs = {
     makan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
     uang: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>`,
@@ -73,7 +81,13 @@ function removeLS(key) { localStorage.removeItem(LS_PREFIX + key); }
 
 function formatRp(num) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num); }
 function formatRpPendek(num) { return formatRp(num).replace(/\.000$/, '...'); }
-function formatDetailDate(iso) { if(!iso) return '-'; const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function formatDetailDate(iso) { 
+    if(!iso) return '-'; 
+    const d = new Date(iso);
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const dayName = days[d.getDay()];
+    return `${dayName}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; 
+}
 function properTitleCase(str) { if(!str) return ""; return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase()); }
 
 function getDynamicColor(categoryStr, type) {
@@ -82,19 +96,6 @@ function getDynamicColor(categoryStr, type) {
     if (inColors[categoryStr]) return inColors[categoryStr];
     let hash = 0; for(let i = 0; i < categoryStr.length; i++) hash = categoryStr.charCodeAt(i) + ((hash << 5) - hash);
     return `hsl(${Math.abs(hash) % 360}, 70%, 50%)`; 
-}
-
-function refreshApp() { 
-    showToast("Menyegarkan sistem...", "syncing"); 
-    setTimeout(() => window.location.reload(true), 1500); 
-}
-
-// Toast Notifikasi (Durasi 8 Detik)
-function showToast(msg, type = 'success') { 
-    const box = document.getElementById('toastBox'); if(!box) return; 
-    const t = document.createElement('div'); t.className = `toast ${type}`; t.innerHTML = msg; box.appendChild(t); 
-    setTimeout(() => t.classList.add('show'), 10); 
-    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 8000); 
 }
 
 async function hashPIN(pin) {
@@ -107,28 +108,48 @@ async function hashPIN(pin) {
     } catch (e) { return btoa(pin); }
 }
 
+// Upgrade Toast: Durasi lebih lama (8s) dan Apple Style Blur terintegrasi
+function showToast(msg, type = 'success') { 
+    const box = document.getElementById('toastBox'); if(!box) return; 
+    const t = document.createElement('div'); t.className = `toast ${type}`; 
+    // Apple-style transparent blur effect di-trigger melalui CSS custom ini
+    t.style.backdropFilter = "blur(20px)";
+    t.style.webkitBackdropFilter = "blur(20px)";
+    t.style.background = "rgba(10, 20, 15, 0.75)";
+    t.innerHTML = msg; box.appendChild(t); 
+    setTimeout(() => t.classList.add('show'), 10); 
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 8000); // 8 Detik agar terbaca
+}
+
+function refreshApp() {
+    showToast("Mempersiapkan penyegaran aplikasi...", "syncing");
+    setTimeout(() => {
+        window.location.reload();
+    }, 800);
+}
+
 // ==========================================
-// Z-INDEX MODAL ENGINE & SCROLL FIX
+// Z-INDEX MODAL ENGINE (Anti Overlap Multi-Layer & Fix Scroll Bug)
 // ==========================================
 let modalStack = [];
 function openModal(id) {
     const el = document.getElementById(id);
     if (!el) return;
     
-    // Simpan posisi scroll sebelum modal pertama dibuka
+    // Kunci posisi scroll saat ini agar body tidak terlempar ke atas
     if (modalStack.length === 0) {
-        scrollPos = window.scrollY;
-        document.body.style.top = `-${scrollPos}px`;
-        document.body.classList.add('modal-open');
+        scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        document.body.style.top = `-${scrollPosition}px`;
     }
-    
+
     const baseZIndex = 10000;
-    const currentZIndex = baseZIndex + (modalStack.length * 20); 
+    const currentZIndex = baseZIndex + (modalStack.length * 20);
     
     el.style.zIndex = currentZIndex;
     el.classList.add('active');
     
     if (!modalStack.includes(id)) { modalStack.push(id); }
+    document.body.classList.add('modal-open');
 }
 
 function closeModal(id) {
@@ -139,12 +160,11 @@ function closeModal(id) {
     if (el) { el.classList.remove('active'); }
     
     modalStack = modalStack.filter(modalId => modalId !== id);
-    
-    // Kembalikan posisi scroll saat modal terakhir ditutup
     if (modalStack.length === 0) {
         document.body.classList.remove('modal-open');
+        // Kembalikan posisi scroll ke titik semula dengan halus
         document.body.style.top = '';
-        window.scrollTo(0, scrollPos);
+        window.scrollTo({ top: scrollPosition, behavior: 'instant' });
     }
 }
 
@@ -164,221 +184,8 @@ document.getElementById('btnConfirmYes2').addEventListener('click', () => {
 });
 
 // ==========================================
-// PRAYER TIMES (GPS LIVE TRACKING)
+// DATABASE ENGINE & ENCRYPTION
 // ==========================================
-function initPrayerTimes(force = false) {
-    const pText = document.getElementById('prayerLocationText');
-    const pDate = document.getElementById('prayerDateText');
-    const pGrid = document.getElementById('prayerTimesGrid');
-    if(!pText || !pGrid) return;
-
-    const todayStr = new Date().toISOString().split('T')[0];
-    const cached = JSON.parse(getLS('prayer_cache') || 'null');
-
-    // Cek cache jika tidak dipaksa sinkron ulang
-    if (!force && cached && cached.date === todayStr && cached.timings) {
-        renderPrayerUI(cached);
-        return;
-    }
-
-    if (navigator.geolocation) {
-        pText.innerText = "Mencari Lokasi...";
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
-            try {
-                const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=11`);
-                const data = await res.json();
-                
-                if(data && data.data) {
-                    const pt = data.data.timings;
-                    const newCache = {
-                        date: todayStr,
-                        location: "Lokasi GPS Aktif",
-                        timings: [
-                            { n: 'Tahajud', t: '02:30' }, 
-                            { n: 'Shubuh', t: pt.Fajr },
-                            { n: 'Dhuha', t: pt.Sunrise },
-                            { n: 'Dzuhur', t: pt.Dhuhr },
-                            { n: 'Ashar', t: pt.Asr },
-                            { n: 'Maghrib', t: pt.Maghrib },
-                            { n: 'Isya', t: pt.Isha }
-                        ]
-                    };
-                    setLS('prayer_cache', JSON.stringify(newCache));
-                    renderPrayerUI(newCache);
-                    if (force) showToast("Jadwal Sinkron dengan GPS", "success");
-                }
-            } catch(e) {
-                pText.innerText = "Gagal sinkron server";
-            }
-        }, (err) => {
-            pText.innerText = "Izin GPS Ditolak";
-        });
-    } else {
-        pText.innerText = "GPS Tdk Didukung";
-    }
-}
-
-function forceRefreshGPS() {
-    initPrayerTimes(true);
-}
-
-function renderPrayerUI(data) {
-    const pText = document.getElementById('prayerLocationText');
-    const pDate = document.getElementById('prayerDateText');
-    const pGrid = document.getElementById('prayerTimesGrid');
-    
-    if(pText) pText.innerText = data.location || "Lokasi Anda";
-    if(pDate) pDate.innerText = data.date;
-    
-    if(pGrid && data.timings) {
-        pGrid.innerHTML = data.timings.map(p => `
-            <div class="prayer-item">
-                <span class="p-name">${p.n}</span>
-                <span class="p-time">${p.t}</span>
-            </div>
-        `).join('');
-    }
-}
-
-// ==========================================
-// INITIALIZATION & BOOT
-// ==========================================
-function checkAppVersion() {
-    const savedVersion = getLS('app_version');
-    if (savedVersion !== APP_VERSION) {
-        setLS('app_version', APP_VERSION);
-        if (navigator.onLine) {
-            const updateScreen = document.getElementById('updateScreen');
-            if (updateScreen) { updateScreen.style.display = 'flex'; setTimeout(() => { window.location.reload(true); }, 2000); }
-        }
-    }
-}
-
-function bootApp() {
-    checkAppVersion();
-    
-    // Deteksi Mode Publik (Wali Murid)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('view') === 'public') {
-        isPublicMode = true;
-        initPublicPortal();
-        return;
-    }
-
-    db = loadLocalDB(); 
-    initAppHeader();
-    renderShortcuts();
-    renderWishlist();
-    renderDriveLinks();
-    checkAttendanceReset();
-    updateUI('');
-    initPrayerTimes();
-
-    const netStatus = document.getElementById('networkStatus');
-    if (APP_MODE === 'CLOUD') {
-        currentUser = { id: 'offline_user', email: profile.googleEmail || 'Cloud User' }; 
-        if(netStatus) { netStatus.innerText = navigator.onLine ? "Menyambungkan..." : "Offline (Cloud)"; netStatus.className = navigator.onLine ? "status-sync sync-pending" : "status-sync sync-offline"; }
-    } else {
-        currentUser = null;
-        if(netStatus) { netStatus.innerText = "Offline Mode (Guest)"; netStatus.className = "status-sync sync-offline"; }
-    }
-    
-    setTimeout(initSupabaseBackground, 500);
-    
-    // Auto-Ping
-    document.body.addEventListener('click', () => {
-        if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient && currentUser?.id !== 'offline_user') {
-            try { sbClient.from('profiles').select('id').limit(1).then(); } catch(e){}
-        }
-    });
-}
-
-function initAppHeader() { 
-    document.getElementById('headName').innerText = formatSmartName(profile.name); 
-    document.getElementById('headGender').innerText = profile.gender || 'Rahasia'; 
-    document.getElementById('headProfileImg').src = profile.photo; 
-}
-
-function formatSmartName(name) { 
-    if (!name) return name; 
-    if (window.innerWidth > 400) return name; 
-    if (name.length > 12) { let words = name.trim().split(/\s+/); if (words.length > 1) { let lastWord = words.pop(); return words.join(' ') + ' ' + lastWord.charAt(0).toUpperCase() + '.'; } } 
-    return name; 
-}
-/* =========================================================
-   TPA FINANCE v5.1 - ENTERPRISE CORE LOGIC (PART 2)
-   Cloud Sync, Theme Engine, Health AI, & Core UI Render
-========================================================= */
-
-// ==========================================
-// CLOUD SYNC & SUPABASE ENGINE
-// ==========================================
-async function initSupabaseBackground() {
-    if (typeof window.supabase === 'undefined') return;
-    if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    if (APP_MODE === 'CLOUD' && navigator.onLine) {
-        try {
-            const { data: { session }, error } = await sbClient.auth.getSession();
-            if (error) throw error;
-            if (session && session.user) {
-                currentUser = session.user;
-                updateNetworkStatus("Online Mode (Cloud)", "sync-online");
-                fetchUserTransactions(); 
-                setupRealtime();
-                if (pendingSync.length > 0) processPendingSync();
-            } else { forceLogoutToGuest(); }
-        } catch(err) { updateNetworkStatus("Server Lambat", "sync-offline"); }
-    }
-
-    if (!window.supabaseListenerAdded) {
-        window.supabaseListenerAdded = true;
-        sbClient.auth.onAuthStateChange(async (event, currentSession) => {
-            if (event === 'SIGNED_OUT') { forceLogoutToGuest(); } 
-            else if (event === 'SIGNED_IN' && currentSession) {
-                currentUser = currentSession.user; APP_MODE = 'CLOUD'; setLS('app_mode', 'CLOUD');
-                updateNetworkStatus("Online Mode (Cloud)", "sync-online");
-                
-                try {
-                    const { data: profileData } = await sbClient.from('profiles').select('data').eq('id', currentUser.id).single();
-                    if (profileData && profileData.data) { profile = { ...profile, ...profileData.data }; } 
-                    else { 
-                        if(profile.name === 'Pengurus' || profile.name === 'Pengurus Baru') profile.name = properTitleCase(currentUser.user_metadata?.full_name) || 'Member TPA'; 
-                        profile.photo = currentUser.user_metadata?.avatar_url || profile.photo; 
-                        await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
-                    }
-                } catch(e) {}
-                
-                profile.googleLinked = true; profile.googleEmail = currentUser.email; 
-                setLS('profile_secure_v51', JSON.stringify(profile));
-                
-                db = loadLocalDB(); initAppHeader(); renderShortcuts(); fetchUserTransactions(); setupRealtime(); 
-                closeModal('googleAuthModal');
-                if (navigator.onLine && pendingSync.length > 0) processPendingSync();
-            }
-        });
-    }
-}
-
-function updateNetworkStatus(text, statusClass) {
-    const netStatus = document.getElementById('networkStatus');
-    if(netStatus) { 
-        netStatus.innerText = text; 
-        netStatus.className = `status-sync ${statusClass}`; 
-    }
-}
-
-function forceLogoutToGuest() {
-    currentUser = null; APP_MODE = 'GUEST'; setLS('app_mode', 'GUEST');
-    profile = { ...defaultProfile }; setLS('profile_secure_v51', JSON.stringify(profile));
-    removeLS('cloud_db'); removeLS('cloud_db_fallback'); db = loadLocalDB(); 
-    initAppHeader(); renderShortcuts(); updateUI(''); 
-    showToast("Berhasil Logout.", "success"); closeModal('profileViewModal');
-    updateNetworkStatus(navigator.onLine ? "Online Mode (Guest)" : "Offline Mode (Guest)", navigator.onLine ? "sync-online" : "sync-offline");
-}
-
 function getDBKey() { return APP_MODE === 'CLOUD' ? LS_PREFIX + 'cloud_db' : LS_PREFIX + 'guest_db'; }
 
 function saveLocalDB(dataToSave) {
@@ -401,62 +208,17 @@ function loadLocalDB() {
     return Array.isArray(data) ? data : [];
 }
 
-async function fetchUserTransactions() {
-    if (APP_MODE !== 'CLOUD' || !currentUser || currentUser.id === 'offline_user' || !sbClient) return;
-    try {
-        if (!navigator.onLine) throw new Error("Offline");
-        const { data, error } = await sbClient.from('transactions').select('*').eq('user_id', currentUser.id).order('date', { ascending: true });
-        if (error) throw error;
-        db = data; saveLocalDB(db); 
-        updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
-    } catch (error) {}
-}
-
-function setupRealtime() {
-    if (APP_MODE !== 'CLOUD' || !currentUser || currentUser.id === 'offline_user' || !sbClient) return;
-    if (realTimeSubscription) sbClient.removeChannel(realTimeSubscription);
-    realTimeSubscription = sbClient.channel('custom-tpa-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${currentUser.id}` }, payload => { fetchUserTransactions(); }).subscribe();
-}
-
-async function processPendingSync() {
-    if (!navigator.onLine || APP_MODE !== 'CLOUD' || !currentUser || currentUser.id === 'offline_user' || !sbClient || pendingSync.length === 0) return;
-    try {
-        showToast("Menyinkronkan antrean data...", "syncing");
-        const payload = pendingSync.map(t => { let newData = { ...t, user_id: currentUser.id }; if(String(newData.id).length > 10) delete newData.id; return newData; });
-        const { error } = await sbClient.from('transactions').insert(payload);
-        if (error) throw error;
-        pendingSync = []; setLS('pending_sync', JSON.stringify(pendingSync));
-        showToast("Data offline tersimpan ke Cloud!", "success"); fetchUserTransactions();
-    } catch (error) {}
-}
-
-window.addEventListener('online', () => { 
-    if(isPublicMode) return;
-    updateNetworkStatus(APP_MODE === 'CLOUD' ? "Menyambungkan..." : "Online (Guest)", APP_MODE === 'CLOUD' ? "sync-pending" : "sync-online");
-    if(APP_MODE === 'CLOUD') {
-        if (currentUser && currentUser.id === 'offline_user') { initSupabaseBackground(); } 
-        else { if (pendingSync.length > 0) { processPendingSync(); } else { fetchUserTransactions(); } updateNetworkStatus("Online Mode (Cloud)", "sync-online"); }
-    }
-});
-window.addEventListener('offline', () => { 
-    if(isPublicMode) return;
-    updateNetworkStatus(pendingSync.length > 0 ? "Offline (Menunggu Sync)" : "Offline Mode", pendingSync.length > 0 ? "sync-pending" : "sync-offline");
-    showToast("Koneksi terputus. Mode Offline.", "error"); 
-});
-
 // ==========================================
-// TEMA ENGINE (SMOOTH RADIAL DARI TITIK KLIK)
+// TEMA ENGINE (SMOOTH RADIAL & RETENTION)
 // ==========================================
 const iconSun = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
 const iconMoon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-const savedTheme = getLS('app_theme') || 'dark';
+const savedTheme = localStorage.getItem('global_tpa_theme') || 'dark'; // Menggunakan global item agar tidak kena imbas LS_PREFIX versi
 document.documentElement.setAttribute('data-theme', savedTheme);
-window.addEventListener('DOMContentLoaded', () => { updateThemeIcon(savedTheme); });
+window.addEventListener('DOMContentLoaded', () => { updateThemeIcon(savedTheme); document.getElementById('metaThemeColor').setAttribute("content", savedTheme === 'light' ? "#059669" : "#05140d"); });
 
 function toggleTheme(e) {
     const layer = document.getElementById('themeTransitionLayer');
-    
     if (e && e.currentTarget) {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = rect.left + rect.width / 2;
@@ -475,11 +237,11 @@ function toggleTheme(e) {
         const htmlEl = document.documentElement; const currentTheme = htmlEl.getAttribute('data-theme') || 'dark';
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark'; 
         htmlEl.setAttribute('data-theme', newTheme); 
-        setLS('app_theme', newTheme); 
+        localStorage.setItem('global_tpa_theme', newTheme); 
         updateThemeIcon(newTheme);
         
         document.getElementById('metaThemeColor').setAttribute("content", newTheme === 'light' ? "#059669" : "#05140d");
-        updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
+        if(typeof updateUI === "function") updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
         
         document.body.classList.add('theme-fade-out');
     }, 450); 
@@ -491,101 +253,282 @@ function updateThemeIcon(theme) {
     const btn = document.getElementById('theme-icon'); if (!btn) return; 
     if (theme === 'light') { btn.innerHTML = iconMoon; } else { btn.innerHTML = iconSun; } 
 }
+// ==========================================
+// PRAYER TIMES (LIVE GPS ENGINE)
+// ==========================================
+let prayerRetryInterval = null;
+
+async function initPrayerTimesLive() {
+    const pText = document.getElementById('prayerLocationText');
+    const pGrid = document.getElementById('prayerTimesGrid');
+    if(!pText || !pGrid) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const cached = JSON.parse(getLS('prayer_cache') || 'null');
+
+    // Tampilkan cache agar jadwal tidak kosong mendadak saat refresh
+    if (cached && cached.date === todayStr && cached.timings) {
+        renderPrayerUI(cached);
+    }
+
+    const fetchLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                if (prayerRetryInterval) clearInterval(prayerRetryInterval); // Stop auto-retry jika sukses terkunci
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                try {
+                    const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=11`);
+                    const data = await res.json();
+                    
+                    if(data && data.data) {
+                        const pt = data.data.timings;
+                        const newCache = {
+                            date: todayStr,
+                            location: "Lokasi GPS Terkunci",
+                            timings: [
+                                { n: 'Subuh', t: pt.Fajr },
+                                { n: 'Dzuhur', t: pt.Dhuhr },
+                                { n: 'Ashar', t: pt.Asr },
+                                { n: 'Maghrib', t: pt.Maghrib },
+                                { n: 'Isya', t: pt.Isha }
+                            ]
+                        };
+                        setLS('prayer_cache', JSON.stringify(newCache));
+                        renderPrayerUI(newCache);
+                    }
+                } catch(e) {
+                    pText.innerText = "Gagal memuat API...";
+                }
+            }, (err) => {
+                pText.innerText = "Akses GPS Ditolak / Mati";
+                // Auto-Retry setiap 8 detik jika GPS mati lalu dihidupkan (Tanpa perlu refresh page)
+                if(!prayerRetryInterval) {
+                    prayerRetryInterval = setInterval(fetchLocation, 8000);
+                }
+            }, { enableHighAccuracy: true, timeout: 5000 });
+        } else {
+            pText.innerText = "Perangkat Tidak Mendukung GPS";
+        }
+    };
+
+    fetchLocation();
+}
+
+function renderPrayerUI(data) {
+    const pText = document.getElementById('prayerLocationText');
+    const pDate = document.getElementById('prayerDateText');
+    const pGrid = document.getElementById('prayerTimesGrid');
+    
+    if(pText) pText.innerText = data.location || "Lokasi Anda";
+    if(pDate) pDate.innerText = data.date;
+    
+    if(pGrid && data.timings) {
+        pGrid.innerHTML = data.timings.map(p => `
+            <div class="prayer-item">
+                <span class="p-name">${p.n}</span>
+                <span class="p-time">${p.t}</span>
+            </div>
+        `).join('');
+    }
+}
 
 // ==========================================
-// UI & NAVIGATION ENGINE
+// INITIALIZATION & CLOUD SYNC ENGINE
 // ==========================================
+function checkAppVersion() {
+    const savedVersion = getLS('app_version');
+    if (savedVersion !== APP_VERSION) {
+        setLS('app_version', APP_VERSION);
+        if (navigator.onLine) {
+            const updateScreen = document.getElementById('updateScreen');
+            if (updateScreen) { updateScreen.style.display = 'flex'; setTimeout(() => { window.location.reload(true); }, 2000); }
+        }
+    }
+}
+
+function bootApp() {
+    checkAppVersion();
+    
+    // Router - Deteksi parameter link transparansi publik
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'public') {
+        isPublicMode = true;
+        if (typeof initPublicPortal === 'function') initPublicPortal(); // Terhubung di Part 3
+        return;
+    }
+
+    // Router Admin
+    db = loadLocalDB(); 
+    initAppHeader();
+    if (typeof renderShortcuts === 'function') renderShortcuts();
+    if (typeof renderWishlist === 'function') renderWishlist();
+    if (typeof renderDriveLinks === 'function') renderDriveLinks();
+    if (typeof checkAttendanceReset === 'function') checkAttendanceReset();
+    if (typeof updateUI === 'function') updateUI('');
+    initPrayerTimesLive(); // Inisiasi GPS Engine
+
+    const netStatus = document.getElementById('networkStatus');
+    if (APP_MODE === 'CLOUD') {
+        currentUser = { id: 'offline_user', email: profile.googleEmail || 'Cloud User' }; 
+        if(netStatus) { netStatus.innerText = navigator.onLine ? "Menyambungkan..." : "Offline (Cloud)"; netStatus.className = navigator.onLine ? "status-sync sync-pending" : "status-sync sync-offline"; }
+    } else {
+        currentUser = null;
+        if(netStatus) { netStatus.innerText = "Offline Mode (Guest)"; netStatus.className = "status-sync sync-offline"; }
+    }
+    
+    setTimeout(initSupabaseBackground, 500);
+}
+
+async function initSupabaseBackground() {
+    if (typeof window.supabase === 'undefined') return;
+    if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    if (APP_MODE === 'CLOUD' && navigator.onLine) {
+        try {
+            const { data: { session }, error } = await sbClient.auth.getSession();
+            if (error) throw error;
+            if (session && session.user) {
+                currentUser = session.user;
+                updateNetworkStatus("Online Mode (Cloud)", "sync-online");
+                if(typeof fetchUserTransactions === 'function') fetchUserTransactions(); 
+                if(typeof setupRealtime === 'function') setupRealtime();
+                if (pendingSync.length > 0 && typeof processPendingSync === 'function') processPendingSync();
+            } else { forceLogoutToGuest(); }
+        } catch(err) { updateNetworkStatus("Server Lambat / Gangguan", "sync-offline"); }
+    }
+
+    if (!window.supabaseListenerAdded) {
+        window.supabaseListenerAdded = true;
+        sbClient.auth.onAuthStateChange(async (event, currentSession) => {
+            if (event === 'SIGNED_OUT') { forceLogoutToGuest(); } 
+            else if (event === 'SIGNED_IN' && currentSession) {
+                currentUser = currentSession.user; APP_MODE = 'CLOUD'; setLS('app_mode', 'CLOUD');
+                updateNetworkStatus("Online Mode (Cloud)", "sync-online");
+                
+                try {
+                    const { data: profileData } = await sbClient.from('profiles').select('data').eq('id', currentUser.id).single();
+                    if (profileData && profileData.data) { profile = { ...profile, ...profileData.data }; } 
+                    else { 
+                        if(profile.name === 'Pengurus' || profile.name === 'Pengurus TPA') profile.name = properTitleCase(currentUser.user_metadata?.full_name) || 'Member TPA'; 
+                        profile.photo = currentUser.user_metadata?.avatar_url || profile.photo; 
+                        await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
+                    }
+                } catch(e) {}
+                
+                profile.googleLinked = true; profile.googleEmail = currentUser.email; 
+                setLS('profile_secure', JSON.stringify(profile));
+                
+                db = loadLocalDB(); initAppHeader(); 
+                if(typeof renderShortcuts === 'function') renderShortcuts(); 
+                if(typeof fetchUserTransactions === 'function') fetchUserTransactions(); 
+                if(typeof setupRealtime === 'function') setupRealtime(); 
+                
+                closeModal('googleAuthModal');
+                if (navigator.onLine && pendingSync.length > 0 && typeof processPendingSync === 'function') processPendingSync();
+            }
+        });
+    }
+}
+
+function updateNetworkStatus(text, statusClass) {
+    const netStatus = document.getElementById('networkStatus');
+    if(netStatus) { 
+        netStatus.innerText = text; 
+        netStatus.className = `status-sync ${statusClass}`; 
+    }
+}
+
+function forceLogoutToGuest() {
+    currentUser = null; APP_MODE = 'GUEST'; setLS('app_mode', 'GUEST');
+    profile = { ...defaultProfile }; setLS('profile_secure', JSON.stringify(profile));
+    removeLS('cloud_db'); removeLS('cloud_db_fallback'); db = loadLocalDB(); 
+    initAppHeader(); 
+    if(typeof renderShortcuts === 'function') renderShortcuts(); 
+    if(typeof updateUI === 'function') updateUI(''); 
+    showToast("Berhasil Logout / Sesi Berakhir.", "success"); closeModal('profileViewModal');
+    updateNetworkStatus(navigator.onLine ? "Online Mode (Guest)" : "Offline Mode (Guest)", navigator.onLine ? "sync-online" : "sync-offline");
+}
+
+// ==========================================
+// EMAILJS OTP SYSTEM (Integrasi Modul)
+// ==========================================
+function startOTPResetProcess() { 
+    closeModal('actionPinModal'); 
+    if(!profile.googleLinked || !profile.googleEmail) { showToast("Gagal: Akun belum terhubung ke Google Cloud!", "error"); return; } 
+    if(!navigator.onLine) { showToast("Gagal: Membutuhkan koneksi internet!", "error"); return; } 
+    document.getElementById('displayUserEmail').innerText = profile.googleEmail; 
+    openModal('otpRequestModal'); 
+}
+
+function sendOTPEmail() { 
+    const btn = document.getElementById('btnSendOTP'); 
+    btn.innerText = "Transmisi Berjalan..."; btn.disabled = true; 
+    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); 
+    otpExpiryTime = Date.now() + 300000; // Kadaluarsa 5 Menit
+    
+    if (typeof emailjs !== 'undefined') {
+        emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { 
+            to_email: profile.googleEmail, 
+            to_name: profile.name, 
+            otp_code: generatedOTP 
+        }).then(() => { 
+            showToast("Kode Autentikasi Terkirim ke Email!"); 
+            closeModal('otpRequestModal'); 
+            openModal('otpVerifyModal'); 
+            btn.innerText="Sematkan Transmisi Data"; btn.disabled=false; 
+        }).catch(() => { 
+            showToast("Gagal. Verifikasi ID Public / Template EmailJS Anda.", "error"); 
+            btn.innerText="Sematkan Transmisi Data"; btn.disabled=false; 
+        }); 
+    } else {
+        showToast("Modul Layanan Email Terputus.", "error"); 
+        btn.innerText="Sematkan Transmisi Data"; btn.disabled=false;
+    }
+}
+
+async function verifyOTPAndSavePin() { 
+    const c = document.getElementById('inputOTP').value; const np = document.getElementById('inputNewPinOTP').value; 
+    if(Date.now() > otpExpiryTime) { showToast("Sesi OTP telah kadaluarsa!", "error"); return; } 
+    if(c !== generatedOTP) { showToast("Kode OTP tidak valid!", "error"); return; } 
+    if(np.length < 4) { showToast("Keamanan PIN minimal 4 angka!", "error"); return; } 
+    
+    profile.pin = await hashPIN(np); 
+    setLS('profile_secure', JSON.stringify(profile)); 
+    if(APP_MODE === 'CLOUD' && sbClient && currentUser && currentUser.id !== 'offline_user') {
+        sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
+    }
+    
+    generatedOTP = ""; 
+    closeModal('otpVerifyModal'); 
+    showToast("Kredensial PIN Berhasil Direset!"); 
+}
+
+// ==========================================
+// UI & NAVIGATION ENGINE (Visual Core)
+// ==========================================
+function initAppHeader() { 
+    document.getElementById('headName').innerText = formatSmartName(profile.name); 
+    document.getElementById('headGender').innerText = profile.gender || 'Rahasia'; 
+    document.getElementById('headProfileImg').src = profile.photo; 
+}
+
+function formatSmartName(name) { 
+    if (!name) return name; 
+    if (window.innerWidth > 400) return name; 
+    if (name.length > 12) { let words = name.trim().split(/\s+/); if (words.length > 1) { let lastWord = words.pop(); return words.join(' ') + ' ' + lastWord.charAt(0).toUpperCase() + '.'; } } 
+    return name; 
+}
+
 function switchWallet(type) { 
     activeWallet = type; 
     document.getElementById('walletSwitchContainer').setAttribute('data-active', type); 
     document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active')); 
     document.getElementById(`tab-${type}`).classList.add('active'); 
-    renderShortcuts(); 
-    updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
+    if (typeof renderShortcuts === 'function') renderShortcuts(); 
+    if (typeof updateUI === 'function') updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
 }
 
-function toggleCustomSelect(id) { 
-    const box = document.getElementById(id); 
-    const isOpen = box.classList.contains('open'); 
-    document.querySelectorAll('.custom-options.open').forEach(el => el.classList.remove('open')); 
-    if(!isOpen) box.classList.add('open'); 
-}
-
-function applyTimeFilter(days, labelText) { 
-    currentTimeFilter = days; 
-    document.getElementById('dispTimeFilter').innerText = labelText; 
-    closeModal(''); 
-    updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
-}
-
-function selectCategory(val) { document.getElementById('tx-category').value = val; document.getElementById('dispTxCat').innerText = val; closeModal(''); }
-function selectTitle(val) { document.getElementById('tx-title-val').value = val; document.getElementById('dispTxTitle').innerText = val; closeModal(''); }
-function selectEditTitle(val) { document.getElementById('edit-tx-title-val').value = val; document.getElementById('dispEditTxTitle').innerText = val; closeModal(''); }
-
-function toggleSection(sec, icn) { 
-    document.getElementById(sec).classList.toggle('hidden'); 
-    document.getElementById(icn).classList.toggle('rotated'); 
-}
-
-function toggleExpandStat(el, id) { 
-    const items = document.getElementById(id).children; 
-    if (el.classList.contains('expanded')) { for(let i of items) i.className = 'expand-item glass-card'; } 
-    else { for(let i of items) i.className = (i === el) ? 'expand-item expanded glass-card' : 'expand-item collapsed'; } 
-} 
-
-function expandChart(el, id) { 
-    if(!el.classList.contains('expanded')) { 
-        for(let i of document.getElementById(id).children) i.className = (i === el) ? 'expand-item expanded glass-card' : 'expand-item collapsed'; 
-        setTimeout(() => { if(pieChart) pieChart.resize(); if(barChart) barChart.resize(); if(lineChart) lineChart.resize(); }, 100); 
-        setTimeout(() => { if(pieChart) pieChart.resize(); if(barChart) barChart.resize(); if(lineChart) lineChart.resize(); }, 550); 
-    } 
-} 
-function closeChart(e, btn) { 
-    e.stopPropagation(); 
-    for(let i of btn.closest('.expand-container').children) i.className = 'expand-item glass-card'; 
-    setTimeout(() => { if(pieChart) pieChart.resize(); if(barChart) barChart.resize(); if(lineChart) lineChart.resize(); }, 100); 
-    setTimeout(() => { if(pieChart) pieChart.resize(); if(barChart) barChart.resize(); if(lineChart) lineChart.resize(); }, 550); 
-}
-
-// ==========================================
-// SHORTCUT RENDERING
-// ==========================================
-function renderShortcuts() { 
-    const c = document.getElementById('quickActionsContainer'); 
-    if(!c) return;
-    c.className = 'quick-actions-wrap grid-mode grid-split-4'; 
-    if(activeWallet === 'utama') {
-        c.innerHTML = ` 
-            <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Infak Santri', 'Penerimaan Infak SPP Santri')">${svgs.uang} <span>Infak Santri</span></button> 
-            <button class="btn-quick svg-biru glass-card" onclick="quickInput('masuk', 'Donasi Masyarakat', 'Donasi Umum')">${svgs.user} <span>Donasi Umum</span></button> 
-            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Honor Guru', 'Pembayaran Honor Guru')">${svgs.makan} <span>Honor Guru</span></button> 
-            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('masuk', 'Bantuan Pemerintah', 'Dana Bantuan')">${svgs.plus_bold} <span>Pemasukan Lain</span></button> 
-        `;
-    } else if(activeWallet === 'wakaf') {
-        c.innerHTML = `
-            <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Wakaf', 'Penerimaan Dana Wakaf')">${svgs.uang} <span>Terima Wakaf</span></button> 
-            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Perbaikan Bangunan', 'Penggunaan Dana Wakaf')">${svgs.plus_bold} <span>Gunakan Wakaf</span></button>
-            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('keluar', 'Kebersihan', 'Biaya Kebersihan Wakaf')">${svgs.minus_bold} <span>Pemeliharaan</span></button>
-            <button class="btn-quick svg-biru glass-card" onclick="quickInput('masuk', 'Lainnya', 'Penerimaan Wakaf Lainnya')">${svgs.plus_bold} <span>Lainnya (+)</span></button> 
-        `;
-    } else if(activeWallet === 'operasional') {
-        c.innerHTML = `
-            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Listrik', 'Bayar Tagihan Listrik')">${svgs.minus_bold} <span>Bayar Listrik</span></button>
-            <button class="btn-quick svg-biru glass-card" onclick="quickInput('keluar', 'Air', 'Bayar Tagihan Air')">${svgs.minus_bold} <span>Bayar Air</span></button>
-            <button class="btn-quick svg-kuning glass-card" onclick="quickInput('keluar', 'ATK', 'Beli ATK & Kebutuhan')">${svgs.book} <span>Beli ATK</span></button>
-            <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Hibah', 'Suntikan Dana Operasional')">${svgs.plus_bold} <span>Tambah Dana</span></button>
-        `;
-    } else if(activeWallet === 'darurat') {
-        c.innerHTML = `
-            <button class="btn-quick svg-hijau glass-card" onclick="quickInput('masuk', 'Dana Cadangan', 'Injeksi Dana Darurat')">${svgs.shield} <span>Simpan Dana</span></button>
-            <button class="btn-quick svg-merah glass-card" onclick="quickInput('keluar', 'Kebutuhan Mendadak', 'Penggunaan Dana Darurat')">${svgs.minus_bold} <span>Tarik Dana</span></button>
-        `;
-    }
-}
-
-// ==========================================
-// HEALTH ENGINE & AI INSIGHT
-// ==========================================
 function updateHealthEngine(filteredDb) { 
     let tIn = 0, tOut = 0; filteredDb.forEach(t => { if(t.type === 'masuk') tIn += t.amount; else tOut += t.amount; }); 
     let balance = tIn - tOut; const badge = document.getElementById('healthBadge'); const text = document.getElementById('healthText'); 
@@ -639,8 +582,27 @@ function startAICarousel(textEl) {
     } 
 }
 
+function toggleCustomSelect(id) { 
+    const box = document.getElementById(id); 
+    const isOpen = box.classList.contains('open'); 
+    document.querySelectorAll('.custom-options.open').forEach(el => el.classList.remove('open')); 
+    if(!isOpen) box.classList.add('open'); 
+}
+
+function applyTimeFilter(days, labelText) { 
+    currentTimeFilter = days; 
+    document.getElementById('dispTimeFilter').innerText = labelText; 
+    closeModal(''); 
+    if (typeof updateUI === 'function') updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
+}
+
+function toggleSection(sec, icn) { 
+    document.getElementById(sec).classList.toggle('hidden'); 
+    document.getElementById(icn).classList.toggle('rotated'); 
+}
+
 // ==========================================
-// CORE UI RENDER (TABLE & CHARTS)
+// CORE UI RENDER (TABLE, CHARTS, RECEIPT)
 // ==========================================
 function updateUI(searchTerm = '') {
     const today = new Date(); today.setHours(0,0,0,0);
@@ -675,20 +637,20 @@ function renderTable(data, isPublic = false) {
     [...data].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(tx => {
         const iM = tx.type === 'masuk';
         let linkHtml = tx.link_bukti ? `<a href="${tx.link_bukti}" target="_blank" rel="noopener" style="color:var(--biru); font-size:11px; font-weight:800; text-decoration:underline; display:block; margin-top:4px;" onclick="event.stopPropagation()">↗ Buka Dokumen Drive</a>` : '';
-        let pihakHtml = tx.pihak_terkait ? `<br><span style="font-size:11px; color:var(--text-muted);">Pihak: <b class="text-neutral">${tx.pihak_terkait}</b></span>` : '';
+        let pihakHtml = tx.pihak_terkait ? `<br><span style="font-size:11px; color:var(--text-muted); border: 1px solid var(--border); padding: 2px 6px; border-radius: 6px; display: inline-block; margin-top: 4px;">Pihak: <b class="text-neutral">${tx.pihak_terkait}</b></span>` : '';
 
         let aksiHtml = isPublic ? '' : `
             <td style="vertical-align:middle; text-align:center; padding-right:15px; width:1%;" class="aksi-col">
                 <div style="display:flex; gap:8px; justify-content:center;">
-                    <button type="button" class="btn-icon-neutral" onclick="event.stopPropagation(); promptActionPin('edit', '${tx.id || tx.date}')">${svgs.edit}</button>
-                    <button type="button" class="btn-icon-danger" onclick="event.stopPropagation(); promptActionPin('delete', '${tx.id || tx.date}')">${svgs.trash}</button>
+                    <button type="button" class="btn-icon-neutral" onclick="promptActionPinFromTable(event, 'edit', '${tx.id || tx.date}')">${svgs.edit}</button>
+                    <button type="button" class="btn-icon-danger" onclick="promptActionPinFromTable(event, 'delete', '${tx.id || tx.date}')">${svgs.trash}</button>
                 </div>
             </td>
         `;
 
         htmlStr += `<tr class="clickable-row" onclick="openReceipt('${tx.id || tx.date}')">
-            <td style="color:var(--text-muted); font-size:11px; vertical-align:middle;">${formatDetailDate(tx.date).split(' - ')[0]}<br>${formatDetailDate(tx.date).split(' - ')[1]}</td>
-            <td style="width:1%; white-space:nowrap; padding:15px 10px; vertical-align:middle;"><div class="badge-cat">${tx.category}</div></td>
+            <td style="color:var(--text-muted); font-size:11px; vertical-align:middle; line-height: 1.6;">${formatDetailDate(tx.date).split(' - ')[0]}<br><b style="color:var(--teks-netral);">${formatDetailDate(tx.date).split(' - ')[1]}</b></td>
+            <td style="width:1%; white-space:nowrap; padding:15px 10px; vertical-align:middle;"><div class="badge-cat" style="border-color:${getDynamicColor(tx.category, tx.type)}; color:${getDynamicColor(tx.category, tx.type)};">${tx.category}</div></td>
             <td style="vertical-align:middle; width:100%;"><span class="text-neutral" style="font-weight:700;">${tx.desc}</span>${pihakHtml}${linkHtml}</td>
             ${aksiHtml}
             <td class="amt-cell ${iM?'amt-in':'amt-out'}" style="vertical-align:middle; text-align:right; padding-left:0;">${iM?'+':'-'}${formatRp(tx.amount)}</td>
@@ -724,185 +686,388 @@ function openReceipt(txId) {
     const strTxId = String(txId); const tx = db.find(t => String(t.id) === strTxId || String(t.date) === strTxId); if(!tx) return; 
     const rDate = formatDetailDate(tx.date); const rId = "TRX-" + new Date(tx.date).getTime().toString().slice(-8); 
     const rType = tx.type === 'masuk' ? 'Pemasukan' : 'Pengeluaran';
+    const cColor = getDynamicColor(tx.category, tx.type);
     
     document.getElementById('receiptContent').innerHTML = ` 
         <div class="receipt-head"><h3 style="margin:0 0 5px 0;" class="text-neutral">BUKTI MUTASI KAS TPA</h3><span style="font-size:11px; color:var(--text-muted); letter-spacing: 1px;">ID: ${rId}</span></div> 
         <div class="receipt-row"><span class="receipt-label">Waktu</span><span class="receipt-val text-neutral">${rDate}</span></div> 
         <div class="receipt-row"><span class="receipt-label">Dompet Kas</span><span class="receipt-val text-neutral" style="text-transform:capitalize;">${tx.wallet}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Kategori</span><span class="receipt-val text-neutral">${tx.category}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Kategori</span><span class="receipt-val" style="color:${cColor}; font-weight:900;">${tx.category}</span></div> 
         <div class="receipt-row"><span class="receipt-label">Sifat Mutasi</span><span class="receipt-val text-neutral">${rType}</span></div> 
-        <div class="receipt-row"><span class="receipt-label">Keterangan</span><span class="receipt-val text-neutral">${tx.desc}</span></div> 
+        <div class="receipt-row"><span class="receipt-label">Keterangan</span><span class="receipt-val text-neutral" style="white-space:normal!important; text-align:right;">${tx.desc}</span></div> 
         ${tx.pihak_terkait ? `<div class="receipt-row"><span class="receipt-label">Pihak Terkait</span><span class="receipt-val text-neutral">${tx.pihak_terkait}</span></div>` : ''} 
         ${tx.link_bukti ? `<div class="receipt-row" style="margin-top:10px;"><span class="receipt-label" style="color:var(--text-muted);">Lampiran Drive</span><span class="receipt-val"><a href="${tx.link_bukti}" target="_blank" rel="noopener" style="color:var(--biru); text-decoration:underline;">Buka Dokumen ↗</a></span></div>` : ''} 
         <div class="receipt-row" style="margin-top:25px; border-top:2px dashed var(--border); padding-top:20px; align-items: flex-end; flex-wrap: nowrap !important;"> 
-            <span class="receipt-label" style="font-size:14px; color:var(--text-muted); flex-shrink: 0;">TOTAL</span> 
+            <span class="receipt-label" style="font-size:14px; color:var(--text-muted); flex-shrink: 0;">TOTAL MUTASI</span> 
             <span class="receipt-val ${tx.type==='masuk'?'amt-in':'amt-out'}" style="font-size: clamp(18px, 5.5vw, 24px); letter-spacing:-1px; white-space: nowrap !important; word-break: keep-all !important; flex-grow: 1; text-align: right;">${formatRp(tx.amount)}</span> 
         </div> 
     `; 
     openModal('receiptModal'); 
 }
-/* =========================================================
-   TPA FINANCE v5.1 - ENTERPRISE CORE LOGIC (PART 3)
-   Transactions, Transfers, Admin SPP, Public Portal, & OTP
-========================================================= */
 
 // ==========================================
-// CUSTOM CALENDAR UI
+// ADMIN: SPP & ABSENSI ENGINE (Daily Builder & Tick)
 // ==========================================
-let currentCalTargetHidden = '';
-let currentCalTargetDisp = '';
-let calDate = new Date(); 
+function openSppAbsenModal() { openModal('sppAbsenModal'); renderAdminStudentTable(); }
 
-function openCustomDatePicker(hiddenId, dispId) {
-    currentCalTargetHidden = hiddenId;
-    currentCalTargetDisp = dispId;
-    
-    const existVal = document.getElementById(hiddenId).value;
-    if (existVal) { calDate = new Date(existVal); } 
-    else { calDate = new Date(); }
-    
-    const monthBox = document.getElementById('custCalMonthOptions');
-    monthBox.innerHTML = monthsArr.map((m,i) => `<div class="custom-option text-neutral" onclick="selectCustCalMonth(${i}, '${m}')">${m}</div>`).join('');
-    
-    const yearBox = document.getElementById('custCalYearOptions');
-    let yHtml = ''; const currYear = new Date().getFullYear();
-    for(let y = currYear - 5; y <= currYear + 5; y++) { yHtml += `<div class="custom-option text-neutral" onclick="selectCustCalYear(${y})">${y}</div>`; }
-    yearBox.innerHTML = yHtml;
-
-    const hourBox = document.getElementById('custCalHourOptions');
-    let hHtml = '';
-    for(let h=0; h<24; h++){ const hh = String(h).padStart(2,'0'); hHtml += `<div class="custom-option text-neutral" style="text-align:center;" onclick="selectCustCalHour('${hh}')">${hh}</div>`; }
-    hourBox.innerHTML = hHtml;
-
-    const minBox = document.getElementById('custCalMinuteOptions');
-    let minHtml = '';
-    for(let m=0; m<60; m+=5){ const mm = String(m).padStart(2,'0'); minHtml += `<div class="custom-option text-neutral" style="text-align:center;" onclick="selectCustCalMinute('${mm}')">${mm}</div>`; }
-    minBox.innerHTML = minHtml;
-
-    selectCustCalMonth(calDate.getMonth(), monthsArr[calDate.getMonth()]);
-    selectCustCalYear(calDate.getFullYear());
-    selectCustCalHour(String(calDate.getHours()).padStart(2,'0'));
-    
-    let mNear = Math.round(calDate.getMinutes() / 5) * 5;
-    if(mNear === 60) mNear = 55;
-    selectCustCalMinute(String(mNear).padStart(2,'0'));
-    
-    openModal('customCalendarModal');
+function registerStudent() {
+    const input = document.getElementById('newStudentName'); const name = properTitleCase(input.value.trim());
+    if (!name) { showToast("Nama murid wajib diisi", "error"); return; }
+    sppData.push({ id: Date.now().toString(), name: name, months: [], presentToday: false, attendLogs: [] });
+    setLS('spp_data', JSON.stringify(sppData)); input.value = ''; renderAdminStudentTable(); showToast("Murid terdaftar", "success");
 }
 
-function selectCustCalMonth(i, m) { document.getElementById('custCalMonthVal').value = i; document.getElementById('dispCalMonth').innerText = m; closeModal(''); renderCustomCalendar(); }
-function selectCustCalYear(y) { document.getElementById('custCalYearVal').value = y; document.getElementById('dispCalYear').innerText = y; closeModal(''); renderCustomCalendar(); }
-function selectCustCalHour(h) { document.getElementById('custCalHourVal').value = h; document.getElementById('dispCalHour').innerText = h; closeModal(''); }
-function selectCustCalMinute(m) { document.getElementById('custCalMinuteVal').value = m; document.getElementById('dispCalMinute').innerText = m; closeModal(''); }
+function deleteStudentAdmin(id) { 
+    openCustomConfirm("Hapus Murid Permanen", "Seluruh rekam jejak SPP & Absensi murid ini akan ditiadakan.", () => {
+        sppData = sppData.filter(s => s.id !== id); setLS('spp_data', JSON.stringify(sppData)); renderAdminStudentTable(); showToast("Murid Dihapus", "success");
+    });
+}
 
-function renderCustomCalendar() {
-    const month = parseInt(document.getElementById('custCalMonthVal').value);
-    const year = parseInt(document.getElementById('custCalYearVal').value);
+function openEditStudentModal(id) {
+    const s = sppData.find(x => x.id === id); if(!s) return;
+    document.getElementById('editStudentTargetId').value = id;
+    document.getElementById('editStudentNameInput').value = s.name;
+    openModal('editStudentModal');
+}
+function saveEditStudentName() {
+    const id = document.getElementById('editStudentTargetId').value;
+    const newName = properTitleCase(document.getElementById('editStudentNameInput').value.trim());
+    if(!newName) return;
+    const sIdx = sppData.findIndex(x => x.id === id);
+    if(sIdx > -1) {
+        sppData[sIdx].name = newName; setLS('spp_data', JSON.stringify(sppData)); closeModal('editStudentModal'); renderAdminStudentTable(); showToast("Identitas Diperbarui");
+    }
+}
+
+function renderAdminStudentTable() {
+    const tbody = document.getElementById('adminStudentTableBody');
+    if (!tbody) return;
+    if (sppData.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data murid terdaftar.</td></tr>`; return; }
     
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    tbody.innerHTML = sppData.map(s => {
+        const lunasBadge = s.months.length > 0 ? s.months.map(m => `<span style="background:var(--hijau); color:#052e16; padding:4px 8px; border-radius:6px; font-size:9px; margin:2px; display:inline-block; font-weight:900;">${m.substring(0,3)}</span>`).join('') : `<span style="color:var(--merah-solid); font-size:10px; font-weight:800;">Belum Ada Pembayaran</span>`;
+        return `
+        <tr style="border-bottom:1px solid var(--border);" class="admin-spp-row">
+            <td style="padding:15px 10px; font-size:13px; font-weight:800;" class="text-neutral">
+                ${s.name}
+                <div style="font-size:10px; color:var(--biru); cursor:pointer; margin-top:6px; border:1px solid var(--border); display:inline-block; padding:3px 8px; border-radius:6px;" onclick="openEditStudentModal('${s.id}')">✎ Edit Nama</div>
+            </td>
+            <td style="padding:15px 10px; text-align:center; cursor:pointer;" onclick="openMultiMonthSelect('${s.id}')">
+                <div style="background:var(--hitam-btn); border:1px solid var(--border); padding:8px; border-radius:8px; min-height:35px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center;">
+                    ${lunasBadge}
+                </div>
+                <div style="font-size:9px; color:var(--text-muted); margin-top:5px;">Klik untuk atur SPP</div>
+            </td>
+            <td style="padding:15px 10px; text-align:center;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <button class="btn-outline-small" style="font-size:10px; padding:6px 12px; border-radius:8px; border-color:var(--hijau); color:var(--hijau-terang);" onclick="openAbsenDetailModal('${s.id}')">Catat Absen</button>
+                </div>
+            </td>
+            <td style="padding:15px 10px; text-align:center;">
+                <button class="btn-icon-danger" style="width:32px; height:32px; padding:6px;" onclick="deleteStudentAdmin('${s.id}')">${svgs.trash}</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function filterAdminStudentTable() {
+    const query = document.getElementById('searchStudentAdmin').value.toLowerCase();
+    const rows = document.querySelectorAll('.admin-spp-row');
+    rows.forEach(row => { const name = row.querySelector('td').innerText.toLowerCase(); row.style.display = name.includes(query) ? '' : 'none'; });
+}
+
+function openMultiMonthSelect(id) {
+    const s = sppData.find(x => x.id === id); if(!s) return;
+    document.getElementById('multiMonthTargetId').value = id;
+    document.getElementById('multiMonthStudentName').innerText = `Otorisasi SPP: ${s.name}`;
     
-    const grid = document.getElementById('calendarDaysGrid');
-    let html = '';
+    const grid = document.getElementById('multiMonthGrid');
+    grid.innerHTML = monthsArr.map(m => `
+        <div>
+            <input type="checkbox" id="cb_${m}" value="${m}" class="spp-month-cb" ${s.months.includes(m) ? 'checked' : ''}>
+            <label for="cb_${m}" class="spp-month-label">${m}</label>
+        </div>
+    `).join('');
+    openModal('multiMonthSelectModal');
+}
+
+function saveMultiMonthSpp() {
+    const id = document.getElementById('multiMonthTargetId').value;
+    const sIdx = sppData.findIndex(x => x.id === id);
+    if(sIdx === -1) return;
     
-    for(let i = 0; i < firstDay; i++) { html += `<div class="cal-day-btn disabled"></div>`; }
+    const selected = [];
+    document.querySelectorAll('.spp-month-cb:checked').forEach(cb => selected.push(cb.value));
     
+    sppData[sIdx].months = selected;
+    setLS('spp_data', JSON.stringify(sppData));
+    closeModal('multiMonthSelectModal'); renderAdminStudentTable(); showToast("Status SPP Murid Diperbarui");
+}
+
+// Logika Absen Harian (Bertambah setiap jam 12 malam)
+function openAbsenDetailModal(id) {
+    const s = sppData.find(x => x.id === id); if(!s) return;
+    document.getElementById('absenTargetId').value = id;
+    document.getElementById('absenStudentName').innerText = `Rekam Jejak: ${s.name}`;
+
+    const grid = document.getElementById('absenDaysGrid');
     const today = new Date();
-    for(let i = 1; i <= daysInMonth; i++) {
-        let classes = 'cal-day-btn';
-        if (calDate.getDate() === i && calDate.getMonth() === month && calDate.getFullYear() === year) classes += ' selected';
-        if (today.getDate() === i && today.getMonth() === month && today.getFullYear() === year) classes += ' today';
-        html += `<div class="${classes}" onclick="selectCustomDay(${i}, ${month}, ${year})">${i}</div>`;
+    today.setHours(0,0,0,0);
+    
+    // Cari hari Senin terakhir (atau limit 7 hari jika lompat minggu)
+    let lastReset = new Date(attendanceData.lastReset);
+    lastReset.setHours(0,0,0,0);
+    
+    let daysToGenerate = Math.floor((today - lastReset) / (1000 * 60 * 60 * 24)) + 1;
+    if (daysToGenerate > 7) daysToGenerate = 7; // Safety cap 1 minggu
+    if (daysToGenerate < 1) daysToGenerate = 1;
+
+    let html = '';
+    for(let i = 0; i < daysToGenerate; i++) {
+        let loopDate = new Date(today);
+        loopDate.setDate(today.getDate() - i);
+        
+        let dateStr = loopDate.toISOString().split('T')[0];
+        let displayStr = formatDetailDate(loopDate.toISOString()).split(' - ')[0];
+
+        let isPresent = false;
+        if(s.attendLogs) { isPresent = s.attendLogs.some(l => l.time.startsWith(dateStr) && l.status === 'Hadir'); }
+
+        html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--hitam-btn); padding:12px; border-radius:12px; border:1px solid var(--border);">
+            <span style="font-size:12px; font-weight:900; color:var(--teks-netral);">${i===0?'HARI INI':displayStr}</span>
+            <div style="display:flex; gap:12px; background:var(--hitam-card); padding:5px; border-radius:8px; border: 1px solid var(--border);">
+                <label style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--hijau-terang); cursor:pointer;"><input type="radio" name="abs_${i}" value="Hadir" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Hadir')" ${isPresent?'checked':''}> Hadir</label>
+                <label style="font-size:11px; display:flex; align-items:center; gap:6px; color:var(--merah-solid); cursor:pointer;"><input type="radio" name="abs_${i}" value="Absen" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Absen')" ${!isPresent?'checked':''}> Absen</label>
+            </div>
+        </div>`;
     }
     grid.innerHTML = html;
+    openModal('absenDetailModal');
 }
 
-function selectCustomDay(d, m, y) {
-    calDate.setFullYear(y); calDate.setMonth(m); calDate.setDate(d);
-    renderCustomCalendar(); 
+function saveAbsenMundur(id, dateStr, statusVal) {
+    const sIdx = sppData.findIndex(x => x.id === id);
+    if(sIdx > -1) {
+        if(!sppData[sIdx].attendLogs) sppData[sIdx].attendLogs = [];
+        sppData[sIdx].attendLogs = sppData[sIdx].attendLogs.filter(l => !l.time.startsWith(dateStr));
+        
+        const fakeTime = `${dateStr}T16:00:00.000Z`;
+        sppData[sIdx].attendLogs.unshift({ status: statusVal, time: fakeTime });
+        
+        sppData[sIdx].attendLogs.sort((a,b) => new Date(b.time) - new Date(a.time));
+        if(sppData[sIdx].attendLogs.length > 20) sppData[sIdx].attendLogs.length = 20;
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        if(dateStr === todayStr) { sppData[sIdx].presentToday = (statusVal === 'Hadir'); renderAdminStudentTable(); }
+        setLS('spp_data', JSON.stringify(sppData));
+    }
 }
 
-function applyCustomDate() {
-    const h = document.getElementById('custCalHourVal').value;
-    const min = document.getElementById('custCalMinuteVal').value;
-    calDate.setHours(h); calDate.setMinutes(min);
+function checkAttendanceReset() {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); 
     
-    const tzOffset = calDate.getTimezoneOffset() * 60000; 
-    const localISOTime = (new Date(calDate - tzOffset)).toISOString().slice(0, -1);
+    if (dayOfWeek === 6 && !getLS('sat_reminder_done')) {
+        showToast("⚠️ Peringatan: Hari Minggu sistem absensi akan otomatis di-reset. Ekspor rekapan CSV hari ini!", "support");
+        setLS('sat_reminder_done', 'true'); 
+    }
+    if (dayOfWeek !== 6) { removeLS('sat_reminder_done'); }
     
-    document.getElementById(currentCalTargetHidden).value = localISOTime;
-    document.getElementById(currentCalTargetDisp).innerText = formatDetailDate(localISOTime);
-    
-    closeModal('customCalendarModal');
-}
-
-// ==========================================
-// TRANSACTION CRUD LOGIC
-// ==========================================
-function quickInput(type, cat, desc) { 
-    document.getElementById('tx-type').value = type; 
-    document.getElementById('modal-title').innerText = type === 'masuk' ? 'Catat Pemasukan TPA' : 'Catat Pengeluaran TPA'; 
-    document.getElementById('tx-desc').value = desc; 
-    document.getElementById('tx-pihak-terkait').value = ''; 
-    document.getElementById('tx-category-manual').value = '';
-    document.getElementById('tx-date-hidden').value = ''; 
-    document.getElementById('disp-tx-date').innerText = 'Gunakan Waktu Saat Ini';
-    document.getElementById('tx-is-saving').value = 'false'; 
-
-    if(cat === 'MANUAL') { 
-        document.getElementById('catSelectWrapper').style.display = 'none'; document.getElementById('tx-category-manual').style.display = 'block'; document.getElementById('label-kategori').innerText = 'Ketik Nama Kategori'; 
-    } else { 
-        document.getElementById('catSelectWrapper').style.display = 'block'; document.getElementById('tx-category-manual').style.display = 'none'; document.getElementById('label-kategori').innerText = 'Kategori'; 
-        const box = document.getElementById('catOptionsBox'); const arr = type === 'masuk' ? categories.masuk : categories.keluar; 
-        box.innerHTML = arr.map(c => `<div class="custom-option text-neutral" onclick="selectCategory('${c}')">${c}</div>`).join(''); 
-        if(!arr.includes(cat)) box.innerHTML += `<div class="custom-option text-neutral" onclick="selectCategory('${cat}')">${cat}</div>`; 
-        selectCategory(cat); 
-    } 
-    document.getElementById('tx-amount').value = ''; rawAmount = 0; 
-    openModal('txModal'); 
-}
-
-const txAmtInput = document.getElementById('tx-amount');
-if(txAmtInput) txAmtInput.addEventListener('input', function() { let v = this.value.replace(/[^0-9]/g, ''); if(v === '') { rawAmount = 0; this.value = ''; return; } rawAmount = parseInt(v, 10); this.value = rawAmount.toLocaleString('id-ID'); });
-
-document.getElementById('btnExecuteTx').addEventListener('click', async () => { 
-    if(rawAmount <= 0) { showToast("Nominal 0", "error"); return; } 
-    if (document.getElementById('tx-is-saving').value === 'true') return; document.getElementById('tx-is-saving').value = 'true'; 
-
-    try {
-        const type = document.getElementById('tx-type').value; 
-        let cF = document.getElementById('tx-category-manual').style.display === 'block' ? document.getElementById('tx-category-manual').value.trim() : document.getElementById('tx-category').value; 
-        let dF = document.getElementById('tx-desc').value.trim(); 
-        let titleVal = document.getElementById('tx-title-val').value;
-        let pihakRaw = document.getElementById('tx-pihak-terkait').value.trim();
-        let pihakFinal = pihakRaw ? `${titleVal} ${properTitleCase(pihakRaw)}` : '';
-        let txDateInput = document.getElementById('tx-date-hidden').value;
-        let finalDate = txDateInput ? new Date(txDateInput).toISOString() : new Date().toISOString();
-
-        if(!cF || !dF) { showToast("Kategori & Deskripsi wajib diisi", "error"); return; } 
-        cF = properTitleCase(cF); dF = properTitleCase(dF);
-
-        let tx = { wallet: activeWallet, type: type, category: cF, desc: dF, pihak_terkait: pihakFinal, link_bukti: '', amount: rawAmount, status: 'normal', date: finalDate };
-
-        if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient && (!currentUser || currentUser.id !== 'offline_user')) { 
-            try { 
-                let data = { ...tx, user_id: currentUser.id };
-                const { error } = await sbClient.from('transactions').insert([data]); 
-                if(error) throw error;
-                await fetchUserTransactions(); closeModal('txModal'); showToast("Tersimpan di Cloud"); 
-            } catch(e) { 
-                tx.id = Date.now() + Math.random(); db.push(tx); pendingSync.push(tx); setLS('pending_sync', JSON.stringify(pendingSync)); saveLocalDB(db); closeModal('txModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : '');
-                showToast("Antrean Offline Aktif.", "syncing"); 
-            }
-        } else { 
-            tx.id = Date.now() + Math.floor(Math.random() * 1000); db.push(tx); 
-            if (APP_MODE === 'CLOUD') { pendingSync.push(tx); setLS('pending_sync', JSON.stringify(pendingSync)); }
-            saveLocalDB(db); closeModal('txModal'); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); 
-            showToast("Disimpan di Lokal"); 
+    if (dayOfWeek === 0) {
+        const lastReset = new Date(attendanceData.lastReset);
+        const diffDays = Math.floor((today - lastReset) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 6) { 
+            sppData = sppData.map(s => ({ ...s, presentToday: false }));
+            setLS('spp_data', JSON.stringify(sppData));
+            attendanceData.lastReset = today.toISOString();
+            setLS('attendance_data', JSON.stringify(attendanceData));
+            setTimeout(() => { showToast("Rotasi Sistem: Database Absensi Mingguan telah di-reset untuk pekan baru.", "syncing"); }, 3000);
         }
-    } finally { document.getElementById('tx-is-saving').value = 'false'; }
-});
+    }
+}
 
+// ==========================================
+// PUBLIC PORTAL ENGINE (Advanced Real-Time Viewer)
+// ==========================================
+function openShareLinkModal() { 
+    const loc = window.location;
+    const url = `${loc.protocol}//${loc.host}${loc.pathname}?view=public`;
+    document.getElementById('publicLinkInput').value = url;
+    openModal('shareLinkModal'); 
+}
+function copyPublicLink() {
+    const input = document.getElementById('publicLinkInput'); input.select(); input.setSelectionRange(0, 99999); 
+    try { navigator.clipboard.writeText(input.value); showToast("URL Transparansi Disalin!", "success"); } catch(e) { document.execCommand("copy"); showToast("Disalin!", "success"); }
+}
+
+function initPublicPortal() {
+    document.getElementById('adminDashboard').style.display = 'none';
+    const pDash = document.getElementById('publicDashboard');
+    pDash.style.display = 'none';
+    document.getElementById('publicLoginOverlay').style.display = 'flex';
+}
+
+function handlePublicAutocomplete() {
+    const val = document.getElementById('publicStudentInput').value.toLowerCase();
+    const list = document.getElementById('publicAutocompleteList');
+    if (!val) { list.classList.add('hidden'); return; }
+    
+    const matches = sppData.filter(s => s.name.toLowerCase().includes(val));
+    if (matches.length === 0) { list.classList.add('hidden'); return; }
+    
+    list.innerHTML = matches.map(m => `<div class="custom-option text-neutral" onclick="selectPublicStudent('${m.name}')">${m.name}</div>`).join('');
+    list.classList.remove('hidden');
+}
+
+function selectPublicStudent(name) {
+    document.getElementById('publicStudentInput').value = name;
+    document.getElementById('publicAutocompleteList').classList.add('hidden');
+}
+
+function validatePublicLogin() {
+    const name = document.getElementById('publicStudentInput').value.trim();
+    if (!name) return;
+    const s = sppData.find(x => x.name.toLowerCase() === name.toLowerCase());
+    
+    if (s) {
+        document.getElementById('publicLoginOverlay').style.display = 'none';
+        
+        // Perhitungan Komprehensif Seluruh Dompet
+        let bUtama = 0, bWakaf = 0, bOps = 0, bDarurat = 0;
+        db.forEach(t => { 
+            let multiplier = t.type === 'masuk' ? 1 : -1;
+            if(t.wallet === 'utama') bUtama += (t.amount * multiplier);
+            if(t.wallet === 'wakaf') bWakaf += (t.amount * multiplier);
+            if(t.wallet === 'operasional') bOps += (t.amount * multiplier);
+            if(t.wallet === 'darurat') bDarurat += (t.amount * multiplier);
+        });
+        
+        let logHtml = '';
+        if(s.attendLogs && s.attendLogs.length > 0) {
+            logHtml = s.attendLogs.slice(0,7).map(lg => {
+                const isH = lg.status === 'Hadir';
+                return `<div class="public-attend-item">
+                    <span class="text-neutral" style="font-weight:800; font-size:11px;">${formatDetailDate(lg.time)}</span>
+                    <span class="${isH ? 'public-badge-hadir' : 'public-badge-absen'}">${lg.status}</span>
+                </div>`;
+            }).join('');
+        } else { logHtml = `<div class="public-attend-item" style="justify-content:center; color:var(--text-muted);">Belum ada riwayat tercatat</div>`; }
+
+        // Render Semua Tabel Transaksi (Gabungan)
+        let publicTxHtml = '';
+        if(db.length > 0) {
+            publicTxHtml = `
+            <div class="table-container glass-card" style="margin-top:15px; border-radius:16px;">
+                <table class="public-tx-table">
+                    <thead><tr><th>Tanggal Mutasi</th><th>Kategori</th><th>Rincian Keterangan</th><th style="text-align: right;">Nominal Mutasi</th></tr></thead>
+                    <tbody id="public-table-body"></tbody>
+                </table>
+            </div>`;
+        } else { publicTxHtml = `<div class="glass-card" style="padding:20px; text-align:center; color:var(--text-muted); font-size:12px;">Database histori bersih/kosong.</div>`; }
+
+        const unpd = monthsArr.filter(m => !s.months.includes(m));
+        const unpdHtml = unpd.length === 12 ? `<span style="color:var(--merah-solid); font-weight:900; font-size:12px; border:1px solid var(--merah-solid); padding:6px 12px; border-radius:8px; background:rgba(239,68,68,0.1);">Belum Melakukan Pembayaran Sama Sekali</span>` : unpd.slice(0,3).map(m => `<span style="background:rgba(239, 68, 68, 0.15); border:1px solid var(--merah-solid); color:var(--merah-solid); padding:6px 12px; border-radius:8px; font-weight:900; font-size:12px;">${m}</span>`).join('') + (unpd.length>3?` <span style="font-size:11px; font-weight:800; color:var(--text-muted); margin-left:5px; border:1px solid var(--border); padding:6px; border-radius:8px;">+ ${unpd.length - 3} Bulan Lainnya</span>`:'');
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const isPresentToday = s.attendLogs && s.attendLogs.some(l => l.time.startsWith(todayStr) && l.status === 'Hadir');
+
+        const pDash = document.getElementById('publicDashboard');
+        pDash.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px; padding-bottom:15px; border-bottom:1px solid var(--border);">
+                <div>
+                    <h2 class="text-neutral" style="margin:0; font-size:18px;">Pusat Data TPA</h2>
+                    <span style="font-size:10px; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:1px;">Transparansi Eksekutif</span>
+                </div>
+                <button class="btn-outline-small" onclick="window.location.reload()" style="margin:0; border-color:var(--merah-solid); color:var(--merah-solid);">Tutup Sesi</button>
+            </div>
+            
+            <div class="public-status-card glass-card">
+                <h3 class="text-neutral" style="margin-top:0; border-bottom:1px dashed var(--border); padding-bottom:15px; display:flex; align-items:center; gap:12px;">
+                    <div style="width:36px; height:36px; background:var(--hijau); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#022c22; box-shadow:0 4px 10px rgba(16,185,129,0.3);">${svgs.user}</div>
+                    Identitas: ${s.name}
+                </h3>
+                
+                <div class="public-status-row">
+                    <span style="color:var(--text-muted); font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">Status Absen Hari Ini</span>
+                    ${isPresentToday ? `<span class="public-badge-hadir" style="font-size:12px;">HADIR</span>` : `<span class="public-badge-absen" style="font-size:12px;">TIDAK HADIR / BELUM TERCATAT</span>`}
+                </div>
+                
+                <div class="public-status-row" style="flex-direction:column; align-items:flex-start;">
+                    <span style="color:var(--text-muted); font-weight:800; font-size:11px; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">Histori Pembayaran SPP (Lunas)</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                        ${s.months.length > 0 ? s.months.map(m => `<span style="background:rgba(34, 197, 94, 0.15); border:1px solid var(--hijau); color:var(--hijau-terang); padding:6px 12px; border-radius:8px; font-weight:900; font-size:12px;">${m}</span>`).join('') : `<span style="color:var(--text-muted); font-weight:800; font-size:11px; font-style:italic;">Data kosong.</span>`}
+                    </div>
+                </div>
+
+                <div class="public-status-row" style="flex-direction:column; align-items:flex-start;">
+                    <span style="color:var(--text-muted); font-weight:800; font-size:11px; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">Bulan Tertunggak / Belum Bayar</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                        ${unpdHtml}
+                    </div>
+                </div>
+
+                <div class="public-status-row" style="flex-direction:column; align-items:flex-start; border-bottom:none;">
+                    <span style="color:var(--text-muted); font-weight:800; font-size:11px; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">Log Kehadiran (7 Hari Terakhir)</span>
+                    <div class="public-attend-log" style="background:var(--hitam-btn); padding:10px; border-radius:12px; border:1px solid var(--border);">${logHtml}</div>
+                </div>
+            </div>
+
+            <h3 class="text-neutral" style="margin-top:35px; font-size:14px; border-bottom:1px solid var(--border); padding-bottom:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted)!important;">Laporan Agregat Kas TPA</h3>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                <div class="glass-card" style="padding:15px; border-radius:14px; border-left:4px solid var(--hijau);">
+                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Kas Utama</span>
+                    <p class="text-neutral" style="font-size:18px; font-weight:900; margin:5px 0 0 0;">${formatRp(bUtama)}</p>
+                </div>
+                <div class="glass-card" style="padding:15px; border-radius:14px; border-left:4px solid var(--ungu);">
+                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Dana Wakaf</span>
+                    <p class="text-neutral" style="font-size:18px; font-weight:900; margin:5px 0 0 0;">${formatRp(bWakaf)}</p>
+                </div>
+                <div class="glass-card" style="padding:15px; border-radius:14px; border-left:4px solid var(--biru);">
+                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Operasional</span>
+                    <p class="text-neutral" style="font-size:18px; font-weight:900; margin:5px 0 0 0;">${formatRp(bOps)}</p>
+                </div>
+                <div class="glass-card" style="padding:15px; border-radius:14px; border-left:4px solid var(--merah-solid);">
+                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Dana Darurat</span>
+                    <p class="text-neutral" style="font-size:18px; font-weight:900; margin:5px 0 0 0;">${formatRp(bDarurat)}</p>
+                </div>
+            </div>
+
+            ${publicTxHtml}
+            <p style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:-10px; margin-bottom:30px;">* Klik pada baris tabel untuk melihat rincian struk transaksi.</p>
+            
+            <div style="margin-top: 40px; border-top: 1px dashed var(--border); padding-top: 25px; text-align:center;">
+                <p style="font-size:11px; font-weight:900; color:var(--teks-netral); margin-bottom:15px; text-transform:uppercase; letter-spacing:0.5px;">Dukung Infrastruktur Server TPA Finance</p>
+                <div class="sosmed-container" style="justify-content:center;">
+                    <a href="https://sociabuzz.com/engyourbae/tribe" target="_blank" rel="noopener" class="btn-sosmed sw" style="flex:1;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg> Traktir Kopi Developer
+                    </a>
+                </div>
+            </div>
+            
+            <div style="text-align:center; margin-top:20px; font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">TPA Finance System v5.3<br>Read Only Portal</div>
+        `;
+        
+        pDash.style.display = 'block';
+
+        if(db.length > 0) {
+            // Render transaksi gabungan untuk public (semua wallet, descending date)
+            renderTable(db, true);
+        }
+        showToast("Kredensial Publik Berhasil Disinkronisasi", "success");
+
+    } else { showToast("Gagal: Nama murid tidak terdaftar dalam database institusi.", "error"); }
+}
+
+// TRANSACTION EXTRAS
+function executeTxDeleteFinal(txId) {
+    openCustomConfirm("Penghapusan Transaksi", "Data yang dihapus akan menghilang dari sistem laporan.", async () => {
+        const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return; const delTx = db[idx]; db.splice(idx, 1);
+        if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && delTx.id) { try { await sbClient.from('transactions').delete().eq('id', delTx.id); } catch(e) {} } else { pendingSync = pendingSync.filter(t => String(t.id) !== txId && String(t.date) !== txId); setLS('pending_sync', JSON.stringify(pendingSync)); }
+        saveLocalDB(db); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Arsip Berhasil Dimusnahkan.", "success");
+    });
+}
 function promptActionPin(action, txId) { 
     closeModal('receiptModal'); 
     if (!profile.pin || profile.pin.trim() === '') { 
@@ -915,6 +1080,7 @@ function promptActionPin(action, txId) {
     document.getElementById('inputActionPin').value = ''; 
     openModal('actionPinModal'); 
 }
+function promptActionPinFromTable(e, action, txId) { e.stopPropagation(); promptActionPin(action, txId); }
 
 async function verifyActionPinFinal() { 
     const inputVal = document.getElementById('inputActionPin').value; const hashedInput = await hashPIN(inputVal); 
@@ -925,413 +1091,29 @@ async function verifyActionPinFinal() {
         else if (action === 'edit') openEditTxModal(payload);
         else if (action === 'reset') executeFactoryReset();
         else if (action === 'edit_profile') openProfileEdit();
-    } else { showToast("PIN Salah! Akses Ditolak.", "error"); } 
+    } else { showToast("Kredensial PIN Tidak Cocok! Akses Ditolak.", "error"); } 
 }
-
-function executeTxDeleteFinal(txId) {
-    openCustomConfirm("Hapus Transaksi", "Data yang dihapus akan menghilang dari sistem laporan.", async () => {
-        const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return; const delTx = db[idx]; db.splice(idx, 1);
-        if (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user' && navigator.onLine && sbClient && delTx.id) { try { await sbClient.from('transactions').delete().eq('id', delTx.id); } catch(e) {} } else { pendingSync = pendingSync.filter(t => String(t.id) !== txId && String(t.date) !== txId); setLS('pending_sync', JSON.stringify(pendingSync)); }
-        saveLocalDB(db); updateUI(document.getElementById('searchTxInput') ? document.getElementById('searchTxInput').value : ''); showToast("Data Dihapus.", "success");
-    });
-}
-
-function selectEditCategory(val) { document.getElementById('edit-tx-category').value = val; document.getElementById('dispEditTxCat').innerText = val; closeModal(''); }
-function openEditTxModal(txId) {
-    const tx = db.find(t => String(t.id) === txId || String(t.date) === txId); if(!tx) return;
-    document.getElementById('edit-tx-id').value = txId;
-    
-    const box = document.getElementById('editCatOptionsBox'); const arr = tx.type === 'masuk' ? categories.masuk : categories.keluar; 
-    box.innerHTML = arr.map(c => `<div class="custom-option text-neutral" onclick="selectEditCategory('${c}')">${c}</div>`).join(''); 
-    if(!arr.includes(tx.category)) box.innerHTML += `<div class="custom-option text-neutral" onclick="selectEditCategory('${tx.category}')">${tx.category}</div>`; 
-    selectEditCategory(tx.category);
-
-    document.getElementById('edit-tx-date-hidden').value = tx.date;
-    document.getElementById('disp-edit-tx-date').innerText = formatDetailDate(tx.date);
-    document.getElementById('edit-tx-desc').value = tx.desc;
-    
-    if(tx.pihak_terkait) {
-        let parts = tx.pihak_terkait.split(' '); let potentialTitle = parts[0]; let recognizedTitles = ['Murid', 'Ustadz/ah', 'Pengurus', 'Tokoh', 'Bapak/Ibu'];
-        if(recognizedTitles.some(t => potentialTitle.includes(t))) {
-            let titleFull = parts.shift();
-            if(titleFull === 'Pengurus' && parts[0] === 'Masjid') { titleFull = 'Pengurus Masjid'; parts.shift(); }
-            if(titleFull === 'Tokoh' && parts[0] === 'Masyarakat') { titleFull = 'Tokoh Masyarakat'; parts.shift(); }
-            selectEditTitle(titleFull); document.getElementById('edit-tx-pihak').value = parts.join(' ');
-        } else {
-            selectEditTitle('Bapak/Ibu'); document.getElementById('edit-tx-pihak').value = tx.pihak_terkait;
-        }
-    } else { selectEditTitle('Bapak/Ibu'); document.getElementById('edit-tx-pihak').value = ''; }
-
-    editRawAmount = tx.amount;
-    document.getElementById('edit-tx-amount').value = tx.amount.toLocaleString('id-ID');
-    openModal('editTxModal');
-}
-const editTxAmtInput = document.getElementById('edit-tx-amount');
-if(editTxAmtInput) editTxAmtInput.addEventListener('input', function() { let v = this.value.replace(/[^0-9]/g, ''); if(v === '') { editRawAmount = 0; this.value = ''; return; } editRawAmount = parseInt(v, 10); this.value = editRawAmount.toLocaleString('id-ID'); });
-
-async function saveEditedTransaction() {
-    const txId = document.getElementById('edit-tx-id').value;
-    const idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if(idx === -1) return;
-    
-    const cat = document.getElementById('edit-tx-category').value;
-    const desc = document.getElementById('edit-tx-desc').value.trim();
-    const date = document.getElementById('edit-tx-date-hidden').value;
-    const tTitle = document.getElementById('edit-tx-title-val').value;
-    const tPihak = document.getElementById('edit-tx-pihak').value.trim();
-    
-    if(!desc || editRawAmount <= 0) { showToast("Data tidak valid", "error"); return; }
-
-    db[idx].category = cat; db[idx].desc = desc; db[idx].date = date; db[idx].pihak_terkait = tPihak ? `${tTitle} ${properTitleCase(tPihak)}` : ''; db[idx].amount = editRawAmount;
-
-    if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient && db[idx].id) {
-        try { await sbClient.from('transactions').update({ category: cat, desc: desc, date: date, pihak_terkait: db[idx].pihak_terkait, amount: editRawAmount }).eq('id', db[idx].id); } catch(e) {}
-    }
-    saveLocalDB(db); closeModal('editTxModal'); updateUI(); showToast("Berhasil Diubah");
-}
-
-// ==========================================
-// TRANSFER ANTAR DOMPET
-// ==========================================
-function openTransferDaruratModal() { document.getElementById('transfer-amount').value = ''; document.getElementById('transfer-desc').value = ''; openModal('transferDaruratModal'); }
-function selectTransferSource(val, label) { document.getElementById('transfer-source-val').value = val; document.getElementById('dispTransferSource').innerText = label; closeModal(''); }
-
-async function executeTransferDarurat() {
-    const source = document.getElementById('transfer-source-val').value;
-    const amountVal = document.getElementById('transfer-amount').value.replace(/[^0-9]/g, ''); const amount = amountVal ? parseInt(amountVal, 10) : 0;
-    const desc = document.getElementById('transfer-desc').value.trim() || 'Alokasi Dana Darurat';
-    if(amount <= 0) { showToast("Nominal tidak valid", "error"); return; }
-    
-    const nowISO = new Date().toISOString();
-    const txOut = { wallet: source, type: 'keluar', category: 'Lainnya', desc: desc, pihak_terkait: 'Pengurus Transfer Internal', link_bukti: '', amount: amount, status: 'normal', date: nowISO };
-    const txIn = { wallet: 'darurat', type: 'masuk', category: 'Dana Cadangan', desc: desc, pihak_terkait: 'Pengurus Transfer Internal', link_bukti: '', amount: amount, status: 'normal', date: nowISO };
-    processDualTransaction(txOut, txIn, 'transferDaruratModal');
-}
-
-function openTransferAntarDompetModal() { document.getElementById('transfer2-amount').value = ''; document.getElementById('transfer2-desc').value = ''; openModal('transferAntarDompetModal'); }
-function selectTransferFrom(val, label) { document.getElementById('transfer-from-val').value = val; document.getElementById('dispTransferFrom').innerText = label; closeModal(''); }
-function selectTransferTo(val, label) { document.getElementById('transfer-to-val').value = val; document.getElementById('dispTransferTo').innerText = label; closeModal(''); }
-
-async function executeTransferAntarDompet() {
-    const source = document.getElementById('transfer-from-val').value; const target = document.getElementById('transfer-to-val').value;
-    const amountVal = document.getElementById('transfer2-amount').value.replace(/[^0-9]/g, ''); const amount = amountVal ? parseInt(amountVal, 10) : 0;
-    const desc = document.getElementById('transfer2-desc').value.trim() || `Transfer dari ${source} ke ${target}`;
-    
-    if(source === target) { showToast("Dompet asal & tujuan sama!", "error"); return; }
-    if(amount <= 0) { showToast("Nominal tidak valid", "error"); return; }
-
-    const nowISO = new Date().toISOString();
-    const txOut = { wallet: source, type: 'keluar', category: 'Lainnya', desc: desc, pihak_terkait: 'Pengurus Transfer Internal', link_bukti: '', amount: amount, status: 'normal', date: nowISO };
-    const txIn = { wallet: target, type: 'masuk', category: 'Lainnya', desc: desc, pihak_terkait: 'Pengurus Transfer Internal', link_bukti: '', amount: amount, status: 'normal', date: nowISO };
-    processDualTransaction(txOut, txIn, 'transferAntarDompetModal');
-}
-
-async function processDualTransaction(txOut, txIn, modalId) {
-    if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient && (!currentUser || currentUser.id !== 'offline_user')) { 
-        try { 
-            let dOut = { ...txOut, user_id: currentUser.id }; let dIn = { ...txIn, user_id: currentUser.id };
-            const { error } = await sbClient.from('transactions').insert([dOut, dIn]); 
-            if(error) throw error;
-            await fetchUserTransactions(); closeModal(modalId); showToast("Transfer Berhasil (Cloud)"); 
-        } catch(e) { 
-            txOut.id = Date.now() + Math.random(); txIn.id = Date.now() + Math.random() + 1;
-            db.push(txOut, txIn); pendingSync.push(txOut, txIn); setLS('pending_sync', JSON.stringify(pendingSync)); saveLocalDB(db); closeModal(modalId); updateUI();
-            showToast("Transfer Offline Masuk Antrean.", "syncing"); 
-        }
-    } else { 
-        txOut.id = Date.now() + Math.random(); txIn.id = Date.now() + Math.random() + 1;
-        db.push(txOut, txIn); if (APP_MODE === 'CLOUD') { pendingSync.push(txOut, txIn); setLS('pending_sync', JSON.stringify(pendingSync)); }
-        saveLocalDB(db); closeModal(modalId); updateUI(); showToast("Transfer Berhasil (Lokal)"); 
-    }
-}
-document.getElementById('transfer-amount')?.addEventListener('input', function() { let v = this.value.replace(/[^0-9]/g, ''); this.value = v ? parseInt(v, 10).toLocaleString('id-ID') : ''; });
-document.getElementById('transfer2-amount')?.addEventListener('input', function() { let v = this.value.replace(/[^0-9]/g, ''); this.value = v ? parseInt(v, 10).toLocaleString('id-ID') : ''; });
-
-// ==========================================
-// WISHLIST, DRIVE, & CSV EXPORT
-// ==========================================
-function renderWishlist() {
-    const container = document.getElementById('wishlistContainer'); if(!container) return;
-    if(wishlists.length === 0) { container.innerHTML = `<div class="glass-card text-neutral" style="text-align:center; padding: 20px; font-size:12px;">Belum ada target.</div>`; return; }
-    container.innerHTML = wishlists.map(w => `
-        <div class="glass-card" style="padding:15px; display:flex; justify-content:space-between; align-items:center;">
-            <div><div style="font-size:15px; font-weight:900;" class="text-neutral">${w.name}</div><div style="font-size:13px; font-weight:700; color:var(--text-muted); margin-top:4px;">Butuh: <span class="text-neutral">${formatRp(w.amount)}</span></div></div>
-            <button onclick="deleteWishlist('${w.id}')" class="btn-icon-danger">${svgs.trash}</button>
-        </div>
-    `).join('');
-}
-function openAddWishlistModal() { document.getElementById('wishlist-name').value = ''; document.getElementById('wishlist-amount').value = ''; openModal('addWishlistModal'); }
-function saveWishlist() {
-    const name = properTitleCase(document.getElementById('wishlist-name').value.trim()); const amountVal = document.getElementById('wishlist-amount').value.replace(/[^0-9]/g, ''); const amount = amountVal ? parseInt(amountVal, 10) : 0;
-    if(!name || amount <= 0) { showToast("Data tidak valid", "error"); return; }
-    wishlists.push({ id: Date.now().toString(), name, amount }); setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); closeModal('addWishlistModal'); showToast("Tersimpan");
-}
-function deleteWishlist(id) { wishlists = wishlists.filter(w => w.id !== id); setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); }
-document.getElementById('wishlist-amount')?.addEventListener('input', function() { let v = this.value.replace(/[^0-9]/g, ''); this.value = v ? parseInt(v, 10).toLocaleString('id-ID') : ''; });
-
-function renderDriveLinks() {
-    const container = document.getElementById('driveContainer'); if(!container) return;
-    if(driveLinks.length === 0) { container.innerHTML = `<div class="glass-card text-neutral" style="text-align:center; padding: 20px; width:100%; font-size:12px;">Kosong.</div>`; return; }
-    container.innerHTML = driveLinks.map(d => `
-        <div class="glass-card" style="padding:12px 15px; display:flex; align-items:center; gap:10px; min-width:200px; flex-shrink:0;">
-            ${svgs.link} <a href="${d.url}" target="_blank" rel="noopener" class="text-neutral" style="text-decoration:none; font-size:13px; font-weight:800; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</a>
-            <button onclick="deleteDriveLink('${d.id}')" class="btn-icon-danger" style="width:28px; height:28px; padding:4px;">${svgs.trash}</button>
-        </div>
-    `).join('');
-}
-function openAddDriveModal() { document.getElementById('drive-name').value = ''; document.getElementById('drive-url').value = ''; openModal('addDriveModal'); }
-function saveDriveLink() {
-    const name = properTitleCase(document.getElementById('drive-name').value.trim()); const url = document.getElementById('drive-url').value.trim();
-    if(!name || !url.startsWith('http')) { showToast("URL tidak valid", "error"); return; }
-    driveLinks.push({ id: Date.now().toString(), name, url }); setLS('drivelinks', JSON.stringify(driveLinks)); renderDriveLinks(); closeModal('addDriveModal'); showToast("Tersimpan");
-}
-function deleteDriveLink(id) { driveLinks = driveLinks.filter(d => d.id !== id); setLS('drivelinks', JSON.stringify(driveLinks)); renderDriveLinks(); }
-
-function openCSVModal() { 
-    if(db.length === 0) { showToast("Data kosong.", "error"); return; } 
-    document.getElementById('csv-start-hidden').value = ''; document.getElementById('disp-csv-start').innerText = 'Pilih...'; document.getElementById('csv-end-hidden').value = ''; document.getElementById('disp-csv-end').innerText = 'Pilih...';
-    openModal('csvExportModal'); 
-}
-function executeCSVExport() { 
-    closeModal('csvExportModal'); let csv = "Tanggal,Dompet,Tipe,Kategori,Keterangan,Pihak_Terkait,Link_Drive,Nominal\n"; 
-    const startDateVal = document.getElementById('csv-start-hidden').value; const endDateVal = document.getElementById('csv-end-hidden').value;
-    const filteredData = db.filter(tx => { 
-        if(tx.wallet !== activeWallet) return false; 
-        let txDate = new Date(tx.date); txDate.setHours(0,0,0,0);
-        if (startDateVal) { let sDate = new Date(startDateVal); sDate.setHours(0,0,0,0); if (txDate < sDate) return false; }
-        if (endDateVal) { let eDate = new Date(endDateVal); eDate.setHours(23,59,59,999); if (txDate > eDate) return false; }
-        return true; 
-    });
-    if(filteredData.length === 0) { showToast("Data filter kosong.", "error"); return; }
-    [...filteredData].sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(row => { let r = [formatDetailDate(row.date), row.wallet, row.type, row.category, row.desc, row.pihak_terkait||'-', row.link_bukti||'-', row.amount]; csv += r.map(v => `"${v}"`).join(",") + "\n"; }); 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Laporan_TPA_${activeWallet.toUpperCase()}_${new Date().toISOString().split('T')[0]}.csv`; 
-    document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("Berhasil Diunduh", "success"); 
-}
-
-function clearSearch() { document.getElementById('searchTxInput').value = ''; document.getElementById('searchClearBtn').style.display = 'none'; updateUI(''); }
-
-// ==========================================
-// ADMIN: SPP & ABSENSI ENGINE (Backward Logging)
-// ==========================================
-function registerStudent() {
-    const input = document.getElementById('newStudentName'); const name = properTitleCase(input.value.trim());
-    if (!name) { showToast("Nama murid wajib diisi", "error"); return; }
-    sppData.push({ id: Date.now().toString(), name: name, months: [], presentToday: false, attendLogs: [] });
-    setLS('spp_data_v51', JSON.stringify(sppData)); input.value = ''; renderAdminStudentTable(); showToast("Murid terdaftar", "success");
-}
-
-function deleteStudentAdmin(id) { 
-    openCustomConfirm("Hapus Murid", "Riwayat SPP dan Absen murid ini akan hilang permanen.", () => {
-        sppData = sppData.filter(s => s.id !== id); setLS('spp_data_v51', JSON.stringify(sppData)); renderAdminStudentTable(); showToast("Dihapus", "success");
-    });
-}
-
-function openEditStudentModal(id) {
-    const s = sppData.find(x => x.id === id); if(!s) return;
-    document.getElementById('editStudentTargetId').value = id; document.getElementById('editStudentNameInput').value = s.name;
-    openModal('editStudentModal');
-}
-function saveEditStudentName() {
-    const id = document.getElementById('editStudentTargetId').value; const newName = properTitleCase(document.getElementById('editStudentNameInput').value.trim());
-    if(!newName) return; const sIdx = sppData.findIndex(x => x.id === id);
-    if(sIdx > -1) { sppData[sIdx].name = newName; setLS('spp_data_v51', JSON.stringify(sppData)); closeModal('editStudentModal'); renderAdminStudentTable(); showToast("Nama Diubah"); }
-}
-
-function filterAdminStudentTable() {
-    const query = document.getElementById('searchStudentAdmin').value.toLowerCase();
-    const rows = document.querySelectorAll('.admin-spp-row');
-    rows.forEach(row => { const name = row.querySelector('td').innerText.toLowerCase(); row.style.display = name.includes(query) ? '' : 'none'; });
-}
-
-function openMultiMonthSelect(id) {
-    const s = sppData.find(x => x.id === id); if(!s) return;
-    document.getElementById('multiMonthTargetId').value = id; document.getElementById('multiMonthStudentName').innerText = `SPP: ${s.name}`;
-    const grid = document.getElementById('multiMonthGrid');
-    grid.innerHTML = monthsArr.map(m => `
-        <div><input type="checkbox" id="cb_${m}" value="${m}" class="spp-month-cb" ${s.months.includes(m) ? 'checked' : ''}><label for="cb_${m}" class="spp-month-label">${m.substring(0,3)}</label></div>
-    `).join('');
-    openModal('multiMonthSelectModal');
-}
-
-function saveMultiMonthSpp() {
-    const id = document.getElementById('multiMonthTargetId').value; const sIdx = sppData.findIndex(x => x.id === id); if(sIdx === -1) return;
-    const selected = []; document.querySelectorAll('.spp-month-cb:checked').forEach(cb => selected.push(cb.value));
-    sppData[sIdx].months = selected; setLS('spp_data_v51', JSON.stringify(sppData)); closeModal('multiMonthSelectModal'); renderAdminStudentTable(); showToast("Status SPP Diperbarui");
-}
-
-function openAbsenDetailModal(id) {
-    const s = sppData.find(x => x.id === id); if(!s) return;
-    document.getElementById('absenTargetId').value = id; document.getElementById('absenStudentName').innerText = `Absensi: ${s.name}`;
-    const grid = document.getElementById('absenDaysGrid'); const today = new Date(); let html = '';
-    
-    for(let i=0; i<7; i++) {
-        let loopDate = new Date(); loopDate.setDate(today.getDate() - i);
-        let dateStr = loopDate.toISOString().split('T')[0]; let displayStr = formatDetailDate(loopDate.toISOString()).split(' - ')[0];
-        let isPresent = s.attendLogs ? s.attendLogs.some(l => l.time.startsWith(dateStr) && l.status === 'Hadir') : false;
-
-        html += `
-        <div class="border-box" style="display:flex; justify-content:space-between; align-items:center; background:var(--hitam-btn); border-radius:10px;">
-            <span style="font-size:12px; font-weight:800; color:var(--teks-netral);">${i===0?'HARI INI':displayStr}</span>
-            <div style="display:flex; gap:10px;">
-                <label style="font-size:11px; display:flex; align-items:center; gap:4px; color:var(--hijau);"><input type="radio" name="abs_${i}" value="Hadir" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Hadir')" ${isPresent?'checked':''}> Hadir</label>
-                <label style="font-size:11px; display:flex; align-items:center; gap:4px; color:var(--merah-solid);"><input type="radio" name="abs_${i}" value="Absen" onchange="saveAbsenMundur('${id}', '${dateStr}', 'Absen')" ${!isPresent?'checked':''}> Absen</label>
-            </div>
-        </div>`;
-    }
-    grid.innerHTML = html; openModal('absenDetailModal');
-}
-
-function saveAbsenMundur(id, dateStr, statusVal) {
-    const sIdx = sppData.findIndex(x => x.id === id);
-    if(sIdx > -1) {
-        if(!sppData[sIdx].attendLogs) sppData[sIdx].attendLogs = [];
-        sppData[sIdx].attendLogs = sppData[sIdx].attendLogs.filter(l => !l.time.startsWith(dateStr));
-        const fakeTime = `${dateStr}T16:00:00.000Z`; sppData[sIdx].attendLogs.unshift({ status: statusVal, time: fakeTime });
-        sppData[sIdx].attendLogs.sort((a,b) => new Date(b.time) - new Date(a.time)); if(sppData[sIdx].attendLogs.length > 20) sppData[sIdx].attendLogs.length = 20;
-
-        const todayStr = new Date().toISOString().split('T')[0];
-        if(dateStr === todayStr) { sppData[sIdx].presentToday = (statusVal === 'Hadir'); renderAdminStudentTable(); }
-        setLS('spp_data_v51', JSON.stringify(sppData));
-    }
-}
-
-function toggleAttendance(id, isPresent) {
-    const sIdx = sppData.findIndex(x => x.id === id);
-    if(sIdx > -1) {
-        sppData[sIdx].presentToday = isPresent; if(!sppData[sIdx].attendLogs) sppData[sIdx].attendLogs = [];
-        const nowISO = new Date().toISOString(); const todayStr = nowISO.split('T')[0];
-        sppData[sIdx].attendLogs = sppData[sIdx].attendLogs.filter(l => !l.time.startsWith(todayStr));
-        sppData[sIdx].attendLogs.unshift({ status: isPresent ? 'Hadir' : 'Batal / Absen', time: nowISO });
-        sppData[sIdx].attendLogs.sort((a,b) => new Date(b.time) - new Date(a.time)); if(sppData[sIdx].attendLogs.length > 20) sppData[sIdx].attendLogs.length = 20;
-        setLS('spp_data_v51', JSON.stringify(sppData));
-    }
-}
-
-function downloadAbsensiCSV() {
-    if(sppData.length === 0) { showToast("Data murid kosong.", "error"); return; }
-    let csv = "Nama_Murid,Bulan_Lunas,Status_Hadir_Hari_Ini,Log_Absensi_Mingguan\n";
-    sppData.forEach(s => {
-        const bln = s.months.join(" & ") || "Belum Ada"; const hdr = s.presentToday ? "HADIR" : "TIDAK HADIR";
-        const logs = (s.attendLogs || []).map(l => `[${formatDetailDate(l.time)}: ${l.status}]`).join(" | "); csv += `"${s.name}","${bln}","${hdr}","${logs}"\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Rekap_Absen_TPA_${new Date().toISOString().split('T')[0]}.csv`; 
-    document.body.appendChild(link); link.click(); document.body.removeChild(link); showToast("Rekap Absen Diunduh", "success");
-}
-
-// ==========================================
-// PUBLIC PORTAL ENGINE & SHARE LINK
-// ==========================================
-function openShareLinkModal() { 
-    const loc = window.location; const url = `${loc.protocol}//${loc.host}${loc.pathname}?view=public`;
-    document.getElementById('publicLinkInput').value = url; openModal('shareLinkModal'); 
-}
-function copyPublicLink() {
-    const input = document.getElementById('publicLinkInput'); input.select(); input.setSelectionRange(0, 99999); 
-    try { navigator.clipboard.writeText(input.value); showToast("Tautan Disalin!", "success"); } catch(e) { document.execCommand("copy"); showToast("Disalin!", "success"); }
-}
-
-function handlePublicAutocomplete() {
-    const val = document.getElementById('publicStudentInput').value.toLowerCase(); const list = document.getElementById('publicAutocompleteList');
-    if (!val) { list.classList.add('hidden'); return; }
-    const matches = sppData.filter(s => s.name.toLowerCase().includes(val));
-    if (matches.length === 0) { list.classList.add('hidden'); return; }
-    list.innerHTML = matches.map(m => `<div class="custom-option text-neutral" onclick="selectPublicStudent('${m.name}')">${m.name}</div>`).join('');
-    list.classList.remove('hidden');
-}
-
-function selectPublicStudent(name) { document.getElementById('publicStudentInput').value = name; document.getElementById('publicAutocompleteList').classList.add('hidden'); }
-
-// ==========================================
-// PROFILE VIEW & REQUESTS
-// ==========================================
-function openProfileView() { 
-    document.getElementById('viewGoogleStatus').innerText = (APP_MODE === 'CLOUD') ? (profile.googleEmail || currentUser?.email || "Terhubung") : "Tidak Terhubung";
-    document.getElementById('viewGoogleStatus').style.color = (APP_MODE === 'CLOUD') ? 'var(--hijau-terang)' : 'var(--text-muted)';
-    document.getElementById('textGoogleLink').innerText = (APP_MODE === 'CLOUD') ? "Logout" : "Hubungkan";
-    document.getElementById('viewJoinDate').innerText = "Bergabung: " + formatDetailDate(profile.joinDate).split(' - ')[0];
-    
-    document.getElementById('btnGoogleLink').onclick = () => {
-        if(APP_MODE === 'CLOUD') { openCustomConfirm("Logout Cloud", "Keluar ke Mode Guest? Data aman tersimpan.", async () => { if(sbClient && navigator.onLine) await sbClient.auth.signOut(); else forceLogoutToGuest(); }); } else { openModal('googleAuthModal'); }
-    };
-    openModal('profileViewModal'); 
-}
-
-function requestProfileEdit() { 
-    if(profile.pin && profile.pin !== '') { 
-        closeModal('profileViewModal'); document.getElementById('actionPinType').value = 'edit_profile'; document.getElementById('inputActionPin').value = ''; openModal('actionPinModal'); 
-    } else { openProfileEdit(); } 
-}
-
-function openProfileEdit() { 
-    document.getElementById('editProfileImg').src = profile.photo; 
-    document.getElementById('editName').value = profile.name !== 'Pengurus Baru' ? profile.name : ''; 
-    selectGender(profile.gender); document.getElementById('editPin').value = ''; openModal('profileEditModal'); 
-}
-function selectGender(val) { document.getElementById('editGender').value = val; document.getElementById('dispGenderVal').innerText = val; closeModal(''); }
-
-const profileUploader = document.getElementById('profileUploader');
-if(profileUploader) profileUploader.addEventListener('change', function(e) { 
-    const f = e.target.files[0]; if(!f) return; showToast("Memproses Foto...", "syncing"); const reader = new FileReader(); 
-    reader.onload = function(evt) { const img = new Image(); img.onload = function() { 
-        const canvas = document.createElement('canvas'); const MAX = 300; let w = img.width, h = img.height; 
-        if(w > h) { if(w > MAX) { h *= MAX/w; w = MAX; } } else { if(h > MAX) { w *= MAX/h; h = MAX; } } 
-        canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h); 
-        profile.photo = canvas.toDataURL('image/jpeg', 0.6); document.getElementById('editProfileImg').src = profile.photo; 
-    }; img.src = evt.target.result; }; reader.readAsDataURL(f); 
-});
-
-// ==========================================
-// EXTRAS: GOOGLE AUTH, OTP EMAILJS, & RESET
-// ==========================================
-document.getElementById('btnRealGoogleLogin')?.addEventListener('click', async () => { 
-    const msg = document.getElementById('googleAuthStatusMsg');
-    msg.innerText = "Memproses login ke Google..."; msg.style.color = 'var(--biru)';
-    if(typeof window.supabase === 'undefined' || !sbClient || !navigator.onLine) { msg.innerText = "Gagal menyambung. Cek koneksi internet."; msg.style.color = 'var(--merah-solid)'; return; }
-    try { await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); } catch (e) { msg.innerText = "Terjadi kesalahan sistem OAuth."; msg.style.color = 'var(--merah-solid)'; }
-});
 
 function initResetSequence() { 
-    if(!profile.pin) { showToast("Buat PIN Keamanan dahulu di menu Edit Profil.", "error"); return; } 
-    closeModal('profileViewModal'); document.getElementById('actionPinType').value = 'reset'; document.getElementById('inputActionPin').value = ''; openModal('actionPinModal'); 
+    if(!profile.pin) { showToast("Tetapkan PIN Keamanan terlebih dahulu di menu Edit Profil.", "error"); return; } 
+    closeModal('profileViewModal'); 
+    document.getElementById('actionPinType').value = 'reset'; 
+    document.getElementById('inputActionPin').value = ''; 
+    openModal('actionPinModal'); 
 }
+
 async function executeFactoryReset() { 
-    showToast("Membersihkan Database...", "syncing"); 
-    try { if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient) { await sbClient.from('transactions').delete().eq('user_id', currentUser.id); } } catch(e) {}
+    showToast("Mengosongkan Entri Database...", "syncing"); 
+    try { 
+        if(APP_MODE === 'CLOUD' && navigator.onLine && sbClient) await sbClient.from('transactions').delete().eq('user_id', currentUser.id); 
+    } catch(e) {}
     db = []; sppData = []; attendanceData = { lastReset: new Date().toISOString(), records: {} }; pendingSync = []; wishlists = []; driveLinks = [];
-    removeLS('cloud_db'); removeLS('guest_db'); removeLS('spp_data_v51'); removeLS('attendance_data_v51'); removeLS('pending_sync'); removeLS('wishlists'); removeLS('drivelinks');
-    updateUI(''); renderWishlist(); renderDriveLinks(); showToast("Reset Selesai.", "success"); 
+    removeLS('cloud_db'); removeLS('guest_db'); removeLS('spp_data'); removeLS('attendance_data'); removeLS('pending_sync'); removeLS('wishlists'); removeLS('drivelinks');
+    updateUI(''); if(typeof renderWishlist==='function')renderWishlist(); if(typeof renderDriveLinks==='function')renderDriveLinks(); showToast("Format Basis Data Berhasil.", "success"); 
 }
 
-function startOTPResetProcess() { 
-    closeModal('actionPinModal'); 
-    if(!profile.googleLinked || !profile.googleEmail) { showToast("Akun belum terhubung Cloud!", "error"); return; } 
-    if(!navigator.onLine) { showToast("Butuh koneksi internet!", "error"); return; } 
-    document.getElementById('displayUserEmail').innerText = profile.googleEmail; openModal('otpRequestModal'); 
-}
-function sendOTPEmail() { 
-    const btn = document.getElementById('btnSendOTP'); btn.innerText = "Mengirim..."; btn.disabled = true; 
-    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpExpiryTime = Date.now() + 300000; 
-    if (typeof emailjs !== 'undefined') {
-        emailjs.send('service_l08406o', 'template_osq8mgb', { to_email: profile.googleEmail, to_name: profile.name, otp_code: generatedOTP })
-        .then(() => { showToast("OTP Terkirim ke Email!"); closeModal('otpRequestModal'); openModal('otpVerifyModal'); btn.innerText="Kirim Kode OTP"; btn.disabled=false; })
-        .catch(() => { showToast("Gagal kirim email. Cek limitasi API.", "error"); btn.innerText="Kirim Kode OTP"; btn.disabled=false; }); 
-    } else { showToast("Sistem Email Offline.", "error"); btn.innerText="Kirim Kode OTP"; btn.disabled=false; }
-}
-async function verifyOTPAndSavePin() { 
-    const c = document.getElementById('inputOTP').value; const np = document.getElementById('inputNewPinOTP').value; 
-    if(Date.now() > otpExpiryTime) { showToast("OTP Kadaluarsa!", "error"); return; } 
-    if(c !== generatedOTP) { showToast("OTP Salah!", "error"); return; } 
-    if(np.length < 4) { showToast("PIN minimal 4 digit!", "error"); return; } 
-    profile.pin = await hashPIN(np); setLS('profile_secure_v51', JSON.stringify(profile)); 
-    if(APP_MODE === 'CLOUD' && sbClient) sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
-    generatedOTP = ""; closeModal('otpVerifyModal'); showToast("PIN Berhasil Direset!"); 
-}
-
-function triggerDevSupportNotification() {
-    if(isPublicMode) return;
-    const msgs = ["Bantu Developer terus update aplikasi dengan klik tombol 'Traktir Kopi' di menu Profil 🙏", "Aplikasi bermanfaat? Dukung Developer via SociaBuzz di menu Profil ☕", "TPA Finance 100% Gratis. Dukung pemeliharaan server di menu Profil ❤️"];
-    showToast(msgs[Math.floor(Math.random() * msgs.length)], "support");
-}
-setInterval(triggerDevSupportNotification, 180000); 
-
-// KICKSTART APP
-bootApp();
+// Execution Kickstart (Memastikan seluruh DOM selesai diload)
+document.addEventListener('DOMContentLoaded', () => {
+    // Memulai sistem TPA v5.3
+    if (typeof bootApp === 'function') bootApp();
+});
