@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TPA Finance">
 <link rel="apple-touch-icon" href="icon-192x192.png">
-<title>TPA Finance v4.4 - Enterprise Edition</title>
+<title>TPA Finance v4.5 - Enterprise Edition</title>
 
 <!-- Tema dibaca SEBELUM render agar refresh tidak kembali ke gelap -->
 <script>
@@ -276,7 +276,18 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div class="pub-body">
-        <!-- Notifikasi -->
+        <!-- Jadwal Sholat Publik -->
+        <section class="pub-section">
+            <h3 class="pub-h">Jadwal Sholat <span class="pub-year" id="pubPrayerLoc"></span></h3>
+            <div class="prayer-times-scroll" id="pubPrayerGrid"></div>
+        </section>
+
+       <!-- Target Dana Publik -->
+        <section class="pub-section">
+            <h3 class="pub-h">Target Dana TPA</h3>
+            <div class="stack-list" id="pubWishlistGrid"></div>
+        </section>
+       <!-- Notifikasi -->
         <section class="pub-section">
             <h3 class="pub-h">Notifikasi Terbaru</h3>
             <div id="pubNotifList" class="pub-notif-list"></div>
