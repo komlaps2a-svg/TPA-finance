@@ -1,5 +1,5 @@
 /* =========================================================
-   TPA FINANCE v4.6 - STYLE.CSS (ENTERPRISE EDITION)
+   TPA FINANCE v4.7 - STYLE.CSS (ENTERPRISE EDITION)
    Pembaruan Struktural: Presisi Tata Letak, Flexbox Strict, 
    & Estetika Modern
 ========================================================= */
@@ -225,9 +225,11 @@ td { padding: 18px 16px; border-bottom: 1px solid var(--border); font-size: 14px
 .empty-cell { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; } .tx-time { color: var(--text-muted); font-size: 12px; white-space: nowrap; } .tx-cat { white-space: nowrap; width: 1%; } .tx-desc { min-width: 220px; } .tx-desc .text-neutral { font-weight: 800; }
 .tx-pihak { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: block; } .tx-link { color: var(--biru); font-size: 12px; font-weight: 800; text-decoration: underline; display: block; margin-top: 6px; }
 .aksi-col { width: 1%; text-align: center; padding-right: 18px; } .aksi-wrap { display: flex; gap: 10px; justify-content: center; }
-.badge-cat { display: inline-block; padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; border: 1px solid var(--border); background: var(--hitam-btn); color: var(--teks-netral); }
-.wallet-chip { margin-top: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; padding: 4px 10px; border-radius: 20px; display: inline-block; color: #fff; background: var(--hijau); }
-.wallet-chip.w-wakaf { background: var(--ungu); } .wallet-chip.w-operasional { background: var(--biru); } .wallet-chip.w-darurat { background: var(--merah-solid); }
+.badge-cat { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; border: 1px solid var(--border); background: var(--hitam-btn); color: var(--teks-netral); vertical-align: middle; }
+.wallet-chip { margin-top: 0; margin-left: 10px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; color: #fff; background: var(--hijau); vertical-align: middle; }
+.wallet-chip.w-wakaf { background: var(--ungu); } 
+.wallet-chip.w-operasional { background: var(--biru); } 
+.wallet-chip.w-darurat { background: var(--merah-solid); }
 .amt-cell { font-family: 'Courier New', monospace; font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 900; letter-spacing: -.5px; text-align: right; white-space: nowrap; } .amt-in { color: var(--hijau-terang) !important; } .amt-out { color: var(--merah-solid) !important; }
 .public-tx-table th:nth-child(4), .public-tx-table td.aksi-col { display: none !important; }
 
