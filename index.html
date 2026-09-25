@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TPA Finance">
 <link rel="apple-touch-icon" href="icon-192x192.png">
-<title>TPA Finance v4.7 - Enterprise Edition</title>
+<title>TPA Finance v4.8 - Enterprise Edition</title>
 
 <!-- Tema dibaca SEBELUM render agar refresh tidak kembali ke gelap -->
 <script>
@@ -772,6 +772,8 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="text" id="wishlist-name" class="input-field glass-card text-neutral" autocomplete="off">
         <label class="input-label">Estimasi Kebutuhan (Rp)</label>
         <input type="text" id="wishlist-amount" class="input-field glass-card text-neutral" inputmode="numeric" placeholder="0" autocomplete="off">
+        <label class="input-label">Dana Terkumpul Saat Ini (Rp)</label>
+        <input type="text" id="wishlist-collected" class="input-field glass-card text-neutral" inputmode="numeric" placeholder="0 (Bisa dikosongkan)" autocomplete="off">
         <button class="btn-modal btn-primary" onclick="saveWishlist()">Simpan Target</button>
         <button class="btn-modal btn-cancel" onclick="closeModal('addWishlistModal')">Batal</button>
     </div>
