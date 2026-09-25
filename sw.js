@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tpa-finance-cache-v5.2.1';
+const CACHE_NAME = 'tpa-finance-cache-v5.2.2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
