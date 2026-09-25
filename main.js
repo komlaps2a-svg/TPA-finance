@@ -1021,7 +1021,7 @@ function saveDriveLink() {
     const name = properTitleCase($('drive-name').value.trim()), url =$('drive-url').value.trim();
     if (!name || !/^https?:\/\//i.test(url)) { showToast("Nama dan URL (https://...) harus valid.", "error"); return; }
     driveLinks.push({ id: Date.now().toString(), name, url }); 
-    saveScopedData(); /*
+    saveScopedData();
     renderDriveLinks(); closeModal('addDriveModal'); showToast("Pintasan Drive tersimpan.");
 }
 function deleteDriveLink(id) { 
