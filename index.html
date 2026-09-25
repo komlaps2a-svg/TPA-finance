@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TPA Finance">
 <link rel="apple-touch-icon" href="icon-192x192.png">
-<title>TPA Finance v5.0 - Enterprise Edition</title>
+<title>TPA Finance v5.1 - Enterprise Edition</title>
 
 <!-- Tema dibaca SEBELUM render agar refresh tidak kembali ke gelap -->
 <script>
@@ -776,6 +776,20 @@ document.addEventListener('DOMContentLoaded', function () {
         <input type="text" id="wishlist-collected" class="input-field glass-card text-neutral" inputmode="numeric" placeholder="0 (Bisa dikosongkan)" autocomplete="off">
         <button class="btn-modal btn-primary" onclick="saveWishlist()">Simpan Target</button>
         <button class="btn-modal btn-cancel" onclick="closeModal('addWishlistModal')">Batal</button>
+    </div>
+</div>
+
+<!-- UPDATE TARGET DANA (TAMBAH SALDO) -->
+<div class="modal-overlay" id="updateWishlistModal">
+    <div class="modal-card">
+        <h2 class="text-neutral modal-header-title">Tambah Saldo Target</h2>
+        <input type="hidden" id="update-wishlist-id">
+        <p id="update-wishlist-name" class="student-tag" style="margin-bottom:20px;"></p>
+        <label class="input-label">Nominal Tambahan (Rp)</label>
+        <input type="text" id="update-wishlist-amount" class="input-field glass-card text-neutral amount-input" inputmode="numeric" placeholder="0" autocomplete="off">
+        <p class="muted-xs ta-center">Dana ini akan ditambahkan ke total dana terkumpul saat ini untuk memperbarui progres bar.</p>
+        <button class="btn-modal btn-primary" onclick="executeWishlistUpdate()">Tambahkan Dana</button>
+        <button class="btn-modal btn-cancel" onclick="closeModal('updateWishlistModal')">Batal</button>
     </div>
 </div>
 
