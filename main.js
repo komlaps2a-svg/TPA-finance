@@ -1,12 +1,12 @@
 /* =========================================================
-   TPA FINANCE v4.9 - MAIN.JS
+   TPA FINANCE v5.0 - MAIN.JS
    Isi: Config, State, Utils, Toast Apple, Modal + Scroll Lock,
         DB Lokal, Jadwal Sholat GPS Live, Versi/Refresh, Supabase Sync,
         Tema, Header & Profil (lihat + edit).
 ========================================================= */
 "use strict";
 
-const APP_VERSION = '4.9';
+const APP_VERSION = '5.0';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
@@ -1018,15 +1018,16 @@ function renderDriveLinks() {
 }
 function openAddDriveModal() { $('drive-name').value = '';$('drive-url').value = ''; openModal('addDriveModal'); }
 function saveDriveLink() {
-    const name = properTitleCase($('drive-name').value.trim()), url =$('drive-url').value.trim();
+    const name = properTitleCase($('drive-name').value.trim()), url = $('drive-url').value.trim();
     if (!name || !/^https?:\/\//i.test(url)) { showToast("Nama dan URL (https://...) harus valid.", "error"); return; }
     driveLinks.push({ id: Date.now().toString(), name, url }); 
     saveScopedData();
     renderDriveLinks(); closeModal('addDriveModal'); showToast("Pintasan Drive tersimpan.");
 }
+
 function deleteDriveLink(id) { 
     driveLinks = driveLinks.filter(d => d.id !== id); 
-    saveScopedData(); /*
+    saveScopedData();
     renderDriveLinks(); 
 }
 
