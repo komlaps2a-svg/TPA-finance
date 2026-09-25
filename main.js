@@ -1,12 +1,12 @@
 /* =========================================================
-   TPA FINANCE v5.0 - MAIN.JS
+   TPA FINANCE v5.1 - MAIN.JS
    Isi: Config, State, Utils, Toast Apple, Modal + Scroll Lock,
         DB Lokal, Jadwal Sholat GPS Live, Versi/Refresh, Supabase Sync,
         Tema, Header & Profil (lihat + edit).
 ========================================================= */
 "use strict";
 
-const APP_VERSION = '5.0';
+const APP_VERSION = '5.1';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
@@ -979,6 +979,7 @@ function executeTransferAntarDompet() {
 // TARGET DANA, DRIVE, EXPORT CSV, PENCARIAN
 // ==========================================
 bindMoneyInput('wishlist-collected');
+bindMoneyInput('update-wishlist-amount');
 
 function renderWishlist() {
     const c = $('wishlistContainer'); if (!c) return;
@@ -993,7 +994,10 @@ function renderWishlist() {
                     <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%"></div></div>
                 </div>
             </div>
-            <button onclick="promptActionPin('delete_wishlist', '${w.id}')" class="btn-icon-danger">${svgs.trash}</button>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button onclick="openUpdateWishlist('${w.id}')" class="btn-icon-neutral sm" style="width:40px; height:40px; border-radius:12px;">${svgs.plus_bold}</button>
+                <button onclick="promptActionPin('delete_wishlist', '${w.id}')" class="btn-icon-danger">${svgs.trash}</button>
+            </div>
         </div>`;
     }).join('');
 }
@@ -1010,7 +1014,22 @@ function executeWishlistDelete(id) {
         saveScopedData(); renderWishlist(); publishPublicSnapshot(); showToast("Target dana dihapus.");
     });
 }
-
+function openUpdateWishlist(id) {
+    const w = wishlists.find(x => x.id === id); if (!w) return;
+    $('update-wishlist-id').value = id;
+    $('update-wishlist-name').innerText = w.name;
+    $('update-wishlist-amount').value = '';
+    openModal('updateWishlistModal');
+}
+function executeWishlistUpdate() {
+    const id = $('update-wishlist-id').value;
+    const w = wishlists.find(x => x.id === id); if (!w) return;
+    const addAmt = readAmount('update-wishlist-amount');
+    if (addAmt <= 0) { showToast("Masukkan nominal tambahan yang valid.", "error"); return; }
+    w.collected = (w.collected || 0) + addAmt;
+    saveScopedData(); renderWishlist(); publishPublicSnapshot(); closeModal('updateWishlistModal');
+    showToast(`Berhasil menambahkan ${formatRp(addAmt)} ke target ${w.name}.`);
+}
 function renderDriveLinks() {
     const c = $('driveContainer'); if (!c) return;
     if (!driveLinks.length) { c.innerHTML = `<div class="glass-card empty-box text-neutral">Kosong.</div>`; return; }
@@ -1024,13 +1043,11 @@ function saveDriveLink() {
     saveScopedData();
     renderDriveLinks(); closeModal('addDriveModal'); showToast("Pintasan Drive tersimpan.");
 }
-
-function deleteDriveLink(id) { 
-    driveLinks = driveLinks.filter(d => d.id !== id); 
+function deleteDriveLink(id) {
+    driveLinks = driveLinks.filter(d => d.id !== id);
     saveScopedData();
-    renderDriveLinks(); 
+    renderDriveLinks();
 }
-
 function downloadCSV(csv, filename) {
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }), a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -1056,7 +1073,6 @@ function executeCSVExport() {
     rows.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(r => { csv += [formatDetailDate(r.date), r.wallet, r.type, r.category, r.desc, r.pihak_terkait || '-', r.link_bukti || '-', r.amount].map(v => `"${String(v).replace(/"/g, '""')}"`).join(",") + "\n"; });
     downloadCSV(csv, `Laporan_TPA_${activeWallet.toUpperCase()}_${localDateKey()}.csv`); showToast("Laporan CSV berhasil diunduh.");
 }
-
 const searchInput = $('searchTxInput'), searchClear = $('searchClearBtn');
 if (searchInput) searchInput.addEventListener('input', e => { const v = e.target.value.toLowerCase(); searchClear.style.display = v ? 'block' : 'none'; updateUI(v); });
 function clearSearch() { searchInput.value = ''; searchClear.style.display = 'none'; updateUI(''); }
@@ -1106,7 +1122,6 @@ function attStatus(s, d) {
     const k = localDateKey(d), tk = localDateKey();
     if (s.att && s.att[k]) return 'hadir'; if (k > tk) return 'next'; return k === tk ? 'belum' : 'absen';
 }
-
 function openSppAbsenModal() { openModal('sppAbsenModal'); renderAdminStudentTable(); }
 function registerStudent() {
     const input = $('newStudentName'), name = properTitleCase(input.value.trim());
@@ -1123,7 +1138,6 @@ function saveEditStudentName() {
     const s = studentById($('editStudentTargetId').value), n = properTitleCase($('editStudentNameInput').value.trim());
     if (!s || !n) return; s.name = n; saveSpp(); closeModal('editStudentModal'); renderAdminStudentTable(); showToast("Nama murid diubah.");
 }
-
 function monthBadges(list, cls) { 
     if (!list.length) return '<span class="muted-xs">-</span>'; 
     return list.map(m => `<span class="mb ${cls}">${m.substring(0, 3)}</span>`).join(''); 
@@ -1239,29 +1253,57 @@ window.publicTx = [];
 
 async function loadPublicData() {
     let ok = false;
-    if (publicOwner) {
-        if (navigator.onLine && window.supabase) {
-            try {
-                if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                const { data, error } = await sbClient.from('public_snapshot').select('data,updated_at').eq('owner_id', publicOwner).maybeSingle();
-                if (error) throw error;
-                if (data && data.data) { 
-                    notifyPublicChanges(data.data); 
-                    publicStudents = data.data.students || []; window.publicTx = data.data.tx || []; 
-                    window.publicWishlists = data.data.wishlists || []; 
-                    publicUpdated = data.updated_at || data.data.updatedAt; 
-                    publicSource = 'cloud'; ok = true; 
-                }
-            } catch (e) {}
-        }
-        if (!ok) { publicStudents = []; window.publicTx = []; window.publicWishlists = []; publicSource = 'cloud_failed'; }
-    } else {
-        db = loadLocalDB(); loadScopedData();
-        publicStudents = sppData.map(s => ({ id: s.id, name: s.name, months: s.months, unpaid: getUnpaid(s), att: s.att })); 
-        window.publicTx = db; window.publicWishlists = wishlists; 
-        publicUpdated = new Date().toISOString(); publicSource = 'lokal'; ok = true;
+    let fromCloud = false;
+
+    // Jika parameter id cloud (?o=...) tersedia, panggil dari Supabase
+    if (publicOwner && navigator.onLine && window.supabase) {
+        try {
+            if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const { data, error } = await sbClient.from('public_snapshot').select('data,updated_at').eq('owner_id', publicOwner).maybeSingle();
+            if (error) throw error;
+            if (data && data.data) { 
+                notifyPublicChanges(data.data); 
+                publicStudents = data.data.students || []; 
+                window.publicTx = data.data.tx || []; 
+                window.publicWishlists = data.data.wishlists || []; 
+                publicUpdated = data.updated_at || data.data.updatedAt; 
+                publicSource = 'cloud'; 
+                ok = true; 
+                fromCloud = true;
+            }
+        } catch (e) {}
     }
-    publicLoaded = true; return ok;
+
+    // Sistem Fallback: Jika koneksi gagal, data belum disinkronkan, atau test lokal
+    if (!fromCloud) {
+        const tempUid = publicOwner || 'guest';
+        
+        // Membaca file lokal berdasarkan UID untuk memastikan data preview tetap terbaca
+        let localSpp = safeParse(localStorage.getItem(LS_PREFIX + 'spp_' + tempUid), []);
+        if (!localSpp.length) localSpp = safeParse(localStorage.getItem(LS_PREFIX + 'spp_guest'), []);
+        
+        let localWish = safeParse(localStorage.getItem(LS_PREFIX + 'wish_' + tempUid), []);
+        if (!localWish.length) localWish = safeParse(localStorage.getItem(LS_PREFIX + 'wish_guest'), []);
+        
+        let localDb = [];
+        try {
+            const dbKey = LS_PREFIX + (publicOwner ? 'cloud_db' : 'guest_db');
+            const c = localStorage.getItem(dbKey);
+            if (c && typeof CryptoJS !== 'undefined') localDb = JSON.parse(CryptoJS.AES.decrypt(c, SECRET_KEY).toString(CryptoJS.enc.Utf8));
+            else { const f = localStorage.getItem(dbKey + '_fallback'); if (f) localDb = JSON.parse(f); }
+        } catch(e){}
+
+        // Mapping ulang struktur data
+        publicStudents = localSpp.map(s => ({ id: s.id, name: s.name, months: s.months, unpaid: (Array.isArray(s.unpaid) ? s.unpaid : getUnpaid(s)), att: s.att || {} })); 
+        window.publicTx = localDb || []; 
+        window.publicWishlists = localWish || []; 
+        publicUpdated = new Date().toISOString(); 
+        publicSource = publicOwner ? 'cloud_failed' : 'lokal'; 
+        ok = true;
+    }
+    
+    publicLoaded = true; 
+    return ok;
 }
 function notifyPublicChanges(next) {
     if (!publicLoaded || !publicStudentName) return;
