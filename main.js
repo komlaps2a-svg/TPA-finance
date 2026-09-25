@@ -1,13 +1,12 @@
 /* =========================================================
-   TPA FINANCE v4.7 - MAIN.JS
+   TPA FINANCE v4.8 - MAIN.JS
    Isi: Config, State, Utils, Toast Apple, Modal + Scroll Lock,
         DB Lokal, Jadwal Sholat GPS Live, Versi/Refresh, Supabase Sync,
         Tema, Header & Profil (lihat + edit).
-   Bagian 2 & 3 disambung di BAWAH file ini (satu file main.js).
 ========================================================= */
 "use strict";
 
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.8';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
@@ -31,13 +30,41 @@ function safeParse(str, fallback) { try { const v = JSON.parse(str); return v ==
 let sbClient = null;
 let db = [];
 let pendingSync = safeParse(getLS('pending_sync'), []);
-let wishlists = safeParse(getLS('wishlists'), []);
-let driveLinks = safeParse(getLS('drivelinks'), []);
-let sppData = safeParse(getLS('spp_data_v47'), []);
-let attendanceData = safeParse(getLS('attendance_data_v47'), { lastReset: new Date().toISOString(), records: {} });
+let wishlists = [];
+let driveLinks = [];
+let sppData = [];
+let attendanceData = { lastReset: new Date().toISOString(), records: {} };
 let currentUser = null;
-
 let APP_MODE = getLS('app_mode') || 'GUEST';
+
+// --- SISTEM ISOLASI DATABASE AKUN ---
+function getScopedKey(key) {
+    const uid = (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user') ? currentUser.id : 'guest';
+    return LS_PREFIX + key + '_' + uid;
+}
+function loadScopedData() {
+    sppData = safeParse(localStorage.getItem(getScopedKey('spp')), []);
+    wishlists = safeParse(localStorage.getItem(getScopedKey('wish')), []);
+    driveLinks = safeParse(localStorage.getItem(getScopedKey('drive')), []);
+    attendanceData = safeParse(localStorage.getItem(getScopedKey('att')), { lastReset: new Date().toISOString(), records: {} });
+    sppData.forEach(s => { s.months = s.months || []; s.att = s.att || {}; });
+}
+function saveScopedData() {
+    localStorage.setItem(getScopedKey('spp'), JSON.stringify(sppData));
+    localStorage.setItem(getScopedKey('wish'), JSON.stringify(wishlists));
+    localStorage.setItem(getScopedKey('drive'), JSON.stringify(driveLinks));
+    localStorage.setItem(getScopedKey('att'), JSON.stringify(attendanceData));
+}
+function migrateToScopedKeys() {
+    if (!getLS('migrated_to_scoped_v45')) {
+        localStorage.setItem(LS_PREFIX + 'spp_guest', localStorage.getItem(LS_PREFIX + 'spp_data_v47') || '[]');
+        localStorage.setItem(LS_PREFIX + 'wish_guest', localStorage.getItem(LS_PREFIX + 'wishlists') || '[]');
+        localStorage.setItem(LS_PREFIX + 'drive_guest', localStorage.getItem(LS_PREFIX + 'drivelinks') || '[]');
+        localStorage.setItem(LS_PREFIX + 'att_guest', localStorage.getItem(LS_PREFIX + 'attendance_data_v47') || '{"lastReset":"","records":{}}');
+        setLS('migrated_to_scoped_v45', 'true');
+    }
+}
+// ------------------------------------
 let activeWallet = 'utama';
 let currentTimeFilter = 365;
 let rawAmount = 0, editRawAmount = 0;
@@ -340,7 +367,13 @@ async function initSupabaseBackground() {
             if (session && session.user) {
                 currentUser = session.user;
                 updateNetworkStatus("Online Mode (Cloud)", "sync-online");
+                
+                loadScopedData(); /* <--- INJEKSI MEMORI AKUN */
+                
                 loadCloudProfile(); fetchUserTransactions(); setupRealtime();
+                
+                renderWishlist(); renderDriveLinks(); renderAdminStudentTable(); /* <--- RENDER ULANG UI */
+                
                 if (pendingSync.length > 0) processPendingSync();
             } else { forceLogoutToGuest(); }
         } catch (err) { updateNetworkStatus("Server Lambat", "sync-offline"); }
@@ -354,7 +387,9 @@ async function initSupabaseBackground() {
                 currentUser = session.user; APP_MODE = 'CLOUD'; setLS('app_mode', 'CLOUD');
                 updateNetworkStatus("Online Mode (Cloud)", "sync-online");
                 await loadCloudProfile(true);
-                db = loadLocalDB(); initAppHeader(); renderShortcuts(); fetchUserTransactions(); setupRealtime();
+                db = loadLocalDB(); loadScopedData(); 
+                initAppHeader(); renderShortcuts(); fetchUserTransactions(); setupRealtime();
+                renderWishlist(); renderDriveLinks(); renderAdminStudentTable(); 
                 closeModal('googleAuthModal');
                 if (navigator.onLine && pendingSync.length > 0) processPendingSync();
             }
@@ -721,7 +756,7 @@ function renderTable(data, isPublic) {
         const pihak = tx.pihak_terkait ? `<br><span class="tx-pihak">Pihak: <b class="text-neutral">${escapeHtml(tx.pihak_terkait)}</b></span>` : '';
         const chip = isPublic ? `<div class="wallet-chip w-${tx.wallet}">${walletNames[tx.wallet] || tx.wallet}</div>` : '';
         const aksi = isPublic ? `<td class="aksi-col"></td>` : `<td class="aksi-col"><div class="aksi-wrap"><button type="button" class="btn-icon-neutral" onclick="promptActionPinFromTable(event,'edit','${key}')">${svgs.edit}</button><button type="button" class="btn-icon-danger" onclick="promptActionPinFromTable(event,'delete','${key}')">${svgs.trash}</button></div></td>`;
-        return `<tr class="clickable-row" onclick="openReceipt('${key}')"><td class="tx-time">${d[0]}<br>${d[1]}</td><td class="tx-cat"><div class="badge-cat">${escapeHtml(tx.category)}</div>${chip}</td><td class="tx-desc"><span class="text-neutral">${escapeHtml(tx.desc)}</span>${pihak}${link}</td>${aksi}<td class="amt-cell ${iM ? 'amt-in' : 'amt-out'}">${iM ? '+' : '-'}${formatRp(tx.amount)}</td></tr>`;
+        return `<tr class="clickable-row" onclick="openReceipt('${key}')"><td class="tx-time">${d[0]}<br>${d[1]}</td><td class="tx-cat"><div class="tx-cat-wrap"><div class="badge-cat">${escapeHtml(tx.category)}</div>${chip}</div></td><td class="tx-desc"><span class="text-neutral">${escapeHtml(tx.desc)}</span>${pihak}${link}</td>${aksi}<td class="amt-cell ${iM ? 'amt-in' : 'amt-out'}">${iM ? '+' : '-'}${formatRp(tx.amount)}</td></tr>`;
     }).join('');
 }
 
@@ -878,7 +913,7 @@ async function verifyActionPinFinal() {
     setTimeout(() => {
         if (action === 'delete') executeTxDeleteFinal(payload);
         else if (action === 'edit') openEditTxModal(payload);
-        else if (action === 'edit_profile') openProfileEdit();
+        else if (action === 'delete_wishlist') executeWishlistDelete(payload);
         else if (action === 'reset') executeFactoryReset();
     }, 250);
 }
@@ -943,33 +978,57 @@ function executeTransferAntarDompet() {
 // ==========================================
 // TARGET DANA, DRIVE, EXPORT CSV, PENCARIAN
 // ==========================================
+bindMoneyInput('wishlist-collected');
+
 function renderWishlist() {
     const c = $('wishlistContainer'); if (!c) return;
     if (!wishlists.length) { c.innerHTML = `<div class="glass-card empty-box text-neutral">Belum ada target.</div>`; return; }
-    c.innerHTML = wishlists.map(w => `<div class="glass-card list-row"><div><div class="list-title text-neutral">${escapeHtml(w.name)}</div><div class="list-sub">Butuh: <span class="text-neutral">${formatRp(w.amount)}</span></div></div><button onclick="deleteWishlist('${w.id}')" class="btn-icon-danger">${svgs.trash}</button></div>`).join('');
+    c.innerHTML = wishlists.map(w => {
+        const pct = Math.min(100, Math.round((w.collected / w.amount) * 100)) || 0;
+        return `<div class="glass-card list-row">
+            <div style="flex:1; min-width:0; padding-right:15px;">
+                <div class="list-title text-neutral">${escapeHtml(w.name)}</div>
+                <div class="progress-wrap">
+                    <div class="progress-stats"><span>Terkumpul: ${formatRp(w.collected || 0)}</span><span>Butuh: ${formatRp(w.amount)}</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%"></div></div>
+                </div>
+            </div>
+            <button onclick="promptActionPin('delete_wishlist', '${w.id}')" class="btn-icon-danger">${svgs.trash}</button>
+        </div>`;
+    }).join('');
 }
-function openAddWishlistModal() { $('wishlist-name').value = ''; $('wishlist-amount').value = ''; openModal('addWishlistModal'); }
+function openAddWishlistModal() { $('wishlist-name').value = ''; $('wishlist-amount').value = '';$('wishlist-collected').value = ''; openModal('addWishlistModal'); }
 function saveWishlist() {
-    const name = properTitleCase($('wishlist-name').value.trim()), amount = readAmount('wishlist-amount');
+    const name = properTitleCase($('wishlist-name').value.trim()), amount = readAmount('wishlist-amount'), collected = readAmount('wishlist-collected');
     if (!name || amount <= 0) { showToast("Nama dan nominal target harus valid.", "error"); return; }
-    wishlists.push({ id: Date.now().toString(), name, amount }); setLS('wishlists', JSON.stringify(wishlists));
-    renderWishlist(); closeModal('addWishlistModal'); showToast("Target dana tersimpan.");
+    wishlists.push({ id: Date.now().toString(), name, amount, collected }); 
+    saveScopedData(); renderWishlist(); publishPublicSnapshot(); closeModal('addWishlistModal'); showToast("Target dana tersimpan.");
 }
-function deleteWishlist(id) { wishlists = wishlists.filter(w => w.id !== id); setLS('wishlists', JSON.stringify(wishlists)); renderWishlist(); }
+function executeWishlistDelete(id) {
+    openCustomConfirm("Hapus Target Dana", "Data target dana ini akan dihapus permanen.", () => {
+        wishlists = wishlists.filter(w => w.id !== id);
+        saveScopedData(); renderWishlist(); publishPublicSnapshot(); showToast("Target dana dihapus.");
+    });
+}
 
 function renderDriveLinks() {
     const c = $('driveContainer'); if (!c) return;
     if (!driveLinks.length) { c.innerHTML = `<div class="glass-card empty-box text-neutral">Kosong.</div>`; return; }
     c.innerHTML = driveLinks.map(d => `<div class="glass-card drive-item">${svgs.link}<a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="text-neutral">${escapeHtml(d.name)}</a><button onclick="deleteDriveLink('${d.id}')" class="btn-icon-danger sm">${svgs.trash}</button></div>`).join('');
 }
-function openAddDriveModal() { $('drive-name').value = ''; $('drive-url').value = ''; openModal('addDriveModal'); }
+function openAddDriveModal() { $('drive-name').value = '';$('drive-url').value = ''; openModal('addDriveModal'); }
 function saveDriveLink() {
-    const name = properTitleCase($('drive-name').value.trim()), url = $('drive-url').value.trim();
+    const name = properTitleCase($('drive-name').value.trim()), url =$('drive-url').value.trim();
     if (!name || !/^https?:\/\//i.test(url)) { showToast("Nama dan URL (https://...) harus valid.", "error"); return; }
-    driveLinks.push({ id: Date.now().toString(), name, url }); setLS('drivelinks', JSON.stringify(driveLinks));
+    driveLinks.push({ id: Date.now().toString(), name, url }); 
+    saveScopedData(); /*
     renderDriveLinks(); closeModal('addDriveModal'); showToast("Pintasan Drive tersimpan.");
 }
-function deleteDriveLink(id) { driveLinks = driveLinks.filter(d => d.id !== id); setLS('drivelinks', JSON.stringify(driveLinks)); renderDriveLinks(); }
+function deleteDriveLink(id) { 
+    driveLinks = driveLinks.filter(d => d.id !== id); 
+    saveScopedData(); /*
+    renderDriveLinks(); 
+}
 
 function downloadCSV(csv, filename) {
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }), a = document.createElement('a');
@@ -1023,7 +1082,7 @@ function clearSearch() { searchInput.value = ''; searchClear.style.display = 'no
 // ==========================================
 // SPP & ABSENSI (ADMIN)
 // ==========================================
-function saveSpp() { setLS('spp_data_v47', JSON.stringify(sppData)); publishPublicSnapshot(); }
+function saveSpp() { saveScopedData(); publishPublicSnapshot(); }
 function studentById(id) { return sppData.find(s => s.id === id); }
 function migrateSppData() {
     sppData.forEach(s => {
@@ -1179,29 +1238,27 @@ window.publicTx = [];
 
 async function loadPublicData() {
     let ok = false;
-    if (publicOwner && navigator.onLine && window.supabase) {
-        try {
-            if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            const { data, error } = await sbClient.from('public_snapshot').select('data,updated_at').eq('owner_id', publicOwner).maybeSingle();
-            if (error) throw error;
-            if (data && data.data) { 
-                notifyPublicChanges(data.data); 
-                publicStudents = data.data.students || []; 
-                window.publicTx = data.data.tx || []; 
-                window.publicWishlists = data.data.wishlists || []; // <--- Injeksi Data Cloud
-                publicUpdated = data.updated_at || data.data.updatedAt; 
-                publicSource = 'cloud'; 
-                ok = true; 
-            }
-        } catch (e) {}
-    }
-    if (!ok && !publicLoaded) { 
-        db = loadLocalDB(); migrateSppData();
+    if (publicOwner) {
+        if (navigator.onLine && window.supabase) {
+            try {
+                if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                const { data, error } = await sbClient.from('public_snapshot').select('data,updated_at').eq('owner_id', publicOwner).maybeSingle();
+                if (error) throw error;
+                if (data && data.data) { 
+                    notifyPublicChanges(data.data); 
+                    publicStudents = data.data.students || []; window.publicTx = data.data.tx || []; 
+                    window.publicWishlists = data.data.wishlists || []; 
+                    publicUpdated = data.updated_at || data.data.updatedAt; 
+                    publicSource = 'cloud'; ok = true; 
+                }
+            } catch (e) {}
+        }
+        if (!ok) { publicStudents = []; window.publicTx = []; window.publicWishlists = []; publicSource = 'cloud_failed'; }
+    } else {
+        db = loadLocalDB(); loadScopedData();
         publicStudents = sppData.map(s => ({ id: s.id, name: s.name, months: s.months, unpaid: getUnpaid(s), att: s.att })); 
-        window.publicTx = db; 
-        window.publicWishlists = wishlists; // <--- Injeksi Data Lokal (Fallback)
-        publicUpdated = new Date().toISOString(); 
-        publicSource = 'lokal';
+        window.publicTx = db; window.publicWishlists = wishlists; 
+        publicUpdated = new Date().toISOString(); publicSource = 'lokal'; ok = true;
     }
     publicLoaded = true; return ok;
 }
@@ -1253,7 +1310,18 @@ function renderPublicHistory() {
 function renderPublicWishlist() {
     const c = $('pubWishlistGrid'); if (!c) return;
     if (!window.publicWishlists || !window.publicWishlists.length) { c.innerHTML = `<div class="glass-card empty-box text-neutral">Belum ada target dana TPA saat ini.</div>`; return; }
-    c.innerHTML = window.publicWishlists.map(w => `<div class="glass-card list-row"><div><div class="list-title text-neutral">${escapeHtml(w.name)}</div><div class="list-sub">Kebutuhan: <span class="text-neutral">${formatRp(w.amount)}</span></div></div></div>`).join('');
+    c.innerHTML = window.publicWishlists.map(w => {
+        const pct = Math.min(100, Math.round((w.collected / w.amount) * 100)) || 0;
+        return `<div class="glass-card list-row">
+            <div style="flex:1; min-width:0;">
+                <div class="list-title text-neutral">${escapeHtml(w.name)}</div>
+                <div class="progress-wrap">
+                    <div class="progress-stats"><span>Terkumpul: ${formatRp(w.collected || 0)}</span><span>Butuh: ${formatRp(w.amount)}</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%"></div></div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 // Timpa keseluruhan fungsi renderPublicAll ini
@@ -1361,7 +1429,7 @@ function bootApp() {
     const p = new URLSearchParams(window.location.search);
     if (p.get('view') === 'public') { isPublicMode = true; publicOwner = p.get('o'); initPublicPortal(); return; }
 
-    migrateSppData(); db = loadLocalDB();
+    migrateToScopedKeys(); loadScopedData(); db = loadLocalDB();
     initAppHeader(); renderShortcuts(); renderWishlist(); renderDriveLinks(); checkAttendanceReset(); updateUI(''); initPrayerTimes();
 
     if (APP_MODE === 'CLOUD') { currentUser = { id: 'offline_user', email: profile.googleEmail || 'Cloud User' }; updateNetworkStatus(navigator.onLine ? "Menyambungkan..." : "Offline (Cloud)", navigator.onLine ? "sync-pending" : "sync-offline"); }
