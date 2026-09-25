@@ -1,12 +1,12 @@
 /* =========================================================
-   TPA FINANCE v5.1 - MAIN.JS
+   TPA FINANCE v5.2 - MAIN.JS
    Isi: Config, State, Utils, Toast Apple, Modal + Scroll Lock,
         DB Lokal, Jadwal Sholat GPS Live, Versi/Refresh, Supabase Sync,
         Tema, Header & Profil (lihat + edit).
 ========================================================= */
 "use strict";
 
-const APP_VERSION = '5.1';
+const APP_VERSION = '5.2';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
