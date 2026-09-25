@@ -1,5 +1,5 @@
 /* =========================================================
-   TPA FINANCE v4.7 - STYLE.CSS (ENTERPRISE EDITION)
+   TPA FINANCE v4.8 - STYLE.CSS (ENTERPRISE EDITION)
    Pembaruan Struktural: Presisi Tata Letak, Flexbox Strict, 
    & Estetika Modern
 ========================================================= */
@@ -153,13 +153,18 @@ a { -webkit-tap-highlight-color: transparent; }
 .marquee-container { flex: 1; min-width: 0; height: 100%; overflow-y: auto; padding-right: 4px; display: flex; align-items: center; }
 .marquee-container::-webkit-scrollbar { width: 4px; } .marquee-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .marquee-container span { display: block; font-size: 13px; line-height: 1.5; font-weight: 700; color: var(--teks-netral); transition: opacity .4s ease; width: 100%; } .fade-out { opacity: 0; }
+/* Progress Bar Target Dana */
+.progress-wrap { margin-top: 12px; }
+.progress-stats { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; }
+.progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+[data-theme="light"] .progress-bar-bg { background: rgba(0,0,0,0.1); }
+.progress-bar-fill { height: 100%; background: var(--hijau-terang); border-radius: 4px; transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); }
 
-/* Statistik & chart (expand) */
-.expand-container { display: flex; flex-wrap: wrap; gap: 14px; width: 100%; margin-bottom: 24px; transition: all .4s ease; }
-.expand-container:has(.expanded) { display: block; } /* Matikan flex saat expand agar full space */
-.expand-item { flex: 1 1 calc(33.333% - 10px); min-width: 100px; padding: 20px 14px; position: relative; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; transition: transform .2s ease; }
-.expand-item:active { transform: scale(0.98); }
-.expand-item.expanded { width: 100%; display: block; padding: 24px; text-align: center; cursor: default; }
+/* Animasi Expand Mulus & Cepat */
+.expand-container { display: flex; flex-wrap: wrap; gap: 14px; width: 100%; margin-bottom: 24px; }
+.expand-item { flex: 1 1 calc(33.333% - 10px); min-width: 100px; padding: 20px 14px; position: relative; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; transition: flex 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), padding 0.35s ease, opacity 0.35s ease; border: 1px solid var(--border); }
+.expand-item:active { transform: scale(0.97); }
+.expand-item.expanded { flex: 1 1 100%; padding: 24px; text-align: center; cursor: default; }
 .expand-item.expanded:active { transform: none; }
 .expand-item.expanded .card-label { font-size: 15px; margin-bottom: 14px; }
 .card-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; white-space: nowrap; letter-spacing: .5px; display: block; }
@@ -167,11 +172,11 @@ a { -webkit-tap-highlight-color: transparent; }
 .card-value::after { content: attr(data-short); } 
 .expand-item.expanded .card-value { font-size: 36px; white-space: normal; word-break: break-word; } 
 .expand-item.expanded .card-value::after { content: attr(data-full); }
-.expand-item.collapsed { display: none !important; } /* Hilangkan mutlak item lain tanpa sisa ruang */
+.expand-item.collapsed { flex: 0 0 0%; min-width: 0; padding: 0; margin: 0; opacity: 0; pointer-events: none; border-width: 0; }
 .chart-close-red { position: absolute; top: 16px; right: 16px; background: var(--merah-solid) !important; border: none !important; color: #fff !important; width: 40px; height: 40px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 50; box-shadow: 0 4px 12px rgba(239,68,68,.3); }
 .expand-item.expanded .chart-close-red { display: flex; }
-.chart-box { height: 220px; width: 100%; min-height: 220px; position: relative; } 
-.expand-item.expanded .chart-box { height: auto; min-height: 50vh; }
+.chart-box { height: 220px; width: 100%; position: relative; transition: height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); } 
+.expand-item.expanded .chart-box { height: 400px; }
 @media (max-width: 500px) { .expand-item { flex: 1 1 100%; } }
 
 /* Section */
@@ -182,12 +187,11 @@ a { -webkit-tap-highlight-color: transparent; }
 .collapsible-content { max-height: 3000px; opacity: 1; overflow: hidden; transition: max-height .6s cubic-bezier(.4,0,.2,1), opacity .5s ease; }
 .collapsible-content.hidden { max-height: 0; opacity: 0; pointer-events: none; margin: 0; display: block !important; }
 .stack-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-
 /* Aksi cepat */
 .quick-actions-wrap { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 16px; margin-top: 16px; scrollbar-width: none; scroll-snap-type: x mandatory; }
 .quick-actions-wrap::-webkit-scrollbar { display: none; } .quick-actions-wrap.flush { margin-top: 0; margin-bottom: 24px; }
-.quick-actions-wrap.grid-mode { display: grid; gap: 14px; } .grid-split-4, .grid-split-2 { grid-template-columns: repeat(2, 1fr); }
-.btn-quick { padding: 20px 16px; border-radius: 16px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: all .3s; display: flex; align-items: center; justify-content: flex-start; gap: 14px; flex-shrink: 0; border: 1px solid var(--border); background: var(--hitam-btn); scroll-snap-align: start; }
+.quick-actions-wrap.grid-mode { display: grid; gap: 14px; grid-auto-rows: 1fr; } .grid-split-4, .grid-split-2 { grid-template-columns: repeat(2, 1fr); }
+.btn-quick { height: 100%; width: 100%; box-sizing: border-box; padding: 20px 16px; border-radius: 16px; font-size: 13px; cursor: pointer; white-space: nowrap; transition: all .3s; display: flex; align-items: center; justify-content: flex-start; gap: 14px; flex-shrink: 0; border: 1px solid var(--border); background: var(--hitam-btn); scroll-snap-align: start; }
 .btn-quick svg { width: 24px; height: 24px; flex-shrink: 0; } .btn-quick span { color: var(--teks-netral); font-weight: 800; text-align: left; } .btn-quick:active { transform: scale(.95); }
 .svg-hijau { border-color: rgba(52,211,153,.4) !important; } .svg-hijau svg { color: var(--hijau-terang); } .svg-merah { border-color: rgba(239,68,68,.4) !important; } .svg-merah svg { color: var(--merah-solid); }
 .svg-biru { border-color: rgba(96,165,250,.4) !important; } .svg-biru svg { color: var(--biru); } .svg-kuning { border-color: rgba(251,191,36,.4) !important; } .svg-kuning svg { color: var(--kuning); }
@@ -225,8 +229,13 @@ td { padding: 18px 16px; border-bottom: 1px solid var(--border); font-size: 14px
 .empty-cell { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; } .tx-time { color: var(--text-muted); font-size: 12px; white-space: nowrap; } .tx-cat { white-space: nowrap; width: 1%; } .tx-desc { min-width: 220px; } .tx-desc .text-neutral { font-weight: 800; }
 .tx-pihak { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: block; } .tx-link { color: var(--biru); font-size: 12px; font-weight: 800; text-decoration: underline; display: block; margin-top: 6px; }
 .aksi-col { width: 1%; text-align: center; padding-right: 18px; } .aksi-wrap { display: flex; gap: 10px; justify-content: center; }
-.badge-cat { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; border: 1px solid var(--border); background: var(--hitam-btn); color: var(--teks-netral); vertical-align: middle; }
-.wallet-chip { margin-top: 0; margin-left: 10px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; color: #fff; background: var(--hijau); vertical-align: middle; }
+
+/* Kerapian Badge & Chip Tabel Transaksi */
+.tx-cat-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.badge-cat, .wallet-chip { margin: 0; padding: 0 12px; height: 28px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.badge-cat { border: 1px solid var(--border); background: var(--hitam-btn); color: var(--teks-netral); }
+.wallet-chip { color: #fff; background: var(--hijau); border: none; }
+
 .wallet-chip.w-wakaf { background: var(--ungu); } 
 .wallet-chip.w-operasional { background: var(--biru); } 
 .wallet-chip.w-darurat { background: var(--merah-solid); }
