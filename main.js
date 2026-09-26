@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = '5.7';
+const APP_VERSION = '5.8';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
