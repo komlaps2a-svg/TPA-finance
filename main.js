@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = '5.8';
+const APP_VERSION = '5.9';
 const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
@@ -554,7 +554,6 @@ function requestProfileEdit() {
 }
 
 function selectGender(val) { $('editGender').value = val; $('dispGenderVal').innerText = val; closeModal(''); }
-
 function openProfileEdit() {
     $('editProfileImg').src = safePhoto(profile.photo);
     $('editName').value = profile.name !== 'Pengurus Baru' ? profile.name : '';
@@ -563,6 +562,31 @@ function openProfileEdit() {
     $('disp-edit-birth').innerText = profile.birthDate ? formatDateOnly(profile.birthDate) : 'Pilih tanggal lahir';
     $('editPin').value = '';
     openModal('profileEditModal');
+}
+
+async function submitActionPin() {
+    const pinInput = $('inputActionPin').value;
+    
+    if (!pinInput) {
+        showToast("Masukkan PIN terlebih dahulu.", "error");
+        return;
+    }
+
+    const hashed = await hashPIN(pinInput);
+    
+    if (hashed === profile.pin) {
+        closeModal('actionPinModal'); 
+        
+        const actionType = $('actionPinType').value;
+        
+        if (actionType === 'edit_profile') {
+            setTimeout(openProfileEdit, 250); 
+        } 
+        
+    } else {
+        showToast("PIN salah. Akses ditolak.", "error");
+        $('inputActionPin').value = '';
+    }
 }
 
 $('profileUploader').addEventListener('change', function (e) {
