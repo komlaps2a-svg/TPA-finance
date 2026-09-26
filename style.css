@@ -1,5 +1,5 @@
 /* =========================================================
-   TPA FINANCE v5.5 - STYLE.CSS (ENTERPRISE EDITION)
+   TPA FINANCE v5.6 - STYLE.CSS (ENTERPRISE EDITION)
 ========================================================= */
 :root {
     --bg-color: #05140d; --hitam-card: #092115; --hitam-btn: #0c2c1c; --putih: #f8fafc;
@@ -160,16 +160,17 @@ a { -webkit-tap-highlight-color: transparent; }
 
 /* Animasi Expand Mulus & Cepat */
 .expand-container { display: flex; flex-wrap: wrap; gap: 14px; width: 100%; margin-bottom: 24px; position: relative; }
-.expand-item { flex: 1 1 calc(33.333% - 10px); min-width: 100px; padding: 20px 14px; position: relative; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; transition: padding 0.3s ease, opacity 0.3s ease, background 0.3s ease; border: 1px solid var(--border); height: auto; }
+./* Orientasi Dinamis: Default Kiri, Expanded Tengah */
+.expand-item { flex: 1 1 calc(33.333% - 10px); min-width: 100px; padding: 20px 24px; position: relative; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; border-radius: 20px; transition: padding 0.3s ease, opacity 0.3s ease, background 0.3s ease, align-items 0.3s ease; border: 1px solid var(--border); height: auto; }
 .expand-item:active { transform: scale(0.97); }
-.expand-item { flex: 1 1 calc(33.333% - 10px); min-width: 100px; padding: 20px 24px; position: relative; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; border-radius: 20px; transition: padding 0.3s ease, opacity 0.3s ease, background 0.3s ease; border: 1px solid var(--border); height: auto; }
-.expand-item:active { transform: scale(0.97); }
-.expand-item.expanded { flex: 1 1 100%; padding: 24px; text-align: left; cursor: default; height: auto !important; align-items: flex-start; }
+.expand-item.expanded { flex: 1 1 100%; padding: 24px; align-items: center; cursor: default; height: auto !important; }
 .expand-item.expanded:active { transform: none; }
-.expand-item.expanded .card-label { font-size: 14px; margin-bottom: 12px; }
-.card-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; white-space: nowrap; letter-spacing: .5px; display: block; text-align: left; width: 100%; }
-.card-value { font-size: clamp(16px, 4.5vw, 20px); font-weight: 900; margin: 0; letter-spacing: -.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: var(--teks-netral); text-align: left; }
+.card-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; white-space: nowrap; letter-spacing: .5px; display: block; text-align: left; width: 100%; transition: text-align 0.3s ease, font-size 0.3s ease; }
+.expand-item.expanded .card-label { font-size: 14px; margin-bottom: 12px; text-align: center; }
+.card-value { font-size: clamp(16px, 4.5vw, 20px); font-weight: 900; margin: 0; letter-spacing: -.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: var(--teks-netral); text-align: left; transition: text-align 0.3s ease, font-size 0.3s ease; }
 .card-value::after { content: attr(data-short); } 
+.expand-item.expanded .card-value { font-size: 32px; white-space: normal; word-break: break-word; line-height: 1.2; text-align: center; } 
+.expand-item.expanded .card-value::after { content: attr(data-full); }
 .expand-item.expanded .card-value { font-size: 32px; white-space: normal; word-break: break-word; line-height: 1.2; } 
 .expand-item.expanded .card-value::after { content: attr(data-full); }
 .expand-item.expanded .card-value { font-size: 32px; white-space: normal; word-break: break-word; line-height: 1.2; } 
