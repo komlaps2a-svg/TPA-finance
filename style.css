@@ -1,7 +1,5 @@
 /* =========================================================
-   TPA FINANCE v5.3 - STYLE.CSS (ENTERPRISE EDITION)
-   Pembaruan Struktural: Presisi Tata Letak, Flexbox Strict, 
-   & Estetika Modern
+   TPA FINANCE v5.4 - STYLE.CSS (ENTERPRISE EDITION)
 ========================================================= */
 :root {
     --bg-color: #05140d; --hitam-card: #092115; --hitam-btn: #0c2c1c; --putih: #f8fafc;
@@ -161,25 +159,23 @@ a { -webkit-tap-highlight-color: transparent; }
 .progress-bar-fill { height: 100%; background: var(--hijau-terang); border-radius: 4px; transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); }
 
 /* Animasi Expand Mulus & Cepat */
-.expand-container { display: flex; flex-wrap: wrap; gap: 14px; width: 100%; margin-bottom: 24px; }
-.expand-item { flex: 1 1 calc(33.333% - 10px); min-width: 100px; padding: 20px 14px; position: relative; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; border-radius: 20px; transition: flex 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), padding 0.35s ease, opacity 0.35s ease; border: 1px solid var(--border); }
+.expand-container { display: flex; flex-wrap: wrap; gap: 14px; width: 100%; margin-bottom: 24px; position: relative; }
+.expand-item { flex: 1 1 calc(33.333% - 10px); min-width: 100px; padding: 20px 14px; position: relative; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; transition: padding 0.3s ease, opacity 0.3s ease, background 0.3s ease; border: 1px solid var(--border); height: auto; }
 .expand-item:active { transform: scale(0.97); }
-.expand-item.expanded { flex: 1 1 100%; padding: 24px; text-align: center; cursor: default; height: auto; display: flex; flex-direction: column; }
+.expand-item.expanded { flex: 1 1 100%; padding: 24px; text-align: center; cursor: default; height: auto !important; }
 .expand-item.expanded:active { transform: none; }
-.expand-item.expanded .card-label { font-size: 15px; margin-bottom: 14px; }
-.card-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; white-space: nowrap; letter-spacing: .5px; display: block; }
-.card-value { font-size: clamp(16px, 4.5vw, 20px); font-weight: 900; margin: 0; letter-spacing: -.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: var(--teks-netral); }
+.expand-item.expanded .card-label { font-size: 14px; margin-bottom: 12px; }
+.card-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; white-space: nowrap; letter-spacing: .5px; display: block; text-align: center; }
+.card-value { font-size: clamp(16px, 4.5vw, 20px); font-weight: 900; margin: 0; letter-spacing: -.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: var(--teks-netral); text-align: center; }
 .card-value::after { content: attr(data-short); } 
-.expand-item.expanded .card-value { font-size: 36px; white-space: normal; word-break: break-word; } 
+.expand-item.expanded .card-value { font-size: 32px; white-space: normal; word-break: break-word; line-height: 1.2; } 
 .expand-item.expanded .card-value::after { content: attr(data-full); }
-.expand-item.collapsed { flex: 0 0 0%; min-width: 0; padding: 0; margin: 0; opacity: 0; pointer-events: none; border-width: 0; }
-.chart-close-red { position: absolute; top: 16px; right: 16px; background: var(--merah-solid) !important; border: none !important; color: #fff !important; width: 40px; height: 40px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 50; box-shadow: 0 4px 12px rgba(239,68,68,.3); }
-
-#chartContainer .expand-item.expanded { height: 50vh; min-height: 320px; max-height: 450px; }
-#chartContainer .expand-item.expanded .chart-close-red { display: flex; }
-
-.chart-box { height: 220px; width: 100%; position: relative; transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); margin-top: auto; flex-shrink: 0; } 
-#chartContainer .expand-item.expanded .chart-box { height: calc(100% - 40px); flex-grow: 1; flex-shrink: 1; margin-top: 12px; }
+.expand-item.collapsed { position: absolute !important; opacity: 0 !important; pointer-events: none !important; visibility: hidden; z-index: -1; }
+.chart-close-red { position: absolute; top: 16px; right: 16px; background: var(--merah-solid) !important; border: none !important; color: #fff !important; width: 36px; height: 36px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 50; box-shadow: 0 4px 12px rgba(239,68,68,.3); transition: transform 0.2s; }
+.chart-close-red:active { transform: scale(0.9); }
+.expand-item.expanded .chart-close-red { display: flex; }
+.chart-box { height: 160px; width: 100%; position: relative; margin-top: 10px; transition: height 0.3s ease; } 
+#chartContainer .expand-item.expanded .chart-box { height: 280px; margin-top: 16px; flex-shrink: 0; }
 @media (max-width: 500px) { .expand-item { flex: 1 1 100%; } }
 
 /* Section */
