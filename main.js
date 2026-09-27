@@ -1,7 +1,7 @@
 "use strict";
 
-const APP_VERSION = '5.9';
-const LS_PREFIX = 'tpa_finance_v48_';   // JANGAN diubah: menjaga data lama tetap terbaca
+const APP_VERSION = '6.0';
+const LS_PREFIX = 'tpa_finance_v48_';
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kc3l5YXhtaXdza3Jra2xzZWFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNDU4NjIsImV4cCI6MjEwMDcyMTg2Mn0.uXgAIhUjjkNpe9s6N6LGvRXZLUDQUZJrSfUFf1BDmKU';
@@ -9,17 +9,40 @@ const SECRET_KEY = "TPA_Finance_Secure_K3y_v47";
 const EMAILJS_SERVICE_ID = 'service_l08406o';
 const EMAILJS_TEMPLATE_ID = 'template_osq8mgb';
 const EMAILJS_PUBLIC_KEY = 'u7HQ-8xrDo99w3wmh';
-
 const DEFAULT_PHOTO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzIyYzU1ZSI+PHBhdGggZD0iTTEyIDJhNSA1IDAgMSAwIDUgNSBNMTIgMTRhNyA3IDAgMCAwLTcgN3YxSDE5di0xYTcgNyAwIDAgMC03LTdaIi8+PC9zdmc+';
 
-// ---------- Utilitas penyimpanan (dipakai state di bawah) ----------
-function getLS(key) { try { return localStorage.getItem(LS_PREFIX + key); } catch (e) { return null; } }
-function setLS(key, val) { try { localStorage.setItem(LS_PREFIX + key, val); } catch (e) {} }
-function removeLS(key) { try { localStorage.removeItem(LS_PREFIX + key); } catch (e) {} }
-function safeParse(str, fallback) { try { const v = JSON.parse(str); return v === null || v === undefined ? fallback : v; } catch (e) { return fallback; } }
+// ==========================================
+// ERROR OBSERVABILITY & UTILITAS
+// ==========================================
+function logJSONError(what, where, why, errObject = null) {
+    console.error(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        what: what,
+        where: where,
+        why: why,
+        trace: errObject ? String(errObject) : 'N/A'
+    }));
+}
+
+function getLS(key) { 
+    try { return localStorage.getItem(LS_PREFIX + key); } 
+    catch (e) { logJSONError('Read LocalStorage', 'getLS', 'Akses ditolak atau terisolasi', e); return null; } 
+}
+function setLS(key, val) { 
+    try { localStorage.setItem(LS_PREFIX + key, val); } 
+    catch (e) { logJSONError('Write LocalStorage', 'setLS', 'Kuota penuh atau mode private', e); } 
+}
+function removeLS(key) { 
+    try { localStorage.removeItem(LS_PREFIX + key); } 
+    catch (e) { logJSONError('Delete LocalStorage', 'removeLS', 'Kegagalan manipulasi DOM storage', e); } 
+}
+function safeParse(str, fallback) { 
+    try { const v = JSON.parse(str); return v === null || v === undefined ? fallback : v; } 
+    catch (e) { logJSONError('Parse JSON', 'safeParse', 'Format JSON invalid/corrupt', e); return fallback; } 
+}
 
 // ==========================================
-// STATE
+// STATE MANAGEMENT
 // ==========================================
 let sbClient = null;
 let db = [];
@@ -31,11 +54,11 @@ let attendanceData = { lastReset: new Date().toISOString(), records: {} };
 let currentUser = null;
 let APP_MODE = getLS('app_mode') || 'GUEST';
 
-// --- SISTEM ISOLASI DATABASE AKUN ---
 function getScopedKey(key) {
     const uid = (APP_MODE === 'CLOUD' && currentUser && currentUser.id !== 'offline_user') ? currentUser.id : 'guest';
     return LS_PREFIX + key + '_' + uid;
 }
+
 function loadScopedData() {
     sppData = safeParse(localStorage.getItem(getScopedKey('spp')), []);
     wishlists = safeParse(localStorage.getItem(getScopedKey('wish')), []);
@@ -43,22 +66,32 @@ function loadScopedData() {
     attendanceData = safeParse(localStorage.getItem(getScopedKey('att')), { lastReset: new Date().toISOString(), records: {} });
     sppData.forEach(s => { s.months = s.months || []; s.att = s.att || {}; });
 }
+
 function saveScopedData() {
-    localStorage.setItem(getScopedKey('spp'), JSON.stringify(sppData));
-    localStorage.setItem(getScopedKey('wish'), JSON.stringify(wishlists));
-    localStorage.setItem(getScopedKey('drive'), JSON.stringify(driveLinks));
-    localStorage.setItem(getScopedKey('att'), JSON.stringify(attendanceData));
-}
-function migrateToScopedKeys() {
-    if (!getLS('migrated_to_scoped_v45')) {
-        localStorage.setItem(LS_PREFIX + 'spp_guest', localStorage.getItem(LS_PREFIX + 'spp_data_v47') || '[]');
-        localStorage.setItem(LS_PREFIX + 'wish_guest', localStorage.getItem(LS_PREFIX + 'wishlists') || '[]');
-        localStorage.setItem(LS_PREFIX + 'drive_guest', localStorage.getItem(LS_PREFIX + 'drivelinks') || '[]');
-        localStorage.setItem(LS_PREFIX + 'att_guest', localStorage.getItem(LS_PREFIX + 'attendance_data_v47') || '{"lastReset":"","records":{}}');
-        setLS('migrated_to_scoped_v45', 'true');
+    try {
+        localStorage.setItem(getScopedKey('spp'), JSON.stringify(sppData));
+        localStorage.setItem(getScopedKey('wish'), JSON.stringify(wishlists));
+        localStorage.setItem(getScopedKey('drive'), JSON.stringify(driveLinks));
+        localStorage.setItem(getScopedKey('att'), JSON.stringify(attendanceData));
+    } catch (e) {
+        logJSONError('Save Scoped Data', 'saveScopedData', 'Storage exception', e);
     }
 }
-// ------------------------------------
+
+function migrateToScopedKeys() {
+    if (!getLS('migrated_to_scoped_v45')) {
+        try {
+            localStorage.setItem(LS_PREFIX + 'spp_guest', localStorage.getItem(LS_PREFIX + 'spp_data_v47') || '[]');
+            localStorage.setItem(LS_PREFIX + 'wish_guest', localStorage.getItem(LS_PREFIX + 'wishlists') || '[]');
+            localStorage.setItem(LS_PREFIX + 'drive_guest', localStorage.getItem(LS_PREFIX + 'drivelinks') || '[]');
+            localStorage.setItem(LS_PREFIX + 'att_guest', localStorage.getItem(LS_PREFIX + 'attendance_data_v47') || '{"lastReset":"","records":{}}');
+            setLS('migrated_to_scoped_v45', 'true');
+        } catch (e) {
+            logJSONError('Migration', 'migrateToScopedKeys', 'Gagal memindahkan data legacy', e);
+        }
+    }
+}
+
 let activeWallet = 'utama';
 let currentTimeFilter = 365;
 let rawAmount = 0, editRawAmount = 0;
@@ -99,7 +132,7 @@ const svgs = {
 };
 
 // ==========================================
-// UTILITAS
+// CORE HELPERS & CRYPTO
 // ==========================================
 function $(id) { return document.getElementById(id); }
 function currentSearch() { const s = $('searchTxInput'); return s ? s.value.toLowerCase() : ''; }
@@ -126,14 +159,17 @@ async function hashPIN(pin) {
         if (window.crypto && window.crypto.subtle && window.isSecureContext) {
             const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
             return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-        } else if (typeof CryptoJS !== 'undefined') { return CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex); }
+        } 
+        if (typeof CryptoJS !== 'undefined') return CryptoJS.SHA256(pin).toString(CryptoJS.enc.Hex);
         return btoa(pin);
-    } catch (e) { return btoa(pin); }
+    } catch (e) {
+        logJSONError('Hash PIN', 'hashPIN', 'Kriptografi gagal, menggunakan fallback insecure (BTOA)', e);
+        return btoa(pin); 
+    }
 }
 
 // ==========================================
-// NOTIFIKASI GAYA APPLE (blur transparan, besar, tampil lama)
-// Durasi menyesuaikan panjang teks agar semua terbaca.
+// TOAST NOTIFICATIONS (Graceful Degradation)
 // ==========================================
 function showToast(msg, type = 'success') {
     const box = $('toastBox'); if (!box) return;
@@ -152,7 +188,7 @@ function showToast(msg, type = 'success') {
 }
 
 // ==========================================
-// MODAL ENGINE + KUNCI SCROLL (posisi halaman TIDAK loncat ke atas)
+// MODAL ENGINE (Scroll Lock)
 // ==========================================
 let modalStack = [];
 let scrollLockY = 0;
@@ -194,11 +230,10 @@ function openCustomConfirm(title, desc, action) {
     window.confirmActionStep1 = action;
     openModal('confirmModal');
 }
-$('btnConfirmYes').addEventListener('click', () => { closeModal('confirmModal'); setTimeout(() => openModal('confirmModal2'), 350); });
-$('btnConfirmYes2').addEventListener('click', () => { const fn = window.confirmActionStep1; closeModal('confirmModal2'); if (fn) fn(); });
+$('btnConfirmYes').addEventListener('click', () => { closeModal('confirmModal'); setTimeout(() => openModal('confirmModal2'), 350); });$('btnConfirmYes2').addEventListener('click', () => { const fn = window.confirmActionStep1; closeModal('confirmModal2'); if (fn) fn(); });
 
 // ==========================================
-// DATABASE LOKAL (AES)
+// AES LOCAL DATABASE
 // ==========================================
 function getDBKey() { return APP_MODE === 'CLOUD' ? LS_PREFIX + 'cloud_db' : LS_PREFIX + 'guest_db'; }
 
@@ -207,7 +242,9 @@ function saveLocalDB(dataToSave) {
     try {
         if (typeof CryptoJS !== 'undefined') localStorage.setItem(dbKey, CryptoJS.AES.encrypt(JSON.stringify(dataToSave), SECRET_KEY).toString());
         else localStorage.setItem(dbKey + '_fallback', JSON.stringify(dataToSave));
-    } catch (e) {}
+    } catch (e) {
+        logJSONError('Save DB', 'saveLocalDB', 'Gagal enkripsi atau penyimpanan penuh', e);
+    }
 }
 function loadLocalDB() {
     const dbKey = getDBKey(); let data = [];
@@ -215,14 +252,14 @@ function loadLocalDB() {
         const c = localStorage.getItem(dbKey);
         if (c && typeof CryptoJS !== 'undefined') data = JSON.parse(CryptoJS.AES.decrypt(c, SECRET_KEY).toString(CryptoJS.enc.Utf8));
         else { const f = localStorage.getItem(dbKey + '_fallback'); if (f) data = JSON.parse(f); }
-    } catch (e) {}
+    } catch (e) {
+        logJSONError('Load DB', 'loadLocalDB', 'Gagal dekripsi payload AES', e);
+    }
     return Array.isArray(data) ? data : [];
 }
 
 // ==========================================
-// JADWAL SHOLAT - GPS LIVE
-// Otomatis mencari lokasi begitu GPS/izin aktif (tanpa keluar aplikasi & tanpa tombol).
-// Jadwal terakhir selalu tampil dari cache, tidak pernah hilang.
+// GPS & JADWAL SHOLAT (Idempotent Fetch)
 // ==========================================
 let gpsState = 'searching', prayerBusy = false, gpsRetryTimer = null;
 
@@ -250,7 +287,7 @@ async function fetchPrayerByGPS(force) {
             if (!force && cached && cached.date === localDateKey() && !moved) { setGpsState('on'); renderPrayerUI(cached); return; }
             const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lon}&method=20`);
             const json = await res.json();
-            const pt = json && json.data && json.data.timings; if (!pt) throw new Error('kosong');
+            const pt = json && json.data && json.data.timings; if (!pt) throw new Error('Format Aladhan API berubah');
             const maghrib = toMinutes(pt.Maghrib), fajr = toMinutes(pt.Fajr) + 1440;
             const tahajud = maghrib + ((fajr - maghrib) * 2 / 3);
             const zone = (json.data.meta && json.data.meta.timezone) || '';
@@ -265,12 +302,17 @@ async function fetchPrayerByGPS(force) {
             };
             setLS('prayer_cache', JSON.stringify(data));
             setGpsState('on'); renderPrayerUI(data);
-        } catch (e) { if (cached) renderPrayerUI(cached); else if ($('prayerLocationText')) $('prayerLocationText').innerText = 'Gagal memuat jadwal (offline)'; setGpsState('searching'); }
-        finally { prayerBusy = false; }
+        } catch (e) {
+            logJSONError('Fetch API Aladhan', 'fetchPrayerByGPS', 'Gagal memuat network request', e);
+            if (cached) renderPrayerUI(cached); 
+            else if ($('prayerLocationText'))$('prayerLocationText').innerText = 'Gagal memuat jadwal (offline)'; 
+            setGpsState('searching'); 
+        } finally { prayerBusy = false; }
     }, (err) => {
         prayerBusy = false;
         setGpsState(err && err.code === 1 ? 'off' : 'searching');
         const c = loadPrayerCache(); if (c) renderPrayerUI(c);
+        logJSONError('Geolocation', 'getCurrentPosition', 'Izin ditolak atau signal GPS lemah', err);
     }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
 }
 
@@ -282,7 +324,6 @@ function renderPrayerUI(data) {
     
     const html = data.timings.map((p, i) => `<div class="prayer-item ${i === nextIdx ? 'next' : ''}"><span class="p-name">${p.n}</span><span class="p-time">${p.t}</span></div>`).join('');
     
-    // Inject ke Admin
     const pText = $('prayerLocationText'), pDate = $('prayerDateText'), pGrid =$('prayerTimesGrid');
     if (pText) pText.innerText = data.location || 'Lokasi Anda';
     if (pDate) pDate.innerText = `${dayNames[now.getDay()].substring(0, 3)}, ${now.getDate()} ${monthsArr[now.getMonth()].substring(0, 3)} ${now.getFullYear()}`;
@@ -291,7 +332,6 @@ function renderPrayerUI(data) {
         if (!pGrid.dataset.scrolled) { const nEl = pGrid.querySelector('.next'); if (nEl) { pGrid.dataset.scrolled = '1'; pGrid.scrollLeft = Math.max(0, nEl.offsetLeft - 20); } }
     }
     
-    // Inject ke Publik
     const pubLoc = $('pubPrayerLoc'), pubGrid =$('pubPrayerGrid');
     if (pubLoc) pubLoc.innerText = data.location || '';
     if (pubGrid) {
@@ -309,7 +349,7 @@ async function initPrayerTimes() {
             if (st.state === 'denied') setGpsState('off');
             st.onchange = () => { if (st.state === 'granted') fetchPrayerByGPS(true); else if (st.state === 'denied') setGpsState('off'); };
         }
-    } catch (e) {}
+    } catch (e) { logJSONError('Permissions API', 'initPrayerTimes', 'Browser tidak mendukung navigator.permissions', e); }
     fetchPrayerByGPS(false);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { fetchPrayerByGPS(false); renderPrayerUI(loadPrayerCache()); } });
     window.addEventListener('focus', () => fetchPrayerByGPS(false));
@@ -318,14 +358,13 @@ async function initPrayerTimes() {
 }
 
 // ==========================================
-// VERSI, SERVICE WORKER & REFRESH APLIKASI
-// Tema & jadwal sholat tersimpan di localStorage -> tidak berubah saat refresh.
+// SERVICE WORKER & OTA UPDATES
 // ==========================================
 function registerServiceWorker() {
-    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(e => logJSONError('Service Worker', 'register', 'SW gagal di-register', e));
 }
 async function clearAppCaches() {
-    try { if (window.caches) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } } catch (e) {}
+    try { if (window.caches) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } } catch (e) { logJSONError('Cache API', 'clearAppCaches', 'Gagal clear caches', e); }
     try { if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update().catch(() => {}))); } } catch (e) {}
 }
 async function refreshApp() {
@@ -344,10 +383,9 @@ function checkAppVersion() {
 }
 
 // ==========================================
-// SUPABASE SYNC
+// SUPABASE SYNC PROTOCOLS
 // ==========================================
 function isCloudReady() { return APP_MODE === 'CLOUD' && navigator.onLine && sbClient && currentUser && currentUser.id !== 'offline_user'; }
-
 function updateNetworkStatus(text, cls) { const n = $('networkStatus'); if (n) { n.innerText = text; n.className = `status-sync ${cls}`; } }
 
 async function initSupabaseBackground() {
@@ -361,16 +399,15 @@ async function initSupabaseBackground() {
             if (session && session.user) {
                 currentUser = session.user;
                 updateNetworkStatus("Online Mode (Cloud)", "sync-online");
-                
-                loadScopedData(); /* <--- INJEKSI MEMORI AKUN */
-                
+                loadScopedData();
                 loadCloudProfile(); fetchUserTransactions(); setupRealtime();
-                
-                renderWishlist(); renderDriveLinks(); renderAdminStudentTable(); /* <--- RENDER ULANG UI */
-                
+                renderWishlist(); renderDriveLinks(); renderAdminStudentTable();
                 if (pendingSync.length > 0) processPendingSync();
             } else { forceLogoutToGuest(); }
-        } catch (err) { updateNetworkStatus("Server Lambat", "sync-offline"); }
+        } catch (err) { 
+            updateNetworkStatus("Server Lambat", "sync-offline"); 
+            logJSONError('Supabase Session', 'initSupabaseBackground', 'Timeout/Gagal Auth', err);
+        }
     }
 
     if (!window.supabaseListenerAdded) {
@@ -391,11 +428,11 @@ async function initSupabaseBackground() {
     }
 }
 
-// Profil cloud digabung dengan lokal; nama/foto buatan pengurus TIDAK ditimpa data Google.
 async function loadCloudProfile(isLogin) {
     if (!currentUser || currentUser.id === 'offline_user' || !sbClient) return;
     try {
-        const { data: row } = await sbClient.from('profiles').select('data').eq('id', currentUser.id).maybeSingle();
+        const { data: row, error } = await sbClient.from('profiles').select('data').eq('id', currentUser.id).maybeSingle();
+        if (error) throw error;
         if (row && row.data) { profile = { ...profile, ...row.data }; }
         else {
             const meta = currentUser.user_metadata || {};
@@ -403,7 +440,9 @@ async function loadCloudProfile(isLogin) {
             if ((!profile.photo || profile.photo === DEFAULT_PHOTO) && meta.avatar_url) profile.photo = meta.avatar_url;
             await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile });
         }
-    } catch (e) {}
+    } catch (e) {
+        logJSONError('Supabase Profile Fetch', 'loadCloudProfile', 'Gagal menarik data profil dari server', e);
+    }
     profile.googleLinked = true; profile.googleEmail = currentUser.email || profile.googleEmail;
     if (!profile.photo) profile.photo = DEFAULT_PHOTO;
     setLS('profile_secure_v47', JSON.stringify(profile));
@@ -426,7 +465,9 @@ async function fetchUserTransactions() {
         if (error) throw error;
         db = data || []; saveLocalDB(db); updateUI(currentSearch());
         if (typeof publishPublicSnapshot === 'function') publishPublicSnapshot();
-    } catch (e) {}
+    } catch (e) {
+        logJSONError('Fetch Transactions', 'fetchUserTransactions', 'Query SELECT gagal dieksekusi', e);
+    }
 }
 
 function setupRealtime() {
@@ -446,7 +487,9 @@ async function processPendingSync() {
         if (error) throw error;
         pendingSync = []; setLS('pending_sync', '[]');
         showToast("Data offline berhasil tersimpan ke Cloud!", "success"); fetchUserTransactions();
-    } catch (e) {}
+    } catch (e) {
+        logJSONError('Process Pending Sync', 'processPendingSync', 'Insert batch gagal terkirim', e);
+    }
 }
 
 window.addEventListener('online', () => {
@@ -465,7 +508,7 @@ window.addEventListener('offline', () => {
 });
 
 // ==========================================
-// TEMA (ripple dari titik klik) - tema tersimpan permanen
+// THEME ENGINE
 // ==========================================
 const iconSun = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
 const iconMoon = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
@@ -499,7 +542,7 @@ function toggleTheme(e) {
 applyTheme(getLS('app_theme') || 'dark');
 
 // ==========================================
-// HEADER & PROFIL (perbaikan: nama & foto kini terisi di popup)
+// PROFIL & UNIFIED AUTHORIZATION ENGINE
 // ==========================================
 function formatSmartName(name) {
     if (!name) return name;
@@ -509,7 +552,6 @@ function formatSmartName(name) {
     return name;
 }
 function safePhoto(src) { return src && String(src).length > 10 ? src : DEFAULT_PHOTO; }
-
 function bindPhotoFallback(img) { if (img && !img.dataset.fb) { img.dataset.fb = '1'; img.addEventListener('error', () => { if (img.src !== DEFAULT_PHOTO) img.src = DEFAULT_PHOTO; }); } }
 
 function initAppHeader() {
@@ -547,46 +589,48 @@ function openProfileView() {
 function requestProfileEdit() {
     closeModal('profileViewModal');
     if (profile.pin && profile.pin !== '') {
-        $('actionPinType').value = 'edit_profile'; $('actionPinPayload').value = '';
-        $('inputActionPin').value = '';
+        $('actionPinType').value = 'edit_profile'; $('actionPinPayload').value = '';$('inputActionPin').value = '';
         setTimeout(() => openModal('actionPinModal'), 250);
     } else { setTimeout(openProfileEdit, 250); }
 }
 
 function selectGender(val) { $('editGender').value = val; $('dispGenderVal').innerText = val; closeModal(''); }
 function openProfileEdit() {
-    $('editProfileImg').src = safePhoto(profile.photo);
-    $('editName').value = profile.name !== 'Pengurus Baru' ? profile.name : '';
+    $('editProfileImg').src = safePhoto(profile.photo);$('editName').value = profile.name !== 'Pengurus Baru' ? profile.name : '';
     selectGender(profile.gender || 'Rahasia');
-    $('edit-birth-hidden').value = profile.birthDate || '';
-    $('disp-edit-birth').innerText = profile.birthDate ? formatDateOnly(profile.birthDate) : 'Pilih tanggal lahir';
+    $('edit-birth-hidden').value = profile.birthDate \vert{}\vert{} '';$('disp-edit-birth').innerText = profile.birthDate ? formatDateOnly(profile.birthDate) : 'Pilih tanggal lahir';
     $('editPin').value = '';
     openModal('profileEditModal');
 }
 
+// ---------------------------------------------------------
+// [CRITICAL] UNIFIED PIN AUTHORIZATION CONTROLLER
+// Menghilangkan redundansi fungsi verifyActionPinFinal
+// ---------------------------------------------------------
 async function submitActionPin() {
     const pinInput = $('inputActionPin').value;
-    
-    if (!pinInput) {
-        showToast("Masukkan PIN terlebih dahulu.", "error");
+    if (!pinInput) { showToast("Masukkan PIN terlebih dahulu.", "error"); return; }
+
+    const hashed = await hashPIN(pinInput);
+    if (hashed !== profile.pin) {
+        showToast("PIN salah. Akses ditolak.", "error");
+        $('inputActionPin').value = '';
         return;
     }
 
-    const hashed = await hashPIN(pinInput);
+    const actionType = $('actionPinType').value;
+    const payload = $('actionPinPayload').value;
     
-    if (hashed === profile.pin) {
-        closeModal('actionPinModal'); 
-        
-        const actionType = $('actionPinType').value;
-        
-        if (actionType === 'edit_profile') {
-            setTimeout(openProfileEdit, 250); 
-        } 
-        
-    } else {
-        showToast("PIN salah. Akses ditolak.", "error");
-        $('inputActionPin').value = '';
-    }
+    closeModal('actionPinModal');
+    $('inputActionPin').value = '';
+
+    setTimeout(() => {
+        if (actionType === 'edit_profile') openProfileEdit();
+        else if (actionType === 'delete') { if(typeof executeTxDeleteFinal === 'function') executeTxDeleteFinal(payload); }
+        else if (actionType === 'edit') { if(typeof openEditTxModal === 'function') openEditTxModal(payload); }
+        else if (actionType === 'delete_wishlist') { if(typeof executeWishlistDelete === 'function') executeWishlistDelete(payload); }
+        else if (actionType === 'reset') { if(typeof executeFactoryReset === 'function') executeFactoryReset(); }
+    }, 250);
 }
 
 $('profileUploader').addEventListener('change', function (e) {
@@ -620,21 +664,16 @@ async function saveProfileData() {
     setLS('profile_secure_v47', JSON.stringify(profile));
     initAppHeader(); closeModal('profileEditModal');
     showToast("Profil berhasil disimpan. Nama & foto sudah diperbarui.", "success");
-    if (isCloudReady()) { try { await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile }); } catch (e) {} }
+    if (isCloudReady()) { 
+        try { await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile }); } 
+        catch (e) { logJSONError('Supabase Upsert', 'saveProfileData', 'Sinkronisasi profil gagal', e); } 
+    }
     setTimeout(openProfileView, 300);
 }
 
-/* ===== AKHIR BAGIAN 1/3 - lanjutkan BAGIAN 2/3 di bawah baris ini ===== */
-
-/* =========================================================
-   TPA FINANCE v4.4 - MAIN.JS  (BAGIAN 2 dari 3)
-   Isi: Navigasi UI, Shortcut, Health & AI, Tabel/Chart, Struk,
-        Kalender custom, Transaksi CRUD, PIN, Transfer, Target Dana,
-        Drive, Export CSV, Pencarian.
-========================================================= */
-
 function afterDataChange() {
-    saveLocalDB(db); updateUI(currentSearch());
+    saveLocalDB(db); 
+    updateUI(currentSearch());
     if (typeof publishPublicSnapshot === 'function') publishPublicSnapshot();
 }
 function newId() { return Date.now() * 1000 + Math.floor(Math.random() * 1000); }
@@ -667,7 +706,7 @@ function selectCategory(val) { $('tx-category').value = val; $('dispTxCat').inne
 function selectTitle(val) { $('tx-title-val').value = val; $('dispTxTitle').innerText = val; closeModal(''); }
 function selectEditTitle(val) { $('edit-tx-title-val').value = val; $('dispEditTxTitle').innerText = val; closeModal(''); }
 function selectEditCategory(val) { $('edit-tx-category').value = val; $('dispEditTxCat').innerText = val; closeModal(''); }
-function toggleSection(sec, icn) { $(sec).classList.toggle('hidden'); $(icn).classList.toggle('rotated'); }
+function toggleSection(sec, icn) { $(sec).classList.toggle('hidden');$(icn).classList.toggle('rotated'); }
 function toggleExpandStat(el, id) {
     const items = $(id).children;
     if (el.classList.contains('expanded')) for (const i of items) i.className = 'expand-item glass-card';
@@ -701,7 +740,7 @@ function renderShortcuts() {
 // ==========================================
 function updateHealthEngine(fd) {
     let tIn = 0, tOut = 0; fd.forEach(t => t.type === 'masuk' ? tIn += t.amount : tOut += t.amount);
-    const bal = tIn - tOut, badge = $('healthBadge'), text = $('healthText'); if (!badge || !text) return;
+    const bal = tIn - tOut, badge = $('healthBadge'), text =$('healthText'); if (!badge || !text) return;
     let cls = 'health-sehat', lbl = 'SEHAT';
     if (!tIn && !tOut) { cls = 'health-netral'; lbl = 'NETRAL'; }
     else if (bal < 0) { cls = 'health-defisit'; lbl = 'DEFISIT'; }
@@ -711,7 +750,7 @@ function updateHealthEngine(fd) {
     generateAIForecast(fd);
 }
 function generateAIForecast(data) {
-    const box = $('aiInsightBox'), textEl = $('aiInsightText'); if (!box || !textEl) return;
+    const box = $('aiInsightBox'), textEl =$('aiInsightText'); if (!box || !textEl) return;
     const paint = (c) => { box.style.borderLeftColor = `var(${c})`; box.querySelector('svg').style.color = `var(${c})`; };
     aiMessages = [];
     if (!data.length) {
@@ -744,7 +783,7 @@ function startAICarousel(el) {
 }
 
 // ==========================================
-// RENDER UTAMA (tabel & chart)
+// RENDER UTAMA (Tabel & Chart)
 // ==========================================
 function updateUI(searchTerm) {
     searchTerm = (searchTerm || '').toLowerCase();
@@ -794,7 +833,6 @@ function renderCharts(data) {
     lineChart = new Chart($('lineChart'), { type: 'line', data: { labels: hI.map((_, i) => `T${i + 1}`), datasets: [{ label: 'Pemasukan', data: hI, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.1)', fill: true, pointRadius: 2, tension: 0.4 }, { label: 'Pengeluaran', data: hO, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, pointRadius: 2, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: grid } } } } });
 }
 
-// Struk / rincian (dipakai admin & portal publik)
 function openReceipt(txId) {
     const list = (isPublicMode && window.publicTx) ? window.publicTx : db;
     const tx = list.find(t => String(t.id) === String(txId) || String(t.date) === String(txId)); if (!tx) return;
@@ -810,7 +848,7 @@ function openReceipt(txId) {
 }
 
 // ==========================================
-// KALENDER CUSTOM (tahun lahir didukung)
+// KALENDER CUSTOM
 // ==========================================
 let currentCalTargetHidden = '', currentCalTargetDisp = '', calDate = new Date();
 
@@ -869,12 +907,11 @@ function fillCategoryBox(boxId, arr, cat, fn) {
 function quickInput(type, cat, desc) {
     $('tx-type').value = type;
     $('modal-title').innerText = type === 'masuk' ? 'Catat Pemasukan TPA' : 'Catat Pengeluaran TPA';
-    $('tx-desc').value = desc; $('tx-pihak-terkait').value = ''; $('tx-category-manual').value = '';
-    $('tx-date-hidden').value = ''; $('disp-tx-date').innerText = 'Gunakan Waktu Saat Ini'; $('tx-is-saving').value = 'false';
+    $('tx-desc').value = desc; $('tx-pihak-terkait').value = ''; $('tx-category-manual').value = '';$('tx-date-hidden').value = ''; $('disp-tx-date').innerText = 'Gunakan Waktu Saat Ini';$('tx-is-saving').value = 'false';
     selectTitle('Bapak/Ibu');
-    if (cat === 'MANUAL') { $('catSelectWrapper').style.display = 'none'; $('tx-category-manual').style.display = 'block'; $('label-kategori').innerText = 'Ketik Nama Kategori'; }
+    if (cat === 'MANUAL') { $('catSelectWrapper').style.display = 'none'; $('tx-category-manual').style.display = 'block';$('label-kategori').innerText = 'Ketik Nama Kategori'; }
     else {
-        $('catSelectWrapper').style.display = 'block'; $('tx-category-manual').style.display = 'none'; $('label-kategori').innerText = 'Kategori';
+        $('catSelectWrapper').style.display = 'block'; $('tx-category-manual').style.display = 'none';$('label-kategori').innerText = 'Kategori';
         fillCategoryBox('catOptionsBox', type === 'masuk' ? categories.masuk : categories.keluar, cat, 'selectCategory'); selectCategory(cat);
     }
     $('tx-amount').value = ''; rawAmount = 0; openModal('txModal');
@@ -891,6 +928,7 @@ async function persistTransactions(list, modalId, label) {
             await fetchUserTransactions(); closeModal(modalId);
             showToast(`${label} tersimpan di Cloud dan langsung tampil di portal wali murid.`); return;
         } catch (e) {
+            logJSONError('DB Insert', 'persistTransactions', 'Jaringan putus/Supabase limit', e);
             list.forEach(t => t.id = newId()); db.push(...list); pendingSync.push(...list); setLS('pending_sync', JSON.stringify(pendingSync));
             afterDataChange(); closeModal(modalId); showToast("Koneksi bermasalah. Data masuk antrean offline dan dikirim otomatis saat online.", "syncing"); return;
         }
@@ -905,44 +943,43 @@ $('btnExecuteTx').addEventListener('click', async () => {
     if ($('tx-is-saving').value === 'true') return; $('tx-is-saving').value = 'true';
     try {
         const manual = $('tx-category-manual').style.display === 'block';
-        let cat = manual ? $('tx-category-manual').value.trim() : $('tx-category').value, desc = $('tx-desc').value.trim();
+        let cat = manual ? $('tx-category-manual').value.trim() : $('tx-category').value, desc =$('tx-desc').value.trim();
         if (!cat || !desc) { showToast("Kategori & keterangan wajib diisi.", "error"); return; }
-        const pihakRaw = $('tx-pihak-terkait').value.trim(), dIn = $('tx-date-hidden').value;
+        const pihakRaw = $('tx-pihak-terkait').value.trim(), dIn =$('tx-date-hidden').value;
         const tx = { wallet: activeWallet, type: $('tx-type').value, category: properTitleCase(cat), desc: properTitleCase(desc), pihak_terkait: pihakRaw ? `${$('tx-title-val').value} ${properTitleCase(pihakRaw)}` : '', link_bukti: '', amount: rawAmount, status: 'normal', date: dIn ? new Date(dIn).toISOString() : new Date().toISOString() };
         if (tx.type === 'keluar' && walletBalance(activeWallet) < tx.amount) showToast("Perhatian: pengeluaran melebihi saldo dompet ini (saldo akan minus).", "error");
         await persistTransactions([tx], 'txModal', 'Transaksi');
+    } catch (e) {
+        logJSONError('Transaction Execute', 'btnExecuteTx', 'Runtime Error UI', e);
     } finally { $('tx-is-saving').value = 'false'; }
 });
 
-// ---------- PIN & aksi kritis ----------
+// ---------- TRIGGER ACTION PIN ----------
 function promptActionPin(action, txId) {
     closeModal('receiptModal');
-    if (!profile.pin) { if (action === 'edit') openEditTxModal(txId); else executeTxDeleteFinal(txId); return; }
+    if (!profile.pin) { 
+        if (action === 'edit') openEditTxModal(txId); 
+        else if (action === 'delete_wishlist') executeWishlistDelete(txId);
+        else if (action === 'reset') executeFactoryReset();
+        else executeTxDeleteFinal(txId); 
+        return; 
+    }
     $('actionPinType').value = action; $('actionPinPayload').value = txId; $('inputActionPin').value = '';
     setTimeout(() => openModal('actionPinModal'), 150);
 }
 function promptActionPinFromTable(e, action, txId) { e.stopPropagation(); promptActionPin(action, txId); }
 
-async function verifyActionPinFinal() {
-    const hashed = await hashPIN($('inputActionPin').value);
-    if (hashed !== profile.pin) { showToast("PIN salah! Akses ditolak.", "error"); return; }
-    const action = $('actionPinType').value, payload = $('actionPinPayload').value;
-    $('inputActionPin').value = ''; closeModal('actionPinModal');
-    setTimeout(() => {
-        if (action === 'delete') executeTxDeleteFinal(payload);
-        else if (action === 'edit') openEditTxModal(payload);
-        else if (action === 'delete_wishlist') executeWishlistDelete(payload);
-        else if (action === 'reset') executeFactoryReset();
-    }, 250);
-}
-
+// ---------- EXECUTION ACTION (Called by submitActionPin in Part 1) ----------
 function executeTxDeleteFinal(txId) {
     openCustomConfirm("Penghapusan Transaksi", "Data yang dihapus akan hilang dari sistem laporan dan portal wali murid.", async () => {
         const idx = db.findIndex(t => String(t.id) === String(txId) || String(t.date) === String(txId)); if (idx === -1) return;
         const del = db[idx]; db.splice(idx, 1);
         const wasPending = pendingSync.some(t => String(t.id) === String(del.id));
         pendingSync = pendingSync.filter(t => String(t.id) !== String(del.id)); setLS('pending_sync', JSON.stringify(pendingSync));
-        if (!wasPending && isCloudReady() && del.id) { try { await sbClient.from('transactions').delete().eq('id', del.id); } catch (e) {} }
+        if (!wasPending && isCloudReady() && del.id) { 
+            try { await sbClient.from('transactions').delete().eq('id', del.id); } 
+            catch (e) { logJSONError('DB Delete', 'executeTxDeleteFinal', 'Gagal hapus di cloud', e); } 
+        }
         afterDataChange(); showToast("Transaksi berhasil dihapus.");
     });
 }
@@ -951,7 +988,7 @@ function openEditTxModal(txId) {
     const tx = db.find(t => String(t.id) === String(txId) || String(t.date) === String(txId)); if (!tx) return;
     $('edit-tx-id').value = txId;
     fillCategoryBox('editCatOptionsBox', tx.type === 'masuk' ? categories.masuk : categories.keluar, tx.category, 'selectEditCategory'); selectEditCategory(tx.category);
-    $('edit-tx-date-hidden').value = tx.date; $('disp-edit-tx-date').innerText = formatDetailDate(tx.date); $('edit-tx-desc').value = tx.desc;
+    $('edit-tx-date-hidden').value = tx.date; $('disp-edit-tx-date').innerText = formatDetailDate(tx.date);$('edit-tx-desc').value = tx.desc;
     let title = 'Bapak/Ibu', name = tx.pihak_terkait || '';
     ['Pengurus Masjid', 'Tokoh Masyarakat', 'Ustadz/ah', 'Murid', 'Bapak/Ibu'].some(t => { if (name.startsWith(t + ' ')) { title = t; name = name.slice(t.length + 1); return true; } });
     selectEditTitle(title); $('edit-tx-pihak').value = name;
@@ -960,22 +997,25 @@ function openEditTxModal(txId) {
 
 async function saveEditedTransaction() {
     const txId = $('edit-tx-id').value, idx = db.findIndex(t => String(t.id) === txId || String(t.date) === txId); if (idx === -1) return;
-    const desc = $('edit-tx-desc').value.trim(), pihak = $('edit-tx-pihak').value.trim();
+    const desc = $('edit-tx-desc').value.trim(), pihak =$('edit-tx-pihak').value.trim();
     if (!desc || editRawAmount <= 0) { showToast("Keterangan dan nominal harus valid.", "error"); return; }
     const upd = { category: $('edit-tx-category').value, desc: properTitleCase(desc), date: new Date($('edit-tx-date-hidden').value).toISOString(), pihak_terkait: pihak ? `${$('edit-tx-title-val').value} ${properTitleCase(pihak)}` : '', amount: editRawAmount };
     const pend = pendingSync.findIndex(t => String(t.id) === String(db[idx].id));
     Object.assign(db[idx], upd);
     if (pend > -1) { Object.assign(pendingSync[pend], upd); setLS('pending_sync', JSON.stringify(pendingSync)); }
-    else if (isCloudReady() && db[idx].id) { try { await sbClient.from('transactions').update(upd).eq('id', db[idx].id); } catch (e) {} }
+    else if (isCloudReady() && db[idx].id) { 
+        try { await sbClient.from('transactions').update(upd).eq('id', db[idx].id); } 
+        catch (e) { logJSONError('DB Update', 'saveEditedTransaction', 'Gagal update di cloud', e); } 
+    }
     afterDataChange(); closeModal('editTxModal'); showToast("Transaksi berhasil diubah.");
 }
 
 // ==========================================
 // TRANSFER ANTAR DOMPET
 // ==========================================
-function openTransferDaruratModal() { $('transfer-amount').value = ''; $('transfer-desc').value = ''; openModal('transferDaruratModal'); }
+function openTransferDaruratModal() { $('transfer-amount').value = '';$('transfer-desc').value = ''; openModal('transferDaruratModal'); }
 function selectTransferSource(v, l) { $('transfer-source-val').value = v; $('dispTransferSource').innerText = l; closeModal(''); }
-function openTransferAntarDompetModal() { $('transfer2-amount').value = ''; $('transfer2-desc').value = ''; openModal('transferAntarDompetModal'); }
+function openTransferAntarDompetModal() { $('transfer2-amount').value = '';$('transfer2-desc').value = ''; openModal('transferAntarDompetModal'); }
 function selectTransferFrom(v, l) { $('transfer-from-val').value = v; $('dispTransferFrom').innerText = l; closeModal(''); }
 function selectTransferTo(v, l) { $('transfer-to-val').value = v; $('dispTransferTo').innerText = l; closeModal(''); }
 function readAmount(id) { const v = $(id).value.replace(/[^0-9]/g, ''); return v ? parseInt(v, 10) : 0; }
@@ -986,9 +1026,9 @@ function buildTransfer(src, dst, amount, desc, catIn, modalId) {
     const now = new Date().toISOString(), base = { link_bukti: '', pihak_terkait: 'Pengurus Transfer Internal', amount, status: 'normal', date: now, desc };
     persistTransactions([{ ...base, wallet: src, type: 'keluar', category: 'Lainnya' }, { ...base, wallet: dst, type: 'masuk', category: catIn }], modalId, 'Transfer');
 }
-function executeTransferDarurat() { buildTransfer($('transfer-source-val').value, 'darurat', readAmount('transfer-amount'), $('transfer-desc').value.trim() || 'Alokasi Dana Darurat', 'Dana Cadangan', 'transferDaruratModal'); }
+function executeTransferDarurat() { buildTransfer($('transfer-source-val').value, 'darurat', readAmount('transfer-amount'),$('transfer-desc').value.trim() || 'Alokasi Dana Darurat', 'Dana Cadangan', 'transferDaruratModal'); }
 function executeTransferAntarDompet() {
-    const s = $('transfer-from-val').value, t = $('transfer-to-val').value;
+    const s = $('transfer-from-val').value, t =$('transfer-to-val').value;
     if (s === t) { showToast("Dompet asal dan tujuan tidak boleh sama.", "error"); return; }
     buildTransfer(s, t, readAmount('transfer2-amount'), $('transfer2-desc').value.trim() || `Transfer dari ${walletNames[s]} ke ${walletNames[t]}`, 'Lainnya', 'transferAntarDompetModal');
 }
@@ -1055,7 +1095,7 @@ function renderDriveLinks() {
 }
 function openAddDriveModal() { $('drive-name').value = '';$('drive-url').value = ''; openModal('addDriveModal'); }
 function saveDriveLink() {
-    const name = properTitleCase($('drive-name').value.trim()), url = $('drive-url').value.trim();
+    const name = properTitleCase($('drive-name').value.trim()), url =$('drive-url').value.trim();
     if (!name || !/^https?:\/\//i.test(url)) { showToast("Nama dan URL (https://...) harus valid.", "error"); return; }
     driveLinks.push({ id: Date.now().toString(), name, url }); 
     saveScopedData();
@@ -1066,18 +1106,25 @@ function deleteDriveLink(id) {
     saveScopedData();
     renderDriveLinks();
 }
+
+// ---------------- CSV EXPORT ----------------
 function downloadCSV(csv, filename) {
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    try {
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }), a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch (e) {
+        logJSONError('Export File', 'downloadCSV', 'Gagal mem-build/download Blob CSV', e);
+        showToast("Terjadi kesalahan saat mengunduh CSV.", "error");
+    }
 }
 function openCSVModal() {
     if (!db.length) { showToast("Belum ada data untuk diekspor.", "error"); return; }
-    ['csv-start', 'csv-end'].forEach(p => { $(p + '-hidden').value = ''; $('disp-' + p).innerText = 'Pilih...'; });
+    ['csv-start', 'csv-end'].forEach(p => { $(p + '-hidden').value = '';$('disp-' + p).innerText = 'Pilih...'; });
     openModal('csvExportModal');
 }
 function executeCSVExport() {
-    const s = $('csv-start-hidden').value, e = $('csv-end-hidden').value;
+    const s = $('csv-start-hidden').value, e =$('csv-end-hidden').value;
     const rows = db.filter(tx => {
         if (tx.wallet !== activeWallet) return false;
         const d = new Date(tx.date); d.setHours(0, 0, 0, 0);
@@ -1091,28 +1138,10 @@ function executeCSVExport() {
     rows.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(r => { csv += [formatDetailDate(r.date), r.wallet, r.type, r.category, r.desc, r.pihak_terkait || '-', r.link_bukti || '-', r.amount].map(v => `"${String(v).replace(/"/g, '""')}"`).join(",") + "\n"; });
     downloadCSV(csv, `Laporan_TPA_${activeWallet.toUpperCase()}_${localDateKey()}.csv`); showToast("Laporan CSV berhasil diunduh.");
 }
-const searchInput = $('searchTxInput'), searchClear = $('searchClearBtn');
+
+const searchInput = $('searchTxInput'), searchClear =$('searchClearBtn');
 if (searchInput) searchInput.addEventListener('input', e => { const v = e.target.value.toLowerCase(); searchClear.style.display = v ? 'block' : 'none'; updateUI(v); });
 function clearSearch() { searchInput.value = ''; searchClear.style.display = 'none'; updateUI(''); }
-
-/* ===== AKHIR BAGIAN 2/3 - lanjutkan BAGIAN 3/3 di bawah baris ini ===== */
-
-/* =========================================================
-   TPA FINANCE v4.4 - MAIN.JS  (BAGIAN 3 dari 3)
-   Isi: SPP & Absensi admin, Snapshot publik (Supabase), Portal wali
-        murid real-time, Google Login, OTP EmailJS, Reset, bootApp.
-
-   ---- JALANKAN SEKALI di Supabase > SQL Editor (agar portal live) ----
-   create table if not exists public.public_snapshot (
-     owner_id uuid primary key references auth.users(id) on delete cascade,
-     data jsonb not null default '{}'::jsonb,
-     updated_at timestamptz not null default now());
-   alter table public.public_snapshot enable row level security;
-   create policy "snapshot_read"   on public.public_snapshot for select using (true);
-   create policy "snapshot_insert" on public.public_snapshot for insert with check (auth.uid() = owner_id);
-   create policy "snapshot_update" on public.public_snapshot for update using (auth.uid() = owner_id);
-   alter publication supabase_realtime add table public.public_snapshot;
-========================================================= */
 
 // ==========================================
 // SPP & ABSENSI (ADMIN)
@@ -1127,7 +1156,6 @@ function migrateSppData() {
     });
     setLS('spp_data_v47', JSON.stringify(sppData));
 }
-// Belum bayar: otomatis = bulan yang belum lunas s/d bulan ini; admin bisa mengubah manual (s.unpaid)
 function getUnpaid(s) {
     if (Array.isArray(s.unpaid)) return monthsArr.filter(m => s.unpaid.includes(m) && !s.months.includes(m));
     const cur = new Date().getMonth(); return monthsArr.filter((m, i) => i <= cur && !s.months.includes(m));
@@ -1177,7 +1205,6 @@ function filterAdminStudentTable() {
     document.querySelectorAll('.admin-spp-row').forEach(r => r.style.display = r.dataset.name.includes(q) ? '' : 'none');
 }
 
-// ----- Atur SPP: Lunas & Belum Bayar (saling meniadakan) -----
 function openMultiMonthSelect(id) {
     const s = studentById(id); if (!s) return;
     $('multiMonthTargetId').value = id; $('multiMonthStudentName').innerText = s.name;
@@ -1190,7 +1217,7 @@ document.addEventListener('change', e => {
     const cb = e.target; if (!cb.classList || !cb.classList.contains('spp-month-cb')) return;
     const other = document.getElementById((cb.classList.contains('paid') ? 'cbu_' : 'cbp_') + cb.value);
     if (cb.checked && other) other.checked = false;
-    if (!cb.checked && cb.classList.contains('paid') && other) other.checked = true; // batal lunas -> otomatis belum bayar
+    if (!cb.checked && cb.classList.contains('paid') && other) other.checked = true; 
 });
 function saveMultiMonthSpp() {
     const s = studentById($('multiMonthTargetId').value); if (!s) return;
@@ -1199,7 +1226,6 @@ function saveMultiMonthSpp() {
     saveSpp(); closeModal('multiMonthSelectModal'); renderAdminStudentTable(); showToast("Status SPP diperbarui dan tampil di portal wali murid.");
 }
 
-// ----- Absensi pekanan (hari baru terbuka otomatis 00:00, reset Minggu 00:00) -----
 function setAttend(id, key, val) { const s = studentById(id); if (!s) return; if (val) s.att[key] = true; else delete s.att[key]; saveSpp(); }
 function toggleAttendance(id, val) { setAttend(id, localDateKey(), val); showToast(val ? "Hadir dicatat untuk hari ini." : "Kehadiran hari ini dibatalkan.", "success"); }
 function openAbsenDetailModal(id) {
@@ -1223,7 +1249,7 @@ function checkAttendanceReset() {
         attendanceData.lastReset = now.toISOString(); setLS('attendance_data_v47', JSON.stringify(attendanceData)); saveSpp();
         showToast("Sistem: absensi pekan lalu telah di-reset otomatis (Minggu 00:00).", "syncing");
     }
-    if ($('sppAbsenModal') && $('sppAbsenModal').classList.contains('active')) renderAdminStudentTable();
+    if ($('sppAbsenModal') &&$('sppAbsenModal').classList.contains('active')) renderAdminStudentTable();
 }
 function downloadAbsensiCSV() {
     if (!sppData.length) { showToast("Data murid masih kosong.", "error"); return; }
@@ -1233,7 +1259,7 @@ function downloadAbsensiCSV() {
 }
 
 // ==========================================
-// SNAPSHOT PUBLIK (admin -> Supabase) & LINK
+// SNAPSHOT PUBLIK (ADMIN -> SUPABASE) & LINK
 // ==========================================
 let pubPublishTimer = null;
 function buildSnapshot() {
@@ -1249,7 +1275,11 @@ function publishPublicSnapshot() {
     clearTimeout(pubPublishTimer);
     pubPublishTimer = setTimeout(async () => {
         if (!isCloudReady()) return;
-        try { await sbClient.from('public_snapshot').upsert({ owner_id: currentUser.id, data: buildSnapshot(), updated_at: new Date().toISOString() }); } catch (e) {}
+        try { 
+            await sbClient.from('public_snapshot').upsert({ owner_id: currentUser.id, data: buildSnapshot(), updated_at: new Date().toISOString() }); 
+        } catch (e) {
+            logJSONError('Supabase Public Snapshot', 'publishPublicSnapshot', 'Gagal mempublikasi state ke cloud', e);
+        }
     }, 1500);
 }
 function openShareLinkModal() {
@@ -1273,7 +1303,6 @@ async function loadPublicData() {
     let ok = false;
     let fromCloud = false;
 
-    // Jika parameter id cloud (?o=...) tersedia, panggil dari Supabase
     if (publicOwner && navigator.onLine && window.supabase) {
         try {
             if (!sbClient) sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1289,14 +1318,14 @@ async function loadPublicData() {
                 ok = true; 
                 fromCloud = true;
             }
-        } catch (e) {}
+        } catch (e) {
+            logJSONError('Public Portal', 'loadPublicData', 'Gagal menarik snapshot dari Supabase', e);
+        }
     }
 
-    // Sistem Fallback: Jika koneksi gagal, data belum disinkronkan, atau test lokal
     if (!fromCloud) {
         const tempUid = publicOwner || 'guest';
         
-        // Membaca file lokal berdasarkan UID untuk memastikan data preview tetap terbaca
         let localSpp = safeParse(localStorage.getItem(LS_PREFIX + 'spp_' + tempUid), []);
         if (!localSpp.length) localSpp = safeParse(localStorage.getItem(LS_PREFIX + 'spp_guest'), []);
         
@@ -1309,9 +1338,10 @@ async function loadPublicData() {
             const c = localStorage.getItem(dbKey);
             if (c && typeof CryptoJS !== 'undefined') localDb = JSON.parse(CryptoJS.AES.decrypt(c, SECRET_KEY).toString(CryptoJS.enc.Utf8));
             else { const f = localStorage.getItem(dbKey + '_fallback'); if (f) localDb = JSON.parse(f); }
-        } catch(e){}
+        } catch(e) {
+            logJSONError('Public Portal', 'loadPublicData (Fallback)', 'Gagal dekripsi payload AES lokal', e);
+        }
 
-        // Mapping ulang struktur data
         publicStudents = localSpp.map(s => ({ id: s.id, name: s.name, months: s.months, unpaid: (Array.isArray(s.unpaid) ? s.unpaid : getUnpaid(s)), att: s.att || {} })); 
         window.publicTx = localDb || []; 
         window.publicWishlists = localWish || []; 
@@ -1333,13 +1363,12 @@ function notifyPublicChanges(next) {
 }
 async function initPublicPortal() {
     $('adminDashboard').style.display = 'none'; 
-    $('publicDashboard').style.display = 'none'; 
-    $('publicLoginOverlay').style.display = 'flex';
+    $('publicDashboard').style.display = 'none';$('publicLoginOverlay').style.display = 'flex';
     await loadPublicData();
-    initPrayerTimes(); // <--- Eksekusi pelacakan lokasi & jadwal sholat di mode publik
+    initPrayerTimes(); 
 }
 function handlePublicAutocomplete() {
-    const v = $('publicStudentInput').value.toLowerCase(), list = $('publicAutocompleteList');
+    const v = $('publicStudentInput').value.toLowerCase(), list =$('publicAutocompleteList');
     const m = v ? publicStudents.filter(s => s.name.toLowerCase().includes(v)) : [];
     if (!m.length) { list.classList.add('hidden'); return; }
     list.innerHTML = m.map(s => `<div class="custom-option text-neutral" data-name="${escapeHtml(s.name)}" onclick="selectPublicStudent(this.dataset.name)">${escapeHtml(s.name)}</div>`).join(''); list.classList.remove('hidden');
@@ -1350,24 +1379,29 @@ async function validatePublicLogin() {
     await loadPublicData();
     const s = publicStudents.find(x => x.name.toLowerCase() === name.toLowerCase());
     if (!s) { showToast(publicStudents.length ? "Nama tidak ditemukan. Pilih dari daftar yang muncul." : "Data TPA belum tersedia. Admin perlu login Cloud dan membagikan ulang tautan.", "error"); return; }
-    publicStudentName = s.name; $('publicLoginOverlay').style.display = 'none'; $('publicDashboard').style.display = 'block';
+    publicStudentName = s.name; $('publicLoginOverlay').style.display = 'none';$('publicDashboard').style.display = 'block';
     window.scrollTo(0, 0); renderPublicAll(); startPublicLive();
 }
 function startPublicLive() {
     clearInterval(publicTimer); publicTimer = setInterval(refreshPublic, 20000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshPublic(); });
     window.addEventListener('online', refreshPublic);
-    if (sbClient && publicOwner) { try { sbClient.channel('public-live').on('postgres_changes', { event: '*', schema: 'public', table: 'public_snapshot', filter: `owner_id=eq.${publicOwner}` }, () => refreshPublic()).subscribe(); } catch (e) {} }
+    if (sbClient && publicOwner) { 
+        try { 
+            sbClient.channel('public-live').on('postgres_changes', { event: '*', schema: 'public', table: 'public_snapshot', filter: `owner_id=eq.${publicOwner}` }, () => refreshPublic()).subscribe(); 
+        } catch (e) {
+            logJSONError('Public WebSocket', 'startPublicLive', 'Gagal inisiasi realtime channel', e);
+        }
+    }
 }
 async function refreshPublic() { await loadPublicData(); renderPublicAll(); }
 function setPublicWallet(w) { publicWalletFilter = w; document.querySelectorAll('.pub-tab').forEach(b => b.classList.toggle('active', b.dataset.wallet === w)); renderPublicHistory(); }
 
 function renderPublicHistory() {
-    const q = ($('pubSearchTx') ? $('pubSearchTx').value : '').toLowerCase();
+    const q = ($('pubSearchTx') ?$('pubSearchTx').value : '').toLowerCase();
     const list = window.publicTx.filter(t => (publicWalletFilter === 'semua' || t.wallet === publicWalletFilter) && (!q || `${t.desc} ${t.category} ${t.pihak_terkait}`.toLowerCase().includes(q)));
     renderTable(list, true);
 }
-// Fungsi baru untuk merender Target Dana di Publik
 function renderPublicWishlist() {
     const c = $('pubWishlistGrid'); if (!c) return;
     if (!window.publicWishlists || !window.publicWishlists.length) { c.innerHTML = `<div class="glass-card empty-box text-neutral">Belum ada target dana TPA saat ini.</div>`; return; }
@@ -1385,7 +1419,6 @@ function renderPublicWishlist() {
     }).join('');
 }
 
-// Timpa keseluruhan fungsi renderPublicAll ini
 function renderPublicAll() {
     const s = publicStudents.find(x => x.name === publicStudentName); if (!s) return;
     updateThemeIcon(document.documentElement.getAttribute('data-theme'));
@@ -1395,7 +1428,6 @@ function renderPublicAll() {
     $('pubStudentName').innerText = s.name; $('pubTotalAll').innerText = formatRp(all);$('pubLastUpdate').innerText = 'Diperbarui: ' + formatDetailDate(publicUpdated);
     const st = $('pubSyncStatus'); st.innerText = publicSource === 'cloud' ? (navigator.onLine ? 'Live (Cloud)' : 'Offline') : 'Data Perangkat'; st.className = 'status-sync ' + (publicSource === 'cloud' && navigator.onLine ? 'sync-online' : 'sync-pending');
 
-    // Absensi
     const wk = weekDates(), today = new Date(), stats = wk.map(d => attStatus(s, d)), badge = $('pubTodayBadge'), ts = attStatus(s, today);$('pubTodayDate').innerText = `${dayNames[today.getDay()]}, ${today.getDate()} ${monthsArr[today.getMonth()]} ${today.getFullYear()}`;
     badge.className = ts === 'hadir' ? 'public-badge-hadir' : (ts === 'belum' ? 'public-badge-wait' : 'public-badge-absen'); badge.innerText = ts === 'hadir' ? 'HADIR HARI INI' : 'BELUM DIABSEN';
     const ic = { hadir: '✓', absen: '✕', belum: '•', next: '–' };
@@ -1405,24 +1437,18 @@ function renderPublicAll() {
     const lbl = { hadir: ['public-badge-hadir', 'HADIR'], absen: ['public-badge-absen', 'TIDAK HADIR'], belum: ['public-badge-wait', 'BELUM DIABSEN'] };
     $('pubAttendLog').innerHTML = wk.map((d, i) => stats[i] === 'next' ? '' : `<div class="public-attend-item"><span class="text-neutral"><b>${dayNames[d.getDay()]}</b>, ${formatDateOnly(d.toISOString())}</span><span class="${lbl[stats[i]][0]}">${lbl[stats[i]][1]}</span></div>`).reverse().join('') || `<div class="public-attend-item">Belum ada riwayat pekan ini.</div>`;
 
-    // SPP
     const cur = today.getMonth(), unp = s.unpaid || [];
     $('pubSppYear').innerText = today.getFullYear();$('pubSppSummary').innerHTML = `<span class="sum-pill ok">Lunas ${s.months.length} bulan</span><span class="sum-pill bad">Belum Bayar ${unp.length} bulan</span>`;
     $('pubSppGrid').innerHTML = monthsArr.map((m, i) => { const c = s.months.includes(m) ? 'lunas' : (unp.includes(m) ? 'belum' : 'none'); return `<div class="pub-spp ${c} ${i === cur ? 'now' : ''}"><b>${m.substring(0, 3)}</b><span>${c === 'lunas' ? 'LUNAS' : (c === 'belum' ? 'BELUM' : '-')}</span></div>`; }).join('');
 
-    // Notifikasi (Teks bulan SPP kini transparan 100% tanpa limitasi)
     const n = [];
     n.push(ts === 'hadir' ? { t: 'ok', a: `${s.name} hadir hari ini`, b: dayNames[today.getDay()] + ', ' + formatDateOnly(today.toISOString()) } : { t: 'warn', a: `Absensi hari ini belum tercatat`, b: 'Admin belum mencentang kehadiran hari ini.' });
-    
     if (unp.length) n.push({ t: 'warn', a: `SPP belum dibayar: ${unp.join(', ')}`, b: 'Mohon hubungi pengurus TPA untuk pembayaran.' });
     else n.push({ t: 'ok', a: 'SPP tidak ada tunggakan', b: 'Terima kasih atas ketertiban pembayaran.' });
-
     [...window.publicTx].sort((x, y) => new Date(y.date) - new Date(x.date)).slice(0, 4).forEach(t => n.push({ t: 'info', a: `${t.type === 'masuk' ? 'Pemasukan' : 'Pengeluaran'} ${formatRp(t.amount)} · ${walletNames[t.wallet] || t.wallet}`, b: `${escapeHtml(t.desc)} — ${formatDetailDate(t.date)}` }));
     $('pubNotifList').innerHTML = n.map(x => `<div class="pub-notif ${x.t}"><b>${x.a}</b><span>${x.b}</span></div>`).join('');
     
     renderPublicHistory();
-    
-    // Injeksi render Target Dana di akhir proses sinkronisasi publik
     renderPublicWishlist();
 }
 
@@ -1432,8 +1458,12 @@ function renderPublicAll() {
 $('btnRealGoogleLogin').addEventListener('click', async () => {
     const msg = $('googleAuthStatusMsg'); msg.innerText = "Memproses login ke Google..."; msg.style.color = 'var(--biru)';
     if (typeof window.supabase === 'undefined' || !sbClient || !navigator.onLine) { msg.innerText = "Gagal menyambung. Periksa koneksi internet."; msg.style.color = 'var(--merah-solid)'; return; }
-    try { await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); }
-    catch (e) { msg.innerText = "Terjadi kesalahan sistem OAuth."; msg.style.color = 'var(--merah-solid)'; }
+    try { 
+        await sbClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + window.location.pathname } }); 
+    } catch (e) { 
+        logJSONError('Google OAuth', 'btnRealGoogleLogin', 'Provider Google auth ditolak/timeout', e);
+        msg.innerText = "Terjadi kesalahan sistem OAuth."; msg.style.color = 'var(--merah-solid)'; 
+    }
 });
 
 function startOTPResetProcess() {
@@ -1448,28 +1478,33 @@ function sendOTPEmail() {
     btn.innerText = "Mengirim..."; btn.disabled = true;
     generatedOTP = Math.floor(100000 + Math.random() * 900000).toString(); otpExpiryTime = Date.now() + 300000;
     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: profile.googleEmail, to_name: profile.name, otp_code: generatedOTP, email: profile.googleEmail, passcode: generatedOTP, time: new Date(otpExpiryTime).toLocaleTimeString('id-ID') }, EMAILJS_PUBLIC_KEY)
-        .then(() => { showToast("Kode OTP terkirim ke email Anda. Berlaku 5 menit — cek juga folder Spam.", "success"); closeModal('otpRequestModal'); $('inputOTP').value = ''; $('inputNewPinOTP').value = ''; setTimeout(() => openModal('otpVerifyModal'), 250); reset(); })
-        .catch(err => { showToast(`Gagal mengirim email${err && err.text ? ': ' + err.text : ''}. Periksa Service/Template ID EmailJS.`, "error"); reset(); });
+        .then(() => { showToast("Kode OTP terkirim ke email Anda. Berlaku 5 menit — cek juga folder Spam.", "success"); closeModal('otpRequestModal'); $('inputOTP').value = '';$('inputNewPinOTP').value = ''; setTimeout(() => openModal('otpVerifyModal'), 250); reset(); })
+        .catch(err => { 
+            logJSONError('EmailJS', 'sendOTPEmail', 'Kredensial EmailJS invalid atau limit tercapai', err);
+            showToast(`Gagal mengirim email${err && err.text ? ': ' + err.text : ''}. Periksa Service/Template ID EmailJS.`, "error"); reset(); 
+        });
 }
 async function verifyOTPAndSavePin() {
-    const c = $('inputOTP').value.trim(), np = $('inputNewPinOTP').value.trim();
+    const c = $('inputOTP').value.trim(), np =$('inputNewPinOTP').value.trim();
     if (Date.now() > otpExpiryTime) { showToast("OTP kedaluwarsa. Kirim ulang kode baru.", "error"); return; }
     if (!generatedOTP || c !== generatedOTP) { showToast("Kode OTP salah.", "error"); return; }
     if (!/^\d{4,6}$/.test(np)) { showToast("PIN baru harus 4-6 digit angka.", "error"); return; }
     profile.pin = await hashPIN(np); setLS('profile_secure_v47', JSON.stringify(profile));
-    if (isCloudReady()) { try { await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile }); } catch (e) {} }
+    if (isCloudReady()) { 
+        try { await sbClient.from('profiles').upsert({ id: currentUser.id, data: profile }); } 
+        catch (e) { logJSONError('Supabase Upsert', 'verifyOTPAndSavePin', 'Gagal update PIN ke cloud', e); } 
+    }
     generatedOTP = ""; closeModal('otpVerifyModal'); showToast("PIN berhasil direset. Gunakan PIN baru Anda.");
 }
 
-function initResetSequence() {
-    if (!profile.pin) { showToast("Buat PIN keamanan dulu di menu Edit Profil.", "error"); return; }
-    closeModal('profileViewModal'); $('actionPinType').value = 'reset'; $('actionPinPayload').value = ''; $('inputActionPin').value = '';
-    setTimeout(() => openModal('actionPinModal'), 250);
-}
 function executeFactoryReset() {
     openCustomConfirm("Reset Seluruh Database", "Semua transaksi, data murid, target dana, dan arsip akan dihapus permanen. Profil & tema tetap.", async () => {
         showToast("Membersihkan database...", "syncing");
-        try { if (isCloudReady()) await sbClient.from('transactions').delete().eq('user_id', currentUser.id); } catch (e) {}
+        try { 
+            if (isCloudReady()) await sbClient.from('transactions').delete().eq('user_id', currentUser.id); 
+        } catch (e) {
+            logJSONError('Database Reset', 'executeFactoryReset', 'Gagal menghapus entri Supabase', e);
+        }
         db = []; sppData = []; pendingSync = []; wishlists = []; driveLinks = []; attendanceData = { lastReset: new Date().toISOString(), records: {} };
         ['cloud_db', 'cloud_db_fallback', 'guest_db', 'guest_db_fallback', 'spp_data_v47', 'attendance_data_v47', 'pending_sync', 'wishlists', 'drivelinks'].forEach(removeLS);
         updateUI(''); renderWishlist(); renderDriveLinks(); publishPublicSnapshot(); showToast("Reset selesai. Database kosong.");
@@ -1497,11 +1532,15 @@ function bootApp() {
     else { currentUser = null; updateNetworkStatus("Offline Mode (Guest)", "sync-offline"); }
     setTimeout(initSupabaseBackground, 500);
 
-    setInterval(checkAttendanceReset, 60000);        // pantau pergantian hari 00:00 & reset Minggu
+    setInterval(checkAttendanceReset, 60000);
     setInterval(triggerDevSupportNotification, 180000);
-    let lastPing = 0;                                // ping ringan agar Supabase tidak idle (maks 1x / 4 menit)
+    let lastPing = 0;
     document.body.addEventListener('click', () => {
-        if (isCloudReady() && Date.now() - lastPing > 240000) { lastPing = Date.now(); try { sbClient.from('profiles').select('id').limit(1).then(() => {}); } catch (e) {} }
+        if (isCloudReady() && Date.now() - lastPing > 240000) { 
+            lastPing = Date.now(); 
+            try { sbClient.from('profiles').select('id').limit(1).then(() => {}); } 
+            catch (e) { logJSONError('Keep-Alive Ping', 'bootApp', 'Idle connection gagal di-refresh', e); } 
+        }
     });
 }
 bootApp();
