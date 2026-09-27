@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TPA Finance">
 <link rel="apple-touch-icon" href="icon-192x192.png">
-<title>TPA Finance v6.0 - Enterprise Edition</title>
+<title>TPA Finance v6.1 - Enterprise Edition</title>
 
 <!-- Tema dibaca SEBELUM render agar refresh tidak kembali ke gelap -->
 <script>
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <div id="updateScreen" style="display:none;">
     <div class="spinner"></div>
-    <p class="update-text">MENERAPKAN UPDATE VERSI BARU v6.0...</p>
+    <p class="update-text">MENERAPKAN UPDATE VERSI BARU v6.1...</p>
 </div>
 
 <!-- Notifikasi gaya Apple (blur transparan, besar, tampil lama) -->
@@ -711,14 +711,14 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </div>
 
-<!-- PIN (TERKONEKSI DENGAN main.js BARU) -->
+<!-- PIN -->
 <div class="modal-overlay" id="actionPinModal">
     <div class="modal-card ta-center">
         <h2 class="text-neutral modal-header-title">Otorisasi Keamanan</h2>
         <p class="muted-sm">Masukkan PIN Profil Utama untuk melanjutkan tindakan kritis.</p>
         <input type="password" id="inputActionPin" class="input-field glass-card text-neutral pin-input" placeholder="* * * *" inputmode="numeric" maxlength="6" autocomplete="off">
         <input type="hidden" id="actionPinType"><input type="hidden" id="actionPinPayload">
-        <button class="btn-modal btn-primary" onclick="submitActionPin()">Verifikasi PIN</button>
+        <button class="btn-modal btn-primary" onclick="verifyActionPinFinal()">Verifikasi PIN</button>
         <div class="divider-dash"><button class="btn-modal btn-cancel small" onclick="startOTPResetProcess()">Lupa PIN? Reset via Email</button></div>
         <button class="btn-modal btn-cancel" onclick="closeModal('actionPinModal')">Batalkan Tindakan</button>
     </div>
