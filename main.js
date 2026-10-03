@@ -1,6 +1,6 @@
 "use strict";
 
-const APP_VERSION = '6.4';
+const APP_VERSION = '6.5';
 const LS_PREFIX = 'tpa_finance_v48_';
 
 const SUPABASE_URL = 'https://ndsyyaxmiwskrkklseap.supabase.co';
@@ -596,9 +596,11 @@ function requestProfileEdit() {
 
 function selectGender(val) { $('editGender').value = val; $('dispGenderVal').innerText = val; closeModal(''); }
 function openProfileEdit() {
-    $('editProfileImg').src = safePhoto(profile.photo);$('editName').value = profile.name !== 'Pengurus Baru' ? profile.name : '';
+    $('editProfileImg').src = safePhoto(profile.photo);
+    $('editName').value = profile.name !== 'Pengurus Baru' ? profile.name : '';
     selectGender(profile.gender || 'Rahasia');
-    $('edit-birth-hidden').value = profile.birthDate \vert{}\vert{} '';$('disp-edit-birth').innerText = profile.birthDate ? formatDateOnly(profile.birthDate) : 'Pilih tanggal lahir';
+    $('edit-birth-hidden').value = profile.birthDate || '';
+    $('disp-edit-birth').innerText = profile.birthDate ? formatDateOnly(profile.birthDate) : 'Pilih tanggal lahir';
     $('editPin').value = '';
     openModal('profileEditModal');
 }
